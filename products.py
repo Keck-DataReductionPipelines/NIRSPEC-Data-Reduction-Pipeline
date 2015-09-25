@@ -82,6 +82,7 @@ def gen(reduced, out_dir):
     slope = []
     
     for order in reduced.orders:
+        
         for line in order.lines:
             if line.usedInFit:
                 order_num.append(order.orderNum)
@@ -339,6 +340,11 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, si
     nominal_width = 10
     widths = []
     
+    if trace_lower is None:
+        trace_lower = np.zeros(1024, dtype=float)
+    if trace_mean is None:
+        trace_mean = np.zeros(1024, dtype=float)
+        
     for name in names:
         widths.append(max(len(name), nominal_width))
             
@@ -420,6 +426,10 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
     pl.ylabel(title + '(' + y_units + ')')
     pl.grid(True)
     pl.plot(wave, cont, "k-", mfc="none", ms=3.0, linewidth=1)
+    
+    axes = pl.gca()
+    #axes.set_ylim(0, 300)
+    
     fn = constructFileName(outpath, base_name, order_num, title + '.png')
     pl.savefig(fn)
     log_fn(fn)

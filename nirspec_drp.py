@@ -28,9 +28,10 @@ def nirspec_drp(in_dir, out_dir):
         try:
             reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
             products.gen(reducedDataSet, out_dir)
-        except:
+        except Exception as e:
             n_reduced -= 1
-            logger.error('failed to reduce {}'.format(rawDataSet.objFileName))
+            logger.error('failed to reduce {}: {}'.format(
+                    rawDataSet.objFileName, e.message))
             
     logger.info('{} out of {} object frames successfully reduced'.format(
             n_reduced, len(rawDataSets)))   

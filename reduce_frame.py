@@ -13,7 +13,7 @@ import reduce_order
 import nirspec_constants as constants
 import wavelength_utils
 
-cosmic_clean = True
+cosmic_clean = False
 logger = logging.getLogger('obj')
 
 def reduce_frame(raw, out_dir):
@@ -55,11 +55,14 @@ def reduce_frame(raw, out_dir):
     # reduce orders
     reduce_orders(reduced)
     
-    # find wavelength solution
-    find_wavelength_soln(reduced)
-    
-    # apply wavelength solution
-    apply_wavelength_soln(reduced)
+    try:
+        # find wavelength solution
+        find_wavelength_soln(reduced)
+    except Exception as e:
+        logger.info('not applying wavelength solution')
+    else:
+        # apply wavelength solution
+        apply_wavelength_soln(reduced)
     
     return(reduced)
  
@@ -99,19 +102,25 @@ def reduce_orders(reduced):
                 order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
                         top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
             
-                # put integration time and wavelength scale based on 
-                # grating equation into order object
-                order.integrationTime = reduced.getIntegrationTime() # used in noise calc
-                order.wavelengthScaleCalc = wavelength_scale_calc
-            
-                # reduce order, i.e. rectify, extract spectra, identify sky lines
-                reduce_order.reduce_order(order)
-                
-                # add reduced order to list of reduced orders in Reduced object
-                reduced.orders.append(order)
-                                
             except Exception as e:
-                logger.warning('order {} was not successfully reduced: {}'.format(
+                logger.warning('failed to extract order {}: {}'.format(
+                            str(order_num), e.message))
+                continue
+                
+            # put integration time and wavelength scale based on 
+            # grating equation into order object
+            order.integrationTime = reduced.getIntegrationTime() # used in noise calc
+            order.wavelengthScaleCalc = wavelength_scale_calc
+            order.wavelengthScaleMeas = wavelength_scale_calc
+            
+            # reduce order, i.e. rectify, extract spectra, identify sky lines
+            reduce_order.reduce_order(order)
+                
+            # add reduced order to list of reduced orders in Reduced object
+            try:
+                reduced.orders.append(order)                      
+            except Exception as e:
+                logger.warning('failed to reduce order {}: {}'.format(
                         str(order_num), e.message))
         
         # end if order is on the detector
@@ -135,6 +144,7 @@ def find_wavelength_soln(reduced):
             order_inv.append(1.0 / order.orderNum)
             accepted.append(line.acceptedWavelength)
             
+            
     logger.info('total number of identified lines = ' + str(len(col)))
     
 #     print accepted
@@ -144,6 +154,9 @@ def find_wavelength_soln(reduced):
             np.asarray(col, dtype='float32'), 
             np.asarray(order_inv, dtype='float32'), 
             np.asarray(accepted, dtype='float32'))    
+    
+    if wave_fit is None:
+        raise Exception('cannot find wavelength solution')
     
     logger.info('number of lines used in wavelength fit = ' + str(len(wave_fit)))
     

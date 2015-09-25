@@ -42,13 +42,13 @@ def reduce_order(order):
         order.smoothedTrace = order.smoothedTrace - order.botMeas + order.padding
         order.avgTrace = order.avgTrace - order.botMeas + order.padding
     
-    import pylab as pl
-    pl.figure('', facecolor='white', figsize=(8, 6))
-    pl.cla()    
-    f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-    f.axes.get_xaxis().set_visible(False)
-    f.axes.get_yaxis().set_visible(False)
-    pl.show()
+#     import pylab as pl
+#     pl.figure('', facecolor='white', figsize=(8, 6))
+#     pl.cla()    
+#     f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
+#     f.axes.get_xaxis().set_visible(False)
+#     f.axes.get_yaxis().set_visible(False)
+#     pl.show()
     
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
     order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)
@@ -78,13 +78,13 @@ def reduce_order(order):
         order.objImgFlattened = image_lib.rectify_spectral(order.flattenedObjImg, order.spectral_trace)
         order.spectralRectified = True
         
-    import pylab as pl
-    pl.figure('', facecolor='white', figsize=(8, 6))
-    pl.cla()    
-    f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-    f.axes.get_xaxis().set_visible(False)
-    f.axes.get_yaxis().set_visible(False)
-    pl.show()
+#     import pylab as pl
+#     pl.figure('', facecolor='white', figsize=(8, 6))
+#     pl.cla()    
+#     f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
+#     f.axes.get_xaxis().set_visible(False)
+#     f.axes.get_yaxis().set_visible(False)
+#     pl.show()
      
     # compute noise image
     order.noiseImg = nirspec_lib.calc_noise_img(
