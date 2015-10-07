@@ -3,6 +3,7 @@ import numpy as np
 
 import nirspec_lib
 import Order
+import DrpException
 
 logger = logging.getLogger('obj')
 
@@ -31,8 +32,9 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
     determine_edge_locations(tops, bots, order, params['sigma'], params['thresh'])
     
     if order.topMeas is None and order.botMeas is None:
-        logger.error('could not find top or bottom of order')
-        return None
+        msg = 'could not find top or bottom of order'
+        logger.debug(msg)
+        raise DrpException(msg)
     
     # find order edge traces   
     find_edge_traces(tops, bots, order)
@@ -99,7 +101,7 @@ def cut_out_order(obj, flat, order, padding):
     
     # determine highest point of top trace (ignore edge)
     if order.topTrace is None:
-        top_trace_approx = order.botTrace + order.topMeas + 1
+        top_trace_approx = order.botTrace + order.topCalc + 1
         highest_point = max(top_trace_approx[0], top_trace_approx[-OVERSCAN_WIDTH])
     else:
         highest_point = max(order.topTrace[0], order.topTrace[-OVERSCAN_WIDTH])
@@ -116,16 +118,24 @@ def cut_out_order(obj, flat, order, padding):
     
     order.shiftOffset = padding + order.botMeas
 
-    if float(order.botMeas) > float(padding):
-        order.onOrderMask, order.offOrderMask = get_masks(order.objCutout.shape, 
-                order.topTrace - order.botTrace[0] + padding, 
+#     if float(order.botMeas) > float(padding):
+    
+    if order.topTrace is None:
+        top_trace = top_trace_approx
+    else:
+        top_trace = order.topTrace
+    if float(bot) > float(padding):
+        order.onOrderMask, order.offOrderMask = get_masks(
+                order.objCutout.shape, 
+                top_trace - order.botTrace[0] + padding, 
                 order.botTrace - order.botTrace[0] + padding)
 #                 order.topTrace - order.botMeas + padding, 
 #                 order.botTrace - order.botMeas + padding)
     else:
-        order.onOrderMask, order.offOrderMask = get_masks(order.objCutout.shape, 
-            order.topTrace, 
-            order.botTrace)
+        order.onOrderMask, order.offOrderMask = get_masks(
+                order.objCutout.shape, 
+                order.topTrace, 
+                order.botTrace)
     
     return
     

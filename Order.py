@@ -18,7 +18,7 @@ class Order:
         self.botMeas = 0.0
         
         self.wavelengthScaleCalc = []
-        #self.wavelengthShift = 0.0 this value is logged but not needed otherwise
+        self.wavelengthShift = None
         self.wavelengthScaleMeas = []
         
         # wavelength calibration lines, array of class WavelengthCalLine
@@ -31,8 +31,8 @@ class Order:
         self.onOrderMask = []
         self.offOrderMask = []
         
-        self.topTrace = []
-        self.botTrace = []
+        self.topTrace = None
+        self.botTrace = None
         self.avgTrace = []
         self.smoothedTrace = []
         self.traceMask = []

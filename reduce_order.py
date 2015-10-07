@@ -110,8 +110,7 @@ def reduce_order(order):
         order.synthesizedSkySpec = wavelength_utils.synthesize_sky(
                 oh_wavelengths, oh_intensities, order.wavelengthScaleCalc)
          
-        line_pairs = wavelength_utils.line_id(order.skySpec, order.synthesizedSkySpec, 
-                order.wavelengthScaleCalc, oh_wavelengths, oh_intensities)
+        line_pairs = wavelength_utils.line_id(order, oh_wavelengths, oh_intensities)
         
     except (IOError, ValueError) as e:
         logger.warning('sky line matching failed: ' + str(e))

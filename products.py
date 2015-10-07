@@ -44,7 +44,9 @@ subdirs = dict([
                 ('noise.png',       'previews/noise'    ),
                 ('trace.fits',      'fits/trace'        ),
                 ('trace.png',       'previews/trace'    ),
-                ('spectra.png',     'previews/spectra'  )
+                ('spectra.png',     'previews/spectra'  ),
+                ('skylines.png',    'previews/skylines' ),
+                ('skylines.txt',    'ascii/skylines'    )
                 ])
 
 def constructFileName(outpath, base_name, order, fn_suffix):
@@ -130,6 +132,9 @@ def gen(reduced, out_dir):
 #         
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.wavelengthScaleMeas)
+        
+        skyLinesPlot(out_dir, reduced.baseName, order)
+        skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
 #         
 #         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
@@ -148,11 +153,14 @@ def gen(reduced, out_dir):
         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
 
-         
+
+        twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg)
+
         if len(order.wavelengthScaleMeas) > 0:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
                     reduced.getObjectName(), order.orderNum, order.objImg, 
                     order.wavelengthScaleMeas)
+
         else:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image *', 
                     reduced.getObjectName(), order.orderNum, order.objImg, 
@@ -425,7 +433,7 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
     pl.xlabel('wavelength ($\AA$)')
     pl.ylabel(title + '(' + y_units + ')')
     pl.grid(True)
-    pl.plot(wave, cont, "k-", mfc="none", ms=3.0, linewidth=1)
+    pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1)
     
     axes = pl.gca()
     #axes.set_ylim(0, 300)
@@ -455,9 +463,9 @@ def multiSpectrumPlot(outpath, base_name, order, y_units, cont, sky, noise, wave
     pl.ylabel(title + '(' + y_units + ')')
     pl.grid(True)
     
-    pl.plot(wave, cont, "k-", mfc="none", ms=3.0, linewidth=1, label='object')
-    pl.plot(wave, sky, "b-", mfc="none", ms=3.0, linewidth=1, label='sky')
-    pl.plot(wave, noise, "r-", mfc="none", ms=3.0, linewidth=1, label='noise (1 sigma')
+    pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1, label='object')
+    pl.plot(wave[:1004], sky[:1004], "b-", mfc="none", ms=3.0, linewidth=1, label='sky')
+    pl.plot(wave[:1004], noise[:1004], "r-", mfc="none", ms=3.0, linewidth=1, label='noise (1 sigma')
 
     pl.legend(loc='best', prop={'size': 8})
 
@@ -549,6 +557,99 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
     thdulist.writeto(fn, clobber=True)                
     log_fn(fn)
     return 
+
+def skyLinesPlot(outpath, base_name, order):
+    pl.figure('sky lines', facecolor='white', figsize=(8,5))
+    pl.cla()
+    pl.title("sky lines" + ', ' + base_name + ", order " + str(order.orderNum), fontsize=14)
+    pl.xlabel('x (pixels)', fontsize=12)
+    #pl.ylabel('row (pixel)', fontsize=12)
+    
+    synmax = np.amax(order.synthesizedSkySpec);
+    skymax = np.amax(order.skySpec);
+    
+
+    if synmax > skymax:
+        syn = order.synthesizedSkySpec
+        sky = order.skySpec * (synmax / skymax)
+    else:
+        syn = order.synthesizedSkySpec * (skymax / synmax)
+        sky = order.skySpec
+
+    pl.plot((syn * 0.4) + (max(synmax, skymax) / 2), 'g-', linewidth=1, label='synthesized sky')
+    pl.plot(sky * 0.4, 'b-', linewidth=1, label='sky')
+
+    ymin, ymax = pl.ylim()
+    ymax = max(synmax, skymax) * 1.1
+    ymin = -200
+    pl.ylim(ymin, ymax)
+    pl.xlim(0, 1024)
+
+    pl.legend(loc='best', prop={'size': 8})
+    
+    pl.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
+                (0.3, 0.8), xycoords="figure fraction")
+    
+    dy = 0
+    for line in order.lines:
+        pl.plot([line.col, line.col], [ymin, ymax], "k--", linewidth=0.5)
+        pl.annotate(str(line.acceptedWavelength), (line.col, ((ymax - ymin) / 2) + dy), size=8)
+        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), (line.col, ((ymax - ymin) / 3) - dy), size=8)
+        dy += 300
+        if dy > 1500:
+            dy = 0
+
+    
+    #pl.minorticks_on()
+    pl.grid(True)
+
+    fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.png')
+        
+    pl.savefig(fn)
+    log_fn(fn)
+    pl.close()
+    return
+    
+
+def skyLinesAsciiTable(outpath, base_name, order):
+    
+    names = ['order', 'col', 'calc', 'accepted'] 
+    units = [' ', 'pixels', '$\AA$', '$\AA$']
+    formats = ['.0f', '.0f', '.1f', '.1f']
+    widths = [6, 6, 6, 9] 
+    
+    buff = []
+    
+    line = []
+    for i, name in enumerate(names):
+        line.append('{:>{w}}'.format(name, w=widths[i]))
+    buff.append('| {} |'.format('| '.join(line)))
+    
+    line = []
+    for i, unit in enumerate(units):
+        line.append('{:>{w}}'.format(unit, w=widths[i]))
+    buff.append('| {} |'.format('| '.join(line)))
+        
+    if UNDERLINE:
+        line = []
+        for i, unit in enumerate(units):
+            line.append('{:->{w}}'.format('', w=widths[i]))
+        buff.append('--'.join(line))
+    
+    for l in order.lines:
+        data = [order.orderNum, l.col, order.wavelengthScaleCalc[l.col], l.acceptedWavelength]
+        line = []
+        for i, val in enumerate(data):
+            line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
+        buff.append('  {}  '.format('  '.join(line)))
+                
+    fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.txt')
+    fptr = open(fn, 'w')
+    fptr.write('\n'.join(buff))
+    fptr.close()
+    log_fn(fn)
+ 
+    return
     
 def twoDimOrderPlot(outpath, base_name, title, obj_name, order_num, data, x):
     pl.figure('2d order image', facecolor='white', figsize=(8, 5))
@@ -561,20 +662,22 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, order_num, data, x):
     
     pl.imshow(data, origin='lower', vmin=0, vmax=1024, 
                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
-    
+    pl.colorbar()
     fn = constructFileName(outpath, base_name, order_num, 'order.png')
     pl.savefig(fn)
     log_fn(fn)
     pl.close()
+    
+    np.save(fn[:fn.rfind('.')], data)
+    
     return
     
 
-def twoDimOrderFits(outpath, base_name, title, obj_name, order_num, data, x):     
+def twoDimOrderFits(outpath, base_name, order_num, data):     
     hdu = fits.PrimaryHDU(data)
     hdulist = fits.HDUList(hdu)
 #     hdulist[0].header['object'] = '511 Davida'
     fn = constructFileName(outpath, base_name, order_num, 'order.fits')
-
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
     return

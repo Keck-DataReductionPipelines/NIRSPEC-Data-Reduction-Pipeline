@@ -108,8 +108,8 @@ def cosmic_clean(data):
 
 
 EXT_WINDOW = 6
-SKY_WINDOW = 8
-SKY_DISTANCE = 10
+SKY_WINDOW = 4
+SKY_DISTANCE = 5
 
 def get_extraction_ranges(image_width, peak_location):
     """
@@ -160,11 +160,21 @@ def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
     sky_top_sum = np.sum(obj[peak + i, :] for i in sky_range_top)
     sky_bot_sum = np.sum(obj[peak + i, :] for i in sky_range_bot)
     
-    obj_mean = obj_sum / len(obj_range)
     sky_mean = (sky_top_sum + sky_bot_sum) / (len(sky_range_top) + len(sky_range_bot))
-    sky_mean -= np.median(sky_mean) # why this?
-    obj_sp = obj_mean - sky_mean
+#     sky_mean -= np.median(sky_mean) 
+
+    obj_sp = obj_sum - (len(obj_range) * sky_mean)
     
+    print(np.median(obj_sum / len(obj_range)))
+
+#     import pylab as pl
+#     pl.figure()
+#     pl.cla()
+#     pl.plot((obj_sum / len(obj_range)) - np.median(obj_sum / len(obj_range)), 'r-', mfc='none')
+#     pl.plot(sky_mean, 'b-', mfc='none')
+# #     pl.plot(sky_bot_sum, 'g-', mfc='none')
+#     pl.show()
+
     sky_sp = sky_mean - sky_mean.mean() # why this?
     
     obj_noise_sum = np.sum(noise[peak - i, :] for i in obj_range)

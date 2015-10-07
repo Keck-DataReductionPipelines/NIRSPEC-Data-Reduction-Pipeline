@@ -46,21 +46,36 @@ def synthesize_sky(oh_wavelengths, oh_intensities, wavelength_scale_calc):
 
     return synthesized_sky
         
-def line_id(sky, synthesized_sky, wavelength_scale_calc, oh_wavelengths, oh_intensities):
-        
+def line_id(order, oh_wavelengths, oh_intensities):
+    """
+    Given real sky spectrum, synthesized sky spectrum, estimated wavelength scale based on 
+    evaluation of grating equation, and accepted OH emission line wavelengths and relative
+    intensities, match observed sky lines with accepted OH lines.
+    
+    First find_wavelength_shift() is called to determine the offset between the estimated 
+    wavelength scale and the actual wavelength scale by maximizing the overlap integral of 
+    the real sky spectrum with the synthesized sky spectrum.
+    
+    identify() is called to make the actual associate between observed and accepted lines.
+    identify() has not yet been recoded, detailed explanation of algorithm forthcoming.  
+    
+    This function returns (column, wavelength) pairs as a list of tuples.
+    
+    """
     # find wavelength shift
-    wavelength_shift = find_wavelength_shift(sky, synthesized_sky, wavelength_scale_calc)
+    order.wavelengthShift = find_wavelength_shift(order.skySpec, order.synthesizedSkySpec,
+            order.wavelengthScaleCalc)
  
-    if abs(wavelength_shift) > MAX_SHIFT:
+    if abs(order.wavelengthShift) > MAX_SHIFT:
         logger.warning('measured wavelength shift of {:.1f} exceeds threshold of {:.0f}'.format(
-                wavelength_shift, MAX_SHIFT))
+                order.wavelengthShift, MAX_SHIFT))
         return None
         
-    logger.info('wavelength scale shifted by ' + str(round(wavelength_shift, 3)) + ' pixels')   
-    wavelength_scale_shifted = wavelength_scale_calc + wavelength_shift   
+    logger.info('wavelength scale shifted by ' + str(round(order.wavelengthShift, 3)) + ' pixels')   
+    wavelength_scale_shifted = order.wavelengthScaleCalc + order.wavelengthShift   
 
     # match sky lines
-    id_tuple = identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities)
+    id_tuple = identify(order.skySpec, wavelength_scale_shifted, oh_wavelengths, oh_intensities)
     
     if id_tuple is  None:
         return None
@@ -72,8 +87,9 @@ def line_id(sky, synthesized_sky, wavelength_scale_calc, oh_wavelengths, oh_inte
 #     print('matchesidx: ' + str(matchesidx))
 #     raw_input('waiting')    
      
-    p0 = np.polyfit(matchesohx, matchesdx, deg=1)
-    disp = p0[0]
+    p = np.polyfit(matchesohx, matchesdx, deg=1)
+    # polyfit() returns highest power polynomial coefficient first, so p[0] is slope.
+    disp = p[0]
     
     if DISP_UPPER_LIMIT > abs(disp) > DISP_LOWER_LIMIT:
         logger.info('slope of accepted vs measured wavelengths = ' + str(round(disp, 3)))

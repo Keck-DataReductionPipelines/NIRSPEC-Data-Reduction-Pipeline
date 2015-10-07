@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from astropy.io import fits
 
+import DrpException
 import ReducedDataSet
 import Order
 import image_lib
@@ -13,10 +14,9 @@ import reduce_order
 import nirspec_constants as constants
 import wavelength_utils
 
-cosmic_clean = False
 logger = logging.getLogger('obj')
 
-def reduce_frame(raw, out_dir):
+def reduce_frame(raw, out_dir, cosmic_clean):
     """
     
     raw - RawDataSet object
@@ -101,8 +101,7 @@ def reduce_orders(reduced):
             try:
                 order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
                         top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
-            
-            except Exception as e:
+            except DrpException as e:
                 logger.warning('failed to extract order {}: {}'.format(
                             str(order_num), e.message))
                 continue

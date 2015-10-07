@@ -8,7 +8,9 @@ import create_raw_data_sets
 #import ReducedDataSet
 import reduce_frame
 import products
+import DrpException
 
+cosmic_clean = True
 
 def nirspec_drp(in_dir, out_dir):
     """
@@ -26,9 +28,9 @@ def nirspec_drp(in_dir, out_dir):
         
     for rawDataSet in rawDataSets:
         try:
-            reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
+            reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir, cosmic_clean)
             products.gen(reducedDataSet, out_dir)
-        except Exception as e:
+        except DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
                     rawDataSet.objFileName, e.message))
@@ -104,11 +106,16 @@ def main():
     Run with -h to see command line arguments
     """
     
+    global cosmic_clean
     # parse command line arguments
     parser = argparse.ArgumentParser(description="NIRSPEC DRP")
     parser.add_argument('in_dir', help='input directory')
     parser.add_argument('out_dir', help='output directory')
+    parser.add_argument('--cosmic', help='inhibits cosmic ray artifact rejection', 
+            action='store_false')
     args = parser.parse_args()
+    cosmic_clean = args.cosmic
+
     
     # initialize environment, setup main logger, check directories
     try:
