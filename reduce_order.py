@@ -1,6 +1,9 @@
 import logging
 import numpy as np
+import scipy.stats
+import scipy.ndimage
 
+import config
 import image_lib
 import nirspec_lib
 import wavelength_utils
@@ -61,6 +64,11 @@ def reduce_order(order):
     # find spatial profile and peak
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
     order.peakLocation = np.argmax(order.spatialProfile)
+    logger.info('peak intensity row {:d}'.format(order.peakLocation))
+    p0 = order.peakLocation - (config.params['obj_window_width'] / 2)
+    p1 = order.peakLocation + (config.params['obj_window_width'] / 2)
+    order.centroid = (scipy.ndimage.measurements.center_of_mass(order.spatialProfile[p0:p1]))[0] + p0 
+    logger.info('centroid row {:.1f}'.format(float(order.centroid)))
     
     # find and smooth spectral trace
     try:
@@ -96,8 +104,16 @@ def reduce_order(order):
     
     # extract spectra
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \
-        image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation)
+        image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation,
+        config.params['obj_window_width'], config.params['sky_window_width'], 
+        config.params['sky_dist'])
         
+    logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
+    logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
+    logger.info('top background window distance = {}'.format(str(order.topSkyWindow[0] - order.objWindow[-1])))
+    logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
+    logger.info('bottom background window distance = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
+    
     order.objSpec, order.skySpec, order.noiseSpec = image_lib.extract_spectra(
             order.flattenedObjImg, order.noiseImg, order.peakLocation,
             order.objWindow, order.topSkyWindow, order.botSkyWindow)
@@ -105,8 +121,12 @@ def reduce_order(order):
     # find and identify sky lines   
     line_pairs = None # line_pairs are (column number, accepted wavelength
     try:
-        oh_wavelengths, oh_intensities = wavelength_utils.get_oh_lines()
+        oh_wavelengths, oh_intensities = wavelength_utils.get_oh_lines(config.params['oh_filename'])
+    except IOError as e:
+        logger.critcal('cannot read OH line file: ' + str(e))
+        return
         
+    try:
         order.synthesizedSkySpec = wavelength_utils.synthesize_sky(
                 oh_wavelengths, oh_intensities, order.wavelengthScaleCalc)
          
@@ -125,7 +145,26 @@ def reduce_order(order):
             line.col, line.acceptedWavelength = line_pair
             line.peak = order.skySpec[line.col]
             order.lines.append(line)
-        
+            
+        if len(order.lines) >= 3:
+            # do local wavelength fit
+            measured = []
+            accepted = []
+            for line in order.lines:
+                measured.append(order.wavelengthScaleCalc[line.col])
+                accepted.append(line.acceptedWavelength)
+            (order.perOrderSlope, order.perOrderIntercept, order.perOrderCorrCoeff, p, e) = \
+                    scipy.stats.linregress(np.array(measured), np.array(accepted))  
+                    
+            logger.info('per order wavelength fit: n={}, a={:.6f}, b={:.6f}, r={:.6f}'.format(
+                    len(order.lines), order.perOrderIntercept, order.perOrderSlope, 
+                    order.perOrderCorrCoeff))
+#             raw_input('waiting')
+            for line in order.lines:
+                line.localFitWavelength = order.perOrderIntercept + \
+                    (order.perOrderSlope * order.wavelengthScaleCalc[line.col])    
+                line.localFitResidual = abs(line.localFitWavelength - line.acceptedWavelength)  
+                line.localFitSlope = (order.perOrderSlope * (order.wavelengthScaleCalc[1023] - order.wavelengthScaleCalc[0]))/1024.0
     else:
         logger.warning('no matched sky lines in order ' + str(order.orderNum))
                     
@@ -133,12 +172,4 @@ def reduce_order(order):
     
     return
          
-    
-    
-
-    
-
-    
-    
-
     

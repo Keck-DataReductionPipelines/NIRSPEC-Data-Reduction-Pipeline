@@ -1,4 +1,5 @@
 #import numpy as np
+from __builtin__ import False
 
 class Order:
     
@@ -19,10 +20,17 @@ class Order:
         
         self.wavelengthScaleCalc = []
         self.wavelengthShift = None
-        self.wavelengthScaleMeas = []
+        self.wavelengthScaleMeas = None
         
-        # wavelength calibration lines, array of class WavelengthCalLine
+        # Indicates the source of the 
+        self.perOrderCal = False
+        self.perOrderSlope = 0.0;
+        self.perOrderIntercept = 0.0;
+        self.perOrderCorrCoeff = 0.0;
+        
+        # wavelength calibration lines, array of class Line
         self.lines = []
+        
         
         self.padding = 0
         
@@ -54,6 +62,7 @@ class Order:
         
         self.spatialProfile = []
         self.peakLocation = 0
+        self.centroid = None
         
         self.objWindow = []
         self.topSkyWindow = []

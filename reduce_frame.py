@@ -3,11 +3,9 @@ import logging
 import numpy as np
 from astropy.io import fits
 
+import config
 import DrpException
 import ReducedDataSet
-import Order
-import image_lib
-import nirspec_lib
 import grating_eq
 import extract_order
 import reduce_order
@@ -16,13 +14,13 @@ import wavelength_utils
 
 logger = logging.getLogger('obj')
 
-def reduce_frame(raw, out_dir, cosmic_clean):
+def reduce_frame(raw, out_dir):
     """
     
     raw - RawDataSet object
     out_dir - 
     """
-     
+         
     # initialize per-object logger and check output directory
     init(raw.objFileName, out_dir)
     
@@ -45,7 +43,7 @@ def reduce_frame(raw, out_dir, cosmic_clean):
     process_darks_and_flats(raw, reduced)
         
     # clean cosmic ray hits
-    if cosmic_clean:
+    if config.params['cosmic']:
         logger.info('starting cosmic ray cleaning')
         reduced.cleanCosmicRayHits()
         logger.info('cosmic ray cleaning complete')
@@ -57,8 +55,8 @@ def reduce_frame(raw, out_dir, cosmic_clean):
     
     try:
         # find wavelength solution
-        find_wavelength_soln(reduced)
-    except Exception as e:
+        find_global_wavelength_soln(reduced)
+    except DrpException as e:
         logger.info('not applying wavelength solution')
     else:
         # apply wavelength solution
@@ -126,10 +124,11 @@ def reduce_orders(reduced):
     # end for each order
     
     logger.info('{} orders reduced'.format(len(reduced.orders)))
+    logger.info('end')
 
     return
             
-def find_wavelength_soln(reduced):
+def find_global_wavelength_soln(reduced):
     
     # create arrays of col, 1/order, accepted wavelength
     # in future will modify twodfit() to take list of lines rather than these constructed arrays
@@ -155,7 +154,8 @@ def find_wavelength_soln(reduced):
             np.asarray(accepted, dtype='float32'))    
     
     if wave_fit is None:
-        raise Exception('cannot find wavelength solution')
+        #raise DrpException.DrpException('cannot find wavelength solution')
+        return
     
     logger.info('number of lines used in wavelength fit = ' + str(len(wave_fit)))
     
@@ -166,8 +166,8 @@ def find_wavelength_soln(reduced):
             for line in order.lines:
                 if abs(line.acceptedWavelength - exp) <= 0.1:
 #                     print(str(line.acceptedWavelength) + " = " + str(exp))
-                    line.usedInFit = True
-                    line.fitWavelength = wave_fit[i]
+                    line.usedInGlobalFit = True
+                    line.globalFitWavelength = wave_fit[i]
                     found = True
                     break;
             if found:
@@ -180,8 +180,8 @@ def find_wavelength_soln(reduced):
     # for each line used in the fit, compute slope of wavelength solution at that point
     for order in reduced.orders:
         for line in order.lines:   
-            if line.usedInFit:
-                line.slope = \
+            if line.usedInGlobalFit:
+                line.globalFitSlope = \
                         reduced.coeffs[1] + \
                         (2.0 * reduced.coeffs[2] * line.col) + \
                         (reduced.coeffs[4] / order.orderNum) + \
@@ -220,10 +220,13 @@ def init(objFileName, out_dir):
     """    
     
     # set up obj logger
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - ' +
-            '%(levelname)s - %(filename)s:%(lineno)s - %(message)s')
-#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    if config.params['debug']:
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s ' +
+                '%(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+    else:
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
     fn = out_dir + '/' + objFileName[objFileName.find("NS"):objFileName.rfind(".")]  + '.log'
         
@@ -235,7 +238,10 @@ def init(objFileName, out_dir):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     
-    sformatter = logging.Formatter('%(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+    if config.params['debug']:
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+    else:
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     sh = logging.StreamHandler()
     sh.setLevel(logging.DEBUG)
     sh.setFormatter(sformatter)

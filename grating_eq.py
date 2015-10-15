@@ -74,13 +74,13 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     filter_3_y_corr = 50
 
     if '24' in slit:
-        logger.info('applying +/-' + str(long_slit_y_corr) + 
+        logger.debug('applying +/-' + str(long_slit_y_corr) + 
                     ' pixel long slit y correction for slit ' + slit)
         left_top_row += long_slit_y_corr
         left_bot_row -= long_slit_y_corr
         
     elif '42x' in slit:
-        logger.info('applying +/-' + str(low_res_slit_y_corr) + 
+        logger.debug('applying +/-' + str(low_res_slit_y_corr) + 
                     ' pixel low res slit y correction for slit ' + slit)
         left_top_row += low_res_slit_y_corr
         left_bot_row -= low_res_slit_y_corr
@@ -90,19 +90,19 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
     
     if obs_date < shift_date:
-        logger.info('applying +' + str(date_y_corr) + 
+        logger.debug('applying +' + str(date_y_corr) + 
                     ' pixel post-' + shift_date.strftime('%x') + ' y correction')
         left_top_row += date_y_corr
         left_bot_row += date_y_corr
         
     elif 'NIRSPEC-6' in filter or 'NIRSPEC-5' in filter or 'NIRSPEC-4' in filter:
-        logger.info('applying +' + str(filter_4_5_6_y_corr) + 
+        logger.debug('applying +' + str(filter_4_5_6_y_corr) + 
                     ' pixel N-4,5,6 filter y corr for filter ' + filter)
         left_top_row += filter_4_5_6_y_corr
         left_bot_row += filter_4_5_6_y_corr
         
     elif 'NIRSPEC-3' in filter:
-        logger.info('applying +' + str(filter_3_y_corr) + 
+        logger.debug('applying +' + str(filter_3_y_corr) + 
                     ' pixel N-3 filter y corr for filter ' + filter )
         left_top_row += filter_4_5_6_y_corr
         left_bot_row += filter_4_5_6_y_corr
@@ -122,7 +122,7 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     elif order < 55:
         wavelength_shift = 50.0
  
-    logger.info('applying ' + str(wavelength_shift) + ' Angstrom order-dependent wavelength shift')
+    logger.debug('applying ' + str(wavelength_shift) + ' Angstrom order-dependent wavelength shift')
     wavelength_scale += wavelength_shift
  
     return left_top_row, left_bot_row, wavelength_scale

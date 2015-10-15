@@ -36,6 +36,7 @@ subdirs = dict([
                 ('profile.png',     'previews/profile'  ),
                 ('calids.tbl',      'fitstbl/cal'       ),
                 ('calids.txt',      'ascii/cal'         ),
+                ('localcalids.txt', 'ascii/cal'         ),
                 ('order.fits',      'fits/order'        ),
                 ('order.png',       'previews/order'    ),
                 ('sky.fits',        'fits/sky'          ),
@@ -80,23 +81,48 @@ def gen(reduced, out_dir):
     source = []
     wave_exp = []
     wave_fit = []
+    res = []
     peak = []
     slope = []
     
     for order in reduced.orders:
-        
         for line in order.lines:
-            if line.usedInFit:
+            if line.usedInGlobalFit:
                 order_num.append(order.orderNum)
                 col.append(line.col)
                 source.append('sky')
                 wave_exp.append(line.acceptedWavelength)
-                wave_fit.append(line.fitWavelength)
+                wave_fit.append(line.globalFitWavelength)
+                res.append(abs(line.globalFitWavelength - line.acceptedWavelength))
                 peak.append(line.peak)
-                slope.append(line.slope)
+                slope.append(line.globalFitSlope)
                 
     wavelengthCalAsciiTable(
-            out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, peak, slope)
+            out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, res, peak, slope)
+    
+    order_num = []
+    col = []
+    source = []
+    wave_exp = []
+    wave_fit = []
+    res = []
+    peak = []
+    slope = []
+    
+    for order in reduced.orders:
+        if order.perOrderSlope > 0.95 and order.perOrderSlope < 1.05:
+            for line in order.lines:
+                order_num.append(order.orderNum)
+                col.append(line.col)
+                source.append('sky')
+                wave_exp.append(line.acceptedWavelength)
+                wave_fit.append(line.localFitWavelength)
+                res.append(line.localFitResidual)
+                peak.append(line.peak)
+                slope.append(line.localFitSlope)
+                
+    perOrderWavelengthCalAsciiTable(
+            out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, res, peak, slope)
             
     # per order data products
     for order in reduced.orders:
@@ -115,7 +141,8 @@ def gen(reduced, out_dir):
                 order.smoothedTrace, order.traceMask, order.botMeas + order.padding)
      
         profilePlot(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, 
-            order.peakLocation, order.objWindow, order.topSkyWindow, order.botSkyWindow)
+            order.peakLocation, order.centroid, order.objWindow, order.topSkyWindow, 
+            order.botSkyWindow)
          
         profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
 #         
@@ -263,7 +290,7 @@ def profileFitsTable(outpath, base_name, order_num, profile):
     log_fn(fn)
     return         
     
-def profilePlot(outpath, base_name, order_num, profile, peak, 
+def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             ext_range, sky_range_top, sky_range_bot):
 
     pl.figure('spatial profile', facecolor='white')
@@ -285,7 +312,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak,
     
     pl.plot(profile, "ko-", mfc='none', ms=3.0, linewidth=1)
     
-    pl.plot([peak, peak], [ymin, profile[peak]], "g-", linewidth=0.5, label='peak')
+    pl.plot([centroid, centroid], [ymin, profile[peak]], "g-", linewidth=0.5, label='peak')
 
     
     # draw extraction window
@@ -300,6 +327,10 @@ def profilePlot(outpath, base_name, order_num, profile, peak,
     pl.plot((peak + ext_range[-1], peak + ext_range[-1]),
             (ymax - ewh - wvlh, ymax - ewh + wvlh), 
             'r', linewidth=1.5)  
+    
+    # indicate centroid location
+    pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
+                (peak + ext_range[-1] + 5, (ymax - ymin) * 4 / 5))
         
     # draw sky windows
     swh = 0.2 * yrange
@@ -483,11 +514,11 @@ def multiSpectrumPlot(outpath, base_name, order, y_units, cont, sky, noise, wave
 #     logger.info('writing ' + title + ' plot for order ' + str(order) + ' to ' + fits_fn)
 #     hdulist.writeto(fits_fn, clobber=True)
     
-def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, peak, slope):
+def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
     
-    names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'peak', 'disp'] 
-    units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'counts', 'Angstroms/pixel']
-    formats = [ 'd', '', 'd', '.6e', '.6e', 'd', '.3e']
+    names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
+    units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
+    formats = [ 'd', '', 'd', '.6e', '.6e', '.3f', 'd', '.3e']
     nominal_width = 10
     widths = []
     
@@ -502,7 +533,8 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     widths[2] = 6
     widths[3] = 13
     widths[4] = 13
-    widths[5] = 6
+    widths[5] = 9
+    widths[6] = 6
 
     buff = []
     
@@ -523,7 +555,7 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
         buff.append('| {} |'.format('--'.join(line)))
     
     for i in range(len(order)):
-        data = [order[i], source[i], col[i], wave_exp[i], wave_fit[i], (int)(peak[i]), slope[i]]
+        data = [order[i], source[i], col[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]
         line = []
         for i, val in enumerate(data):
             line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
@@ -532,6 +564,62 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     #print('\n'.join(buff))
         
     fn = constructFileName(outpath, base_name, None, 'calids.txt')
+    fptr = open(fn, 'w')
+    fptr.write('\n'.join(buff))
+    fptr.close()
+    log_fn(fn)
+    return
+
+def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
+    
+    names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
+    units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
+    formats = [ 'd', '', 'd', '.6e', '.6e', '.3f', 'd', '.3e']
+    nominal_width = 10
+    widths = []
+    
+    for name in names:
+        widths.append(max(len(name), nominal_width))
+            
+    for i in range(len(names)):
+        widths[i] = max(len(units[i]), widths[i])
+       
+    widths[0] = 6 
+    widths[1] = 6
+    widths[2] = 6
+    widths[3] = 13
+    widths[4] = 13
+    widths[5] = 9
+    widths[6] = 6
+
+    buff = []
+    
+    line = []
+    for i, name in enumerate(names):
+        line.append('{:>{w}}'.format(name, w=widths[i]))
+    buff.append('| {} |'.format('| '.join(line)))
+    
+    line = []
+    for i, unit in enumerate(units):
+        line.append('{:>{w}}'.format(unit, w=widths[i]))
+    buff.append('| {} |'.format('| '.join(line)))
+      
+    if UNDERLINE:  
+        line = []
+        for i, unit in enumerate(units):
+            line.append('{:->{w}}'.format('', w=widths[i]))
+        buff.append('| {} |'.format('--'.join(line)))
+    
+    for i in range(len(order)):
+        data = [order[i], source[i], col[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]
+        line = []
+        for i, val in enumerate(data):
+            line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
+        buff.append('  {}  '.format('  '.join(line)))
+        
+    #print('\n'.join(buff))
+        
+    fn = constructFileName(outpath, base_name, None, 'localcalids.txt')
     fptr = open(fn, 'w')
     fptr.write('\n'.join(buff))
     fptr.close()

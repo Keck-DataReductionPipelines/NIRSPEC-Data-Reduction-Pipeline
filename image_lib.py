@@ -107,23 +107,23 @@ def cosmic_clean(data):
     return(c.cleanarray)
 
 
-EXT_WINDOW = 6
-SKY_WINDOW = 4
-SKY_DISTANCE = 5
+# EXT_WINDOW = 8
+# SKY_WINDOW = 8
+# SKY_DISTANCE = 2
 
-def get_extraction_ranges(image_width, peak_location):
+def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
     """
 
     """
-    if EXT_WINDOW % 2:
-        ext_range = range(int((1 - EXT_WINDOW) / 2.0), int((EXT_WINDOW + 1) / 2.0))
+    if obj_w % 2:
+        ext_range = range(int((1 - obj_w) / 2.0), int((obj_w + 1) / 2.0))
     else:  
-        ext_range = range((-EXT_WINDOW) / 2, EXT_WINDOW / 2)  
+        ext_range = range((-obj_w) / 2, obj_w / 2)  
 
-    sky_range_top = range(ext_range[-1] + SKY_DISTANCE, 
-                          ext_range[-1] + SKY_DISTANCE + SKY_WINDOW)
-    sky_range_bot = range(ext_range[0] - SKY_DISTANCE - SKY_WINDOW + 1,
-                          ext_range[0] - SKY_DISTANCE + 1) 
+    sky_range_top = range(ext_range[-1] + sky_dist, 
+                          ext_range[-1] + sky_dist + sky_w)
+    sky_range_bot = range(ext_range[0] - sky_dist - sky_w + 1,
+                          ext_range[0] - sky_dist + 1) 
 
     if ((peak_location + sky_range_bot[-1] + 1) > image_width) or \
             ((peak_location + sky_range_bot[0]) < 0):
@@ -165,8 +165,6 @@ def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
 
     obj_sp = obj_sum - (len(obj_range) * sky_mean)
     
-    print(np.median(obj_sum / len(obj_range)))
-
 #     import pylab as pl
 #     pl.figure()
 #     pl.cla()

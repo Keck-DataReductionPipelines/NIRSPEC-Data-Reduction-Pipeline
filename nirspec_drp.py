@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 
-#import RawDataSet
+import config
 import create_raw_data_sets
 #import ReducedDataSet
 import reduce_frame
@@ -11,6 +11,7 @@ import products
 import DrpException
 
 cosmic_clean = True
+config_params = {}
 
 def nirspec_drp(in_dir, out_dir):
     """
@@ -18,7 +19,7 @@ def nirspec_drp(in_dir, out_dir):
     then generates reduced data sets from raw data sets.  Level 1 data products
     are generated from the reduced data sets and saved in the output directory.
     """
-    
+        
     logger = logging.getLogger('main')
     
     rawDataSets = create_raw_data_sets.create(in_dir)
@@ -28,7 +29,7 @@ def nirspec_drp(in_dir, out_dir):
         
     for rawDataSet in rawDataSets:
         try:
-            reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir, cosmic_clean)
+            reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
             products.gen(reducedDataSet, out_dir)
         except DrpException as e:
             n_reduced -= 1
@@ -37,6 +38,7 @@ def nirspec_drp(in_dir, out_dir):
             
     logger.info('{} out of {} object frames successfully reduced'.format(
             n_reduced, len(rawDataSets)))   
+    logger.info('end')
     return    
         
         
@@ -46,7 +48,6 @@ def init(in_dir, out_dir):
     output directory either exists or can be created.
     
     """
-    
     
     if not os.path.exists(out_dir):
         try: 
@@ -59,10 +60,14 @@ def init(in_dir, out_dir):
         
     # set up main logger
     logger = logging.getLogger('main')
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - ' +
-            '%(levelname)s - %(filename)s:%(lineno)s - %(message)s')
-#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    if config.params['debug']:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.DEBUG)
+    if config.params['debug']:
+        formatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+    else:
+        formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
     fn = out_dir + '/nirspec_drp.log'
     if os.path.exists(fn):
@@ -73,7 +78,11 @@ def init(in_dir, out_dir):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     
-    sformatter = logging.Formatter('%(levelname)s - %(filename)s:%(lineno)s -  %(message)s')
+    if config.params['debug']:
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s -  %(message)s')
+    else:   
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s -  %(message)s')
+
     sh = logging.StreamHandler()
     sh.setLevel(logging.DEBUG)
     sh.setFormatter(sformatter)
@@ -105,18 +114,39 @@ def main():
     
     Run with -h to see command line arguments
     """
+     
+#     global cosmic_clean
+#     global config_params
     
-    global cosmic_clean
     # parse command line arguments
     parser = argparse.ArgumentParser(description="NIRSPEC DRP")
     parser.add_argument('in_dir', help='input directory')
     parser.add_argument('out_dir', help='output directory')
-    parser.add_argument('--cosmic', help='inhibits cosmic ray artifact rejection', 
+    parser.add_argument('-debug', 
+            help='enables additional logging for debugging', 
+            action='store_true')
+    parser.add_argument('-cosmic', help='inhibits cosmic ray artifact rejection', 
             action='store_false')
+#     , default=config.DEFAULT_COSMIC)
+    parser.add_argument('-obj_window_width', help='object extraction window width in pixels')
+    #default=config.DEFAULT_OBJ_WINDOW)
+    parser.add_argument('-sky_window_width', help='background extraction window width in pixels')
+    #default=config.DEFAULT_SKY_WINDOW)
+    parser.add_argument('-sky_dist', help='distance be object and sky windows in pixels')
+    #default=config.DEFAULT_SKY_DIST)
+    parser.add_argument('-oh_filename', help='path and filename of OH emission line catalog file')
     args = parser.parse_args()
-    cosmic_clean = args.cosmic
+    config.params['debug'] = args.debug
+    config.params['cosmic'] = args.cosmic
+    if args.obj_window_width is not None:
+        config.params['obj_window_width'] = int(args.obj_window_width)
+    if args.sky_window_width is not None:
+        config.params['sky_window_width'] = int(args.sky_window_width)
+    if args.sky_dist is not None:
+        config.params['sky_dist_width'] = int(args.sky_dist)
+    if args.oh_filename is not None:
+        config.params['oh_filename'] = args.oh_filename
 
-    
     # initialize environment, setup main logger, check directories
     try:
         init(args.in_dir, args.out_dir)

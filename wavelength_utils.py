@@ -23,7 +23,7 @@ logger = logging.getLogger('obj')
 MAX_SHIFT = 50
 DISP_LOWER_LIMIT = 0.95
 DISP_UPPER_LIMIT = 1.05
-OH_FILE_NAME = './ir_ohlines.dat'
+#OH_FILE_NAME = './ir_ohlines.dat'
 GAUSSIAN_VARIANCE = 0.2
 
 
@@ -99,7 +99,7 @@ def line_id(order, oh_wavelengths, oh_intensities):
             lines.append((matchesidx[i], matchesohx[i]))
         return lines 
     else:
-        logger.warning('wavelength fit out of limits')
+        logger.warning('per-order wavelength fit slope out of limits, not using sky lines from this order')
         return None
 
 
@@ -125,7 +125,7 @@ def line_id(order, oh_wavelengths, oh_intensities):
 # 
 #     return oh_wavelengths, oh_intensities
 
-def get_oh_lines():
+def get_oh_lines(oh_filename):
     """
     Reads OH line wavelengths and intensities from data file.
     Once the data is read, it is saved in static-like variables 
@@ -142,12 +142,12 @@ def get_oh_lines():
     
     except AttributeError:
         
-        logger.info('reading OH line data from ' + OH_FILE_NAME)
+        logger.info('reading OH line data from ' + oh_filename)
         
         try:
-            lines = open(OH_FILE_NAME).readlines()
+            lines = open(oh_filename).readlines()
         except:
-            logger.error('failed to open OH emission line file: ' + OH_FILE_NAME)
+            logger.error('failed to open OH emission line file: ' + oh_filename)
             raise
     
         get_oh_lines.oh_wavelengths = []
@@ -657,7 +657,10 @@ def twodfit(dataX, dataY, dataZ):
     xhap=0
 
     for j in range(len(x)):
-        logger.debug('deleting outlier = '+str(dataX_new[x[j][0]-xhap])+' order = ' +str(1/dataY_new[x[j][0]-xhap])+' wavelength = '+str(dataZ_new[x[j][0]-xhap]))
+        logger.debug('deleting outlier from 2d fit, col={:d}, order={:d}, accepted wavelength={:.1f}'.format(
+                int(dataX_new[x[j][0]-xhap]),
+                int(1/dataY_new[x[j][0]-xhap]),
+                dataZ_new[x[j][0]-xhap]))
         dataZ_new = np.delete(dataZ_new, x[j][0]-xhap)
         dataX_new = np.delete(dataX_new, x[j][0]-xhap)
         dataY_new = np.delete(dataY_new, x[j][0]-xhap)
@@ -683,7 +686,10 @@ def twodfit(dataX, dataY, dataZ):
         xhap=0
 
         for j in range(len(x)):
-            logger.debug('deleting outlier = '+str(dataX_new[x[j][0]-xhap])+' order = ' +str(1/dataY_new[x[j][0]-xhap])+' wavelength = '+str(dataZ_new[x[j][0]-xhap]))
+            logger.debug('deleting outlier from 2d fit, col={:d}, order={:d}, accepted wavelength={:.1f}'.format(
+                    int(dataX_new[x[j][0]-xhap]),
+                    int(1/dataY_new[x[j][0]-xhap]),
+                    dataZ_new[x[j][0]-xhap]))
             dataZ_new = np.delete(dataZ_new, x[j][0]-xhap)
             dataX_new = np.delete(dataX_new, x[j][0]-xhap)
             dataY_new = np.delete(dataY_new, x[j][0]-xhap)
@@ -722,7 +728,7 @@ def twodfit(dataX, dataY, dataZ):
         if sigma > SIGMA_MAX and len(dataZ_new) > LOWER_LEN_POINTS:
 
             bad_points.append(residual.argmax())
-            logger.debug('sigma=' + str(sigma))
+            logger.debug('2d fit rms residual={:.2f}'.format(sigma))
 
             if testing:
                 dataZ_new_forplot[residual.argmax()-happened ] = dataZ_new_forplot[residual.argmin()]
@@ -747,7 +753,7 @@ def twodfit(dataX, dataY, dataZ):
 
     #ax2.plot(__residual(p1, dataZ_new_forplot, dataX_new_forplot, dataY_new_forplot), 'ko-')
     
-    logger.info('wavelength calibration fit sigma = ' + str(round(sigma, 3)))
+    logger.info('wavelength calibration rms fit residual = ' + str(round(sigma, 3)))
     #logger.info('sigma='+str(sigma))
 
 #     logger.info('final wavelength solution = '+str(p1[0])+' + '+str(p1[1])+' * pixel + '+str(p1[2])+'* pixel ** 2 +'+\

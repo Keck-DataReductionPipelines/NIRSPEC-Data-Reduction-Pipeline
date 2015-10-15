@@ -6,9 +6,14 @@ class Line:
         self.col = -1 
         self.order = 0
         self.acceptedWavelength = 0.0
-        self.fitWavelength = 0.0
-        self.residual = 0.0
         self.peak = 0.0
-        self.slope = 0.0
-        self.usedInFit = False
+
+        self.localFitWavelength = 0.0
+        self.localFitResidual = 0.0
+        self.localFitSlope = 0.0
+        
+        self.globalFitWavelength = 0.0
+        self.globalFitResidual = 0.0
+        self.globalFitSlope = 0.0
+        self.usedInGlobalFit = False
         
