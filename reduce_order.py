@@ -28,14 +28,7 @@ def reduce_order(order):
     logger.info('order has been flat fielded')
     
     # smooth spatial trace
-    # this should probably be done where the trace is first found
-    
-#     import pylab as pl
-#     pl.figure()
-#     pl.cla()
-#     pl.plot(order.avgTrace)
-#     pl.show()
-    
+    # this should probably be done where the trace is first found    
     order.smoothedTrace, order.traceMask = nirspec_lib.smooth_spatial_trace(order.avgTrace)
     logger.info('spatial trace smoothed, ' + str(order.objImg.shape[1] - np.count_nonzero(order.traceMask)) + 
             ' points ignored')
@@ -45,20 +38,43 @@ def reduce_order(order):
         order.smoothedTrace = order.smoothedTrace - order.botMeas + order.padding
         order.avgTrace = order.avgTrace - order.botMeas + order.padding
     
-#     import pylab as pl
-#     pl.figure('', facecolor='white', figsize=(8, 6))
-#     pl.cla()    
-#     f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-#     f.axes.get_xaxis().set_visible(False)
-#     f.axes.get_yaxis().set_visible(False)
-#     pl.show()
+#     if config.params['inter_prod']:
+#         import pylab as pl
+#         pl.figure('', facecolor='white', figsize=(8, 6))
+#         pl.cla()    
+#         f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
+#         pl.show()
+         
+#     if config.params['inter_prod']:
+#         import pylab as pl
+#         pl.figure('', facecolor='white', figsize=(8, 6))
+#         pl.cla()    
+#         f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
+#         pl.show()
+    
+#     order.flattenedObjImg = np.ma.masked_array(order.flattenedObjImg, mask=order.offOrderMask)
+
+#     if config.params['inter_prod']:
+#         pl.figure('', facecolor='white', figsize=(8, 6))
+#         pl.cla()    
+#         f = pl.imshow(np.ma.masked_array(order.objImg, mask=order.offOrderMask), vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
+#         pl.show()
     
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
     order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)
     order.normalizedFlatImg = image_lib.rectify_spatial(order.normalizedFlatImg, order.smoothedTrace)
     order.objImg = image_lib.rectify_spatial(order.objImg, order.smoothedTrace)
+
+    
     order.flattenedObjImg = image_lib.rectify_spatial(order.flattenedObjImg, order.smoothedTrace)
 
+#     # trim?
+#     order.flatImg = order.flatImg[order.lowest_point:order.highest_point, :]
+#     order.normalizedFlatImg = order.normalizedFlatImg[order.lowest_point:order.highest_point, :]
+#     order.objImg = order.objImg[order.lowest_point:order.highest_point, :]
+#     order.flattenedObjImg = order.flattenedObjImg[order.lowest_point:order.highest_point, :]
+
+    
     order.spatialRectified = True
     
     # find spatial profile and peak
@@ -85,14 +101,6 @@ def reduce_order(order):
         order.objImg = image_lib.rectify_spectral(order.objImg, order.spectral_trace)
         order.objImgFlattened = image_lib.rectify_spectral(order.flattenedObjImg, order.spectral_trace)
         order.spectralRectified = True
-        
-#     import pylab as pl
-#     pl.figure('', facecolor='white', figsize=(8, 6))
-#     pl.cla()    
-#     f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-#     f.axes.get_xaxis().set_visible(False)
-#     f.axes.get_yaxis().set_visible(False)
-#     pl.show()
      
     # compute noise image
     order.noiseImg = nirspec_lib.calc_noise_img(
@@ -110,26 +118,29 @@ def reduce_order(order):
         
     logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
     logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
-    logger.info('top background window distance = {}'.format(str(order.topSkyWindow[0] - order.objWindow[-1])))
+    logger.info('top background window separation = {}'.format(str(order.topSkyWindow[0] - order.objWindow[-1])))
     logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
-    logger.info('bottom background window distance = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
+    logger.info('bottom background window separation = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
     
-    order.objSpec, order.skySpec, order.noiseSpec = image_lib.extract_spectra(
-            order.flattenedObjImg, order.noiseImg, order.peakLocation,
-            order.objWindow, order.topSkyWindow, order.botSkyWindow)
+    order.objSpec, order.skySpec, order.noiseSpec, order.topBgMean, order.botBgMean = \
+            image_lib.extract_spectra(
+                order.flattenedObjImg, order.noiseImg, order.peakLocation,
+                order.objWindow, order.topSkyWindow, order.botSkyWindow)
     
     # find and identify sky lines   
     line_pairs = None # line_pairs are (column number, accepted wavelength
     try:
         oh_wavelengths, oh_intensities = wavelength_utils.get_oh_lines(config.params['oh_filename'])
     except IOError as e:
-        logger.critcal('cannot read OH line file: ' + str(e))
-        return
+        logger.critical('cannot read OH line file: ' + str(e))
+        raise
         
     try:
+        # synthesize sky spectrum and store in order object
         order.synthesizedSkySpec = wavelength_utils.synthesize_sky(
                 oh_wavelengths, oh_intensities, order.wavelengthScaleCalc)
          
+        # identify lines and return list of (column number, accepted wavelength) tuples
         line_pairs = wavelength_utils.line_id(order, oh_wavelengths, oh_intensities)
         
     except (IOError, ValueError) as e:
@@ -144,6 +155,17 @@ def reduce_order(order):
             line = Line.Line()
             line.col, line.acceptedWavelength = line_pair
             line.peak = order.skySpec[line.col]
+            
+            # find centroid of peak
+            w = 5
+            p0 = max(0, line.col - (w / 2))
+            p1 = min(1023, line.col + (w / 2)) + 1
+            line.centroid = p0 + scipy.ndimage.center_of_mass(order.skySpec[p0:p1])[0]
+            
+            if abs(line.centroid - line.col) > 1:
+                logger.error('centroid error {} {}'.format(line.col, line.centroid))
+                line.centroid = line.col                
+            
             order.lines.append(line)
             
         if len(order.lines) >= 3:

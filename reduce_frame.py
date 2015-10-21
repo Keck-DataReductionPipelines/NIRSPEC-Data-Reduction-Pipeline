@@ -51,7 +51,11 @@ def reduce_frame(raw, out_dir):
         logger.info("not cleaning cosmic ray hits")
         
     # reduce orders
-    reduce_orders(reduced)
+    try:
+        reduce_orders(reduced)
+    except IOError as e:
+        # might want to do something else here
+        raise
     
     try:
         # find wavelength solution
@@ -110,16 +114,16 @@ def reduce_orders(reduced):
             order.wavelengthScaleCalc = wavelength_scale_calc
             order.wavelengthScaleMeas = wavelength_scale_calc
             
-            # reduce order, i.e. rectify, extract spectra, identify sky lines
-            reduce_order.reduce_order(order)
-                
-            # add reduced order to list of reduced orders in Reduced object
             try:
+                # reduce order, i.e. rectify, extract spectra, identify sky lines
+                reduce_order.reduce_order(order)
+                
+                # add reduced order to list of reduced orders in Reduced object
                 reduced.orders.append(order)                      
-            except Exception as e:
+            except DrpException as e:
                 logger.warning('failed to reduce order {}: {}'.format(
                         str(order_num), e.message))
-        
+                        
         # end if order is on the detector
     # end for each order
     
@@ -133,23 +137,28 @@ def find_global_wavelength_soln(reduced):
     # create arrays of col, 1/order, accepted wavelength
     # in future will modify twodfit() to take list of lines rather than these constructed arrays
     col = []
+    centroid = []
     order_inv = []
     accepted = []
     
     for order in reduced.orders:
         for line in order.lines:
             col.append(line.col)
+            centroid.append(line.centroid)
             order_inv.append(1.0 / order.orderNum)
             accepted.append(line.acceptedWavelength)
             
             
     logger.info('total number of identified lines = ' + str(len(col)))
     
-#     print accepted
-#     raw_input('waiting')
+    if config.params['int_c'] is True:
+        logger.warning('using integer column numbers in wavelength fit')
+        c = np.asarray(col, dtype='float32')
+    else:
+        c = np.asarray(centroid, dtype='float32')
             
     reduced.coeffs, wave_fit, wave_exp = wavelength_utils.twodfit(
-            np.asarray(col, dtype='float32'), 
+            c, 
             np.asarray(order_inv, dtype='float32'), 
             np.asarray(accepted, dtype='float32'))    
     

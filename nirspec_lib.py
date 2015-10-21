@@ -184,6 +184,6 @@ def find_spectral_trace(data, padding):
     
 def smooth_spectral_trace(data, l):
     p0 = np.polyfit(np.arange(len(data) - 10), data[:-10], deg=1)  # end always drops off
-    logger.info('spectral tilt is ' + str(round(p0[0], 1)) + ' pixels/pixel')
+    logger.info('spectral tilt is {:.3f} pixels/pixel'.format(p0[0]))
     fit = np.polyval(p0, np.arange(l))
     return fit

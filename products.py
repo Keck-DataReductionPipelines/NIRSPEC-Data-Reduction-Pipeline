@@ -1,12 +1,15 @@
 import logging
 import os
 import errno
+import warnings
 import numpy as np
 import pylab as pl
 from astropy.io import fits
 from astropy.table import Table, Column
 from astropy.io import ascii
 import Image
+
+import config
 
 main_logger = logging.getLogger('main')
 obj_logger = logging.getLogger('obj')
@@ -48,7 +51,7 @@ subdirs = dict([
                 ('spectra.png',     'previews/spectra'  ),
                 ('skylines.png',    'previews/skylines' ),
                 ('skylines.txt',    'ascii/skylines'    )
-                ])
+               ])
 
 def constructFileName(outpath, base_name, order, fn_suffix):
     fn = outpath + '/' + subdirs[fn_suffix] + '/' + base_name + '_' + fn_suffix
@@ -58,12 +61,16 @@ def constructFileName(outpath, base_name, order, fn_suffix):
         return fn[:fn.rfind('_') + 1] + str(order) + fn[fn.rfind('_'):]
    
 def log_fn(fn):  
-        obj_logger.info('saving {}'.format(fn))
+        #obj_logger.info('saving {}'.format(fn))
         file_count[0] += 1 
         return
 
 def gen(reduced, out_dir):
             
+    obj_logger.info('generating data products...')
+    
+    warnings.filterwarnings('ignore', category=UserWarning, append=True)
+    
     # make sub directories
     for k, v in subdirs.iteritems():
         try:
@@ -102,6 +109,7 @@ def gen(reduced, out_dir):
     
     order_num = []
     col = []
+    centroid = []
     source = []
     wave_exp = []
     wave_fit = []
@@ -114,6 +122,7 @@ def gen(reduced, out_dir):
             for line in order.lines:
                 order_num.append(order.orderNum)
                 col.append(line.col)
+                centroid.append(line.centroid)
                 source.append('sky')
                 wave_exp.append(line.acceptedWavelength)
                 wave_fit.append(line.localFitWavelength)
@@ -122,7 +131,7 @@ def gen(reduced, out_dir):
                 slope.append(line.localFitSlope)
                 
     perOrderWavelengthCalAsciiTable(
-            out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, res, peak, slope)
+            out_dir, reduced.baseName, order_num, col, centroid, source, wave_exp, wave_fit, res, peak, slope)
             
     # per order data products
     for order in reduced.orders:
@@ -142,7 +151,7 @@ def gen(reduced, out_dir):
      
         profilePlot(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, 
             order.peakLocation, order.centroid, order.objWindow, order.topSkyWindow, 
-            order.botSkyWindow)
+            order.botSkyWindow, order.topBgMean, order.botBgMean)
          
         profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
 #         
@@ -185,15 +194,15 @@ def gen(reduced, out_dir):
 
         if len(order.wavelengthScaleMeas) > 0:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
-                    reduced.getObjectName(), order.orderNum, order.objImg, 
+                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
                     order.wavelengthScaleMeas)
 
         else:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image *', 
-                    reduced.getObjectName(), order.orderNum, order.objImg, 
+                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
                     order.wavelengthScaleCalc)
 
-    main_logger.info(str(file_count[0]) + ' product files saved for ' + reduced.baseName)  
+    main_logger.info('{} data products'.format(str(file_count[0])))
     return 
     
     
@@ -291,7 +300,7 @@ def profileFitsTable(outpath, base_name, order_num, profile):
     return         
     
 def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
-            ext_range, sky_range_top, sky_range_bot):
+            ext_range, sky_range_top, sky_range_bot, top_bg_mean, bot_bg_mean):
 
     pl.figure('spatial profile', facecolor='white')
     pl.cla()
@@ -319,13 +328,13 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     wvlh = 0.01 * yrange;
     ewh = 0.05 * yrange
     
-    pl.plot((peak + ext_range[0], peak + ext_range[-1]), (ymax - ewh, ymax - ewh), 
+    pl.plot((peak + ext_range[0], peak + ext_range[-1]), (profile.max(), profile.max()), 
             'r', linewidth=0.5, label='extraction window')
     pl.plot((peak + ext_range[0], peak + ext_range[0]),
-            (ymax - ewh - wvlh, ymax - ewh + wvlh), 
+            (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)
     pl.plot((peak + ext_range[-1], peak + ext_range[-1]),
-            (ymax - ewh - wvlh, ymax - ewh + wvlh), 
+            (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)  
     
     # indicate centroid location
@@ -333,27 +342,28 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
                 (peak + ext_range[-1] + 5, (ymax - ymin) * 4 / 5))
         
     # draw sky windows
-    swh = 0.2 * yrange
+ 
     if (sky_range_top):
+
         pl.plot((peak + sky_range_top[0], peak + sky_range_top[-1]),
-                (profile.min() + swh, profile.min() + swh), 
+                (top_bg_mean, top_bg_mean), 
                 'b', linewidth=0.5, label='sky window')  
         pl.plot((peak + sky_range_top[0], peak + sky_range_top[0]),
-                (profile.min() + swh - wvlh, profile.min() + swh + wvlh), 
+                (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)
         pl.plot((peak + sky_range_top[-1], peak + sky_range_top[-1]),
-                (profile.min() + swh - wvlh, profile.min() + swh + wvlh), 
+                (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)  
         
     if (sky_range_bot):
         pl.plot((peak + sky_range_bot[0], peak + sky_range_bot[-1]),
-                (profile.min() + swh, profile.min() + swh), 
+                (bot_bg_mean, bot_bg_mean), 
                 'b', linewidth=0.5)   
         pl.plot((peak + sky_range_bot[0], peak + sky_range_bot[0]),
-                (profile.min() + swh - wvlh, profile.min() + swh + wvlh), 
+                (bot_bg_mean - wvlh, bot_bg_mean + wvlh), 
                 'b', linewidth=1.5)
         pl.plot((peak + sky_range_bot[-1], peak + sky_range_bot[-1]),
-                (profile.min() + swh - wvlh, profile.min() + swh + wvlh), 
+                (bot_bg_mean - wvlh, bot_bg_mean + wvlh), 
                 'b', linewidth=1.5)
         
     pl.legend(loc='best', prop={'size': 8})
@@ -496,7 +506,7 @@ def multiSpectrumPlot(outpath, base_name, order, y_units, cont, sky, noise, wave
     
     pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1, label='object')
     pl.plot(wave[:1004], sky[:1004], "b-", mfc="none", ms=3.0, linewidth=1, label='sky')
-    pl.plot(wave[:1004], noise[:1004], "r-", mfc="none", ms=3.0, linewidth=1, label='noise (1 sigma')
+    pl.plot(wave[:1004], noise[:1004], "r-", mfc="none", ms=3.0, linewidth=1, label='noise (1 sigma)')
 
     pl.legend(loc='best', prop={'size': 8})
 
@@ -570,11 +580,11 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     log_fn(fn)
     return
 
-def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
+def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, centroid, source, wave_exp, wave_fit, res, peak, slope):
     
-    names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
-    units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
-    formats = [ 'd', '', 'd', '.6e', '.6e', '.3f', 'd', '.3e']
+    names = ['order', 'source', 'col', 'centroid', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
+    units = ['', '', 'pixels', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
+    formats = [ 'd', '', 'd', '.3e', '.6e', '.6e', '.3f', 'd', '.3e']
     nominal_width = 10
     widths = []
     
@@ -587,10 +597,11 @@ def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, source, wave
     widths[0] = 6 
     widths[1] = 6
     widths[2] = 6
-    widths[3] = 13
+    widths[3] = 8
     widths[4] = 13
-    widths[5] = 9
-    widths[6] = 6
+    widths[5] = 13
+    widths[6] = 9
+    widths[7] = 6
 
     buff = []
     
@@ -611,7 +622,7 @@ def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, source, wave
         buff.append('| {} |'.format('--'.join(line)))
     
     for i in range(len(order)):
-        data = [order[i], source[i], col[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]
+        data = [order[i], source[i], col[i], centroid[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]
         line = []
         for i, val in enumerate(data):
             line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
@@ -739,7 +750,7 @@ def skyLinesAsciiTable(outpath, base_name, order):
  
     return
     
-def twoDimOrderPlot(outpath, base_name, title, obj_name, order_num, data, x):
+def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_num, data, x):
     pl.figure('2d order image', facecolor='white', figsize=(8, 5))
     pl.cla()
     pl.title(title + ', ' + base_name + ", order " + str(order_num), fontsize=14)
@@ -748,15 +759,16 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, order_num, data, x):
     #pl.imshow(img, aspect='auto')
     #pl.imshow(data, vmin=0, vmax=1024, aspect='auto')
     
-    pl.imshow(data, origin='lower', vmin=0, vmax=1024, 
+    pl.imshow(data, origin='lower', vmin=np.amin(data), vmax=np.amax(data), 
                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
     pl.colorbar()
-    fn = constructFileName(outpath, base_name, order_num, 'order.png')
+    pl.set_cmap('jet')
+    fn = constructFileName(outpath, base_name, order_num, base_filename)
     pl.savefig(fn)
     log_fn(fn)
     pl.close()
     
-    np.save(fn[:fn.rfind('.')], data)
+#     np.save(fn[:fn.rfind('.')], data)
     
     return
     
@@ -771,24 +783,3 @@ def twoDimOrderFits(outpath, base_name, order_num, data):
     return
     
         
-def quickImagePlot(img, title, x_label, y_label):
-    #return;
-    pl.figure('quick image plot', facecolor='white', figsize=(8, 6))
-    pl.cla()
-    pl.title(title, fontsize=14)
-    pl.xlabel(x_label, fontsize=12)
-    pl.ylabel(y_label, fontsize=12)
-    #pl.imshow(img, aspect='auto')
-    pl.imshow(img, vmin=0, vmax=256, aspect='auto', cmap="gray")
-#     pl.colorbar()
-    #pl.set_cmap('spectral')
-    pl.show()
-    
-    
-def quickPlot(data, title):
-    pl.figure('quick')
-    pl.cla()
-    pl.title(title)
-    pl.plot(data, "ro")
-    pl.show()
-    

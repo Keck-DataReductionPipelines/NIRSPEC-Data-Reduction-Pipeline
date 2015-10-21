@@ -5,6 +5,9 @@ class Order:
     
     def __init__(self, orderNum):
         
+        # temp
+ 
+        
         self.orderNum = orderNum
         self.integrationTime = 0.0
         self.yOffset = -1
@@ -33,11 +36,12 @@ class Order:
         
         
         self.padding = 0
-        
         self.objCutout = []
         self.flatCutout = []
         self.onOrderMask = []
         self.offOrderMask = []
+        self.highestPoint = None
+        self.lowestPoint = None
         
         self.topTrace = None
         self.botTrace = None
@@ -67,6 +71,9 @@ class Order:
         self.objWindow = []
         self.topSkyWindow = []
         self.botSkyWindow = []
+        
+        self.topBgMean = None
+        self.botBgMean = None
         
         self.objSpec = []
         self.noiseSpec = []

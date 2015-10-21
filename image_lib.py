@@ -24,6 +24,9 @@ def rectify_spatial(data, curve):
         s = data[:, i]
         rectified.append(scipy.ndimage.interpolation.shift(
                 s, curve_p[i], order=3, mode='nearest', prefilter=True))
+        
+#         rectified.append(scipy.ndimage.interpolation.shift(
+#                 s, curve_p[i], order=3, mode='constant', prefilter=True))
     return((np.array(rectified)).transpose())
 
 
@@ -160,6 +163,9 @@ def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
     sky_top_sum = np.sum(obj[peak + i, :] for i in sky_range_top)
     sky_bot_sum = np.sum(obj[peak + i, :] for i in sky_range_bot)
     
+    top_bg_mean = (sky_top_sum / len(sky_range_top)).mean()
+    bot_bg_mean = (sky_bot_sum / len(sky_range_bot)).mean()
+    
     sky_mean = (sky_top_sum + sky_bot_sum) / (len(sky_range_top) + len(sky_range_bot))
 #     sky_mean -= np.median(sky_mean) 
 
@@ -182,4 +188,5 @@ def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
     k = np.square(len(obj_range)) / np.square((len(sky_range_top) + len(sky_range_bot)))
     noise_sp = np.sqrt(obj_noise_sum + (k * (sky_noise_top_sum + sky_noise_bot_sum)))
     
-    return obj_sp, sky_sp, noise_sp
+    return obj_sp, sky_sp, noise_sp, top_bg_mean, bot_bg_mean
+

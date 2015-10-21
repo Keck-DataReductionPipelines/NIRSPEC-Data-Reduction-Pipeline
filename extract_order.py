@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 
+import config
 import nirspec_lib
 import Order
 import DrpException
@@ -17,13 +18,15 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
     filter and slit arguments are required to select filter and slit-specific 
     extraction tuning parameters
     """
-    
+    params = get_extraction_params(filterName, slitName)
+
     order = Order.Order(order_num)
     
     order.topCalc = top_calc
     order.botCalc = bot_calc
     
-    params = get_extraction_params(filterName, slitName)
+    order.padding = params['padding']
+    
     
     # create top and bottom edge images for edge location and tracing
     tops, bots = make_top_and_bots(flat)
@@ -42,51 +45,21 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
         order.botMeas = order.botTrace[1] 
 
     crosscut = np.median(flat, axis=1)
-
-#     import pylab as pl
-#     pl.figure('crosscut', facecolor='white')
-#     pl.cla()
-#     pl.plot(crosscut, 'k-', linewidth=2)
-#     pl.xlim(0, 1023)
-#     pl.show()
-#     
-#     pl.figure('crosscut', facecolor='white')
-#     pl.cla()
-#     pl.plot(flat[:, 511:512], 'k-', linewidth=2)
-#     pl.xlim(0, 1023)
-# 
-#     pl.show()
-    
-#     import pylab as pl
-#     pl.figure('cutout', facecolor='white')
-#     pl.cla()
-#     pl.imshow(obj, vmin=0, vmax=512)
-#     pl.plot(order.topTrace, 'w-', linewidth=2)
-#     pl.plot(order.botTrace, 'w-', linewidth=2)
-#     pl.xlim(0, 1023)
-#     pl.ylim(1023, 0)
-# 
-#     pl.show()
-#     
-#     import pylab as pl
-#     pl.figure('cutout', facecolor='white')
-#     pl.cla()
-#     pl.imshow(tops, vmin=0, vmax=1024)
-#     pl.set_cmap('gray')
-# #     pl.plot(order.topTrace, 'w-', linewidth=2)
-# #     pl.plot(order.botTrace, 'w-', linewidth=2)
-#     pl.colorbar()
-#     pl.xlim(0, 1023)
-#     pl.ylim(1023, 0)
-#     pl.show()
     
     # cut out order from object frame and flat and compute on and off order masks
-    cut_out_order(obj, flat, order, params['padding'])
+    cut_out_order(obj, flat, order)
              
     return order
 
 
-def cut_out_order(obj, flat, order, padding):
+def cut_out_order(obj, flat, order):
+    """
+    
+    obj - the full frame object image
+    flat - the full flat, possibly combined, flat image
+    order - the Order object in which the cutouts will be stored
+    padding - the amount of padding to use to account for curvature
+    """
     
     # add extra padding for orders with large tilt
 
@@ -95,9 +68,8 @@ def cut_out_order(obj, flat, order, padding):
         logger.info('large order tilt detected, tilt = ' + str(round(tilt, 1)) + 
             ' threshold = ' + str(LARGE_TILT_THRESHOLD) + 
             ' extra padding = ' + str(LARGE_TILT_EXTRA_PADDING))
-        padding += LARGE_TILT_EXTRA_PADDING
-    order.padding = padding
-    logger.info('cutout padding = ' + str(round(padding, 0)))
+        order.padding += LARGE_TILT_EXTRA_PADDING
+    logger.info('cutout padding = ' + str(round(order.padding, 0)))
     
     # determine highest point of top trace (ignore edge)
     if order.topTrace is None:
@@ -106,17 +78,26 @@ def cut_out_order(obj, flat, order, padding):
     else:
         highest_point = max(order.topTrace[0], order.topTrace[-OVERSCAN_WIDTH])
         
-    # get cut outs and masks
-    if order.botMeas is None:
-        bot = order.botCalc
-    else:
-        bot = order.botMeas
         
-    order.objCutout = np.array(cut_out(obj, highest_point, bot, padding))
-    
-    order.flatCutout = np.array(cut_out(flat, highest_point, bot, padding))
-    
-    order.shiftOffset = padding + order.botMeas
+    # get cut outs and masks
+#     if order.botMeas is None:
+#         bot = order.botCalc
+#     else:
+#         bot = order.botMeas
+        
+    if order.botTrace is None:
+        bot_trace_approx = order.topTrace - order.botCalc - 1
+        lowest_point = min(bot_trace_approx[0], bot_trace_approx[-OVERSCAN_WIDTH])
+    else:
+        lowest_point = min(order.botTrace[0], order.botTrace[-OVERSCAN_WIDTH])
+         
+    bot = lowest_point
+    order.highestPoint = highest_point
+    order.lowestPoint = lowest_point
+         
+    order.objCutout = np.array(cut_out(obj, highest_point, bot, order.padding))
+    order.flatCutout = np.array(cut_out(flat, highest_point, bot, order.padding))
+    order.shiftOffset = order.padding + order.botMeas
 
 #     if float(order.botMeas) > float(padding):
     
@@ -124,19 +105,22 @@ def cut_out_order(obj, flat, order, padding):
         top_trace = top_trace_approx
     else:
         top_trace = order.topTrace
-    if float(bot) > float(padding):
+    if float(bot) > float(order.padding):
         order.onOrderMask, order.offOrderMask = get_masks(
                 order.objCutout.shape, 
-                top_trace - order.botTrace[0] + padding, 
-                order.botTrace - order.botTrace[0] + padding)
-#                 order.topTrace - order.botMeas + padding, 
-#                 order.botTrace - order.botMeas + padding)
+#                 top_trace - order.lowestPoint + order.padding, 
+#                 order.botTrace - order.lowestPoint + order.padding)
+                top_trace - order.botTrace[0] + order.padding, 
+                order.botTrace - order.botTrace[0] + order.padding)
     else:
         order.onOrderMask, order.offOrderMask = get_masks(
                 order.objCutout.shape, 
                 order.topTrace, 
                 order.botTrace)
-    
+        
+    order.objCutout = np.ma.masked_array(order.objCutout, mask=order.offOrderMask)
+    order.flatCutout = np.ma.masked_array(order.flatCutout, mask=order.offOrderMask)
+
     return
     
     
