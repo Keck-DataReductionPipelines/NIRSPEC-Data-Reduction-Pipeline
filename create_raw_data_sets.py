@@ -9,6 +9,8 @@ from __builtin__ import False
 def create(in_dir):
     """
     Given an input directory path, creates and returns a list of raw data sets.
+    A raw data set is an instance of the class RawDataSet and consists of an
+    object file name, it's header, and associated flatas and darks.
     """
     
     logger = logging.getLogger('main')
@@ -27,7 +29,11 @@ def create(in_dir):
 
     for filename, header in headers.items():
         if (header['IMAGETYP'] == 'object'):
-            rawDataSets.append(RawDataSet.RawDataSet(filename, header))
+            if (header['DISPERS'].lower() == 'high'):
+                rawDataSets.append(RawDataSet.RawDataSet(filename, header))
+            else:
+                logger.info('{} is in low dispersion mode, not reduced'.format(
+                        filename[filename.rfind('/') + 1:]))
     
     logger.info(str(len(rawDataSets)) + " object frame(s) found")
     

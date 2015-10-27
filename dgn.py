@@ -12,7 +12,8 @@ logger = logging.getLogger('obj')
 
 subdirs = dict([
                 ('traces.png',      'traces'),
-                ('cutouts.png',     'cutouts')
+                ('cutouts.png',     'cutouts'),
+                ('sprect.png',      'sprect')
                 ])
 
 
@@ -34,10 +35,18 @@ def gen(reduced, out_dir):
     for order in reduced.orders:
         traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.flat, 
                 order.topTrace, order.botTrace)
-        cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
-                order.topTrace - order.lowestPoint + order.padding, 
-                order.botTrace - order.lowestPoint + order.padding)
-        
+        if order.lowestPoint > order.padding:
+            cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
+                    order.topTrace - order.lowestPoint + order.padding, 
+                    order.botTrace - order.lowestPoint + order.padding,
+                    order.smoothedTrace - order.lowestPoint + order.padding)
+        else:
+            cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
+                    order.topTrace, 
+                    order.botTrace,
+                    order.smoothedTrace)
+        sprect_plot(out_dir, reduced.baseName, order.orderNum, 
+                order.srFlatObjImg, order.srNormFlatImg)
     logger.info('done generating diagnostic data products')
     
 def constructFileName(outpath, base_name, order, fn_suffix):
@@ -59,6 +68,7 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
     obj_plot.imshow(obj, vmin=0, vmax=256)
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
+
     obj_plot.set_title('object')
     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
@@ -76,25 +86,27 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
     pl.savefig(constructFileName(outpath, base_name, order_num, 'traces.png'))
     pl.close()
     
-def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
+def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace, trace):
     
     pl.figure('traces', facecolor='white', figsize=(8, 5))
     pl.cla()
-    pl.suptitle('order edge traces, {}, order {}'.format(base_name, order_num), fontsize=14)
+    pl.suptitle('order cutouts, {}, order {}'.format(base_name, order_num), fontsize=14)
     pl.set_cmap('Blues_r')
 
     obj_plot = pl.subplot(2, 1, 1)
-    obj_plot.imshow(obj, vmin=0, vmax=256)
+    obj_plot.imshow(obj, vmin=0, vmax=4.0 * np.median(obj))
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
+    obj_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)
     obj_plot.set_title('object')
 #     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
     
     flat_plot = pl.subplot(2, 1, 2)
-    flat_plot.imshow(flat, vmin=0, vmax=256)
+    flat_plot.imshow(flat, vmin=0, vmax=4.0 * np.median(flat))
     flat_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     flat_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)    
+    flat_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)    
     flat_plot.set_title('flat')
 #     flat_plot.set_ylim([1023, 0])
     flat_plot.set_xlim([0, 1023])
@@ -103,5 +115,25 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace)
     pl.savefig(constructFileName(outpath, base_name, order_num, 'cutouts.png'))
     pl.close()
     
+def sprect_plot(outpath, base_name, order_num, obj, flat):
 
+    pl.figure('spatially rectified', facecolor='white', figsize=(8, 5))
+    pl.cla()
+    pl.suptitle('spatially rectified, {}, order {}'.format(base_name, order_num), fontsize=14)
+    pl.set_cmap('Blues_r')
 
+    obj_plot = pl.subplot(2, 1, 1)
+    obj_plot.imshow(obj, vmin=0, vmax=4.0 * np.median(obj))
+    obj_plot.set_title('object')
+#     obj_plot.set_ylim([1023, 0])
+    obj_plot.set_xlim([0, 1023])
+    
+    flat_plot = pl.subplot(2, 1, 2)
+    flat_plot.imshow(flat, vmin=0, vmax=4.0 * np.median(flat))
+    flat_plot.set_title('flat')
+#     flat_plot.set_ylim([1023, 0])
+    flat_plot.set_xlim([0, 1023])
+ 
+    pl.tight_layout()
+    pl.savefig(constructFileName(outpath, base_name, order_num, 'sprect.png'))
+    pl.close()

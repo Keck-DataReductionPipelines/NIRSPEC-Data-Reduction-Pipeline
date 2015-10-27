@@ -64,6 +64,11 @@ class Order:
         self.flattenedObjImg = []
         self.noiseImg = []
         
+        #
+        self.srNormFlatImg = []
+        self.srFlatObjImg = []
+        #
+        
         self.spatialProfile = []
         self.peakLocation = 0
         self.centroid = None

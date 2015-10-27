@@ -1,10 +1,8 @@
 import logging
 import numpy as np
 
-import config
 import nirspec_lib
 import Order
-import DrpException
 
 logger = logging.getLogger('obj')
 
@@ -27,7 +25,6 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
     
     order.padding = params['padding']
     
-    
     # create top and bottom edge images for edge location and tracing
     tops, bots = make_top_and_bots(flat)
     
@@ -37,14 +34,19 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
     if order.topMeas is None and order.botMeas is None:
         msg = 'could not find top or bottom of order'
         logger.debug(msg)
-        raise DrpException(msg)
+#         raise DrpException.DrpException(msg)
+        return None
     
     # find order edge traces   
     find_edge_traces(tops, bots, order)
+    if order.topTrace is None and order.botTrace is None:
+        logger.info('could not trace top or bottom of order edge on flat')
+        return None
+    
     if order.botTrace is not None:
         order.botMeas = order.botTrace[1] 
 
-    crosscut = np.median(flat, axis=1)
+#     crosscut = np.median(flat, axis=1)
     
     # cut out order from object frame and flat and compute on and off order masks
     cut_out_order(obj, flat, order)
@@ -73,50 +75,31 @@ def cut_out_order(obj, flat, order):
     
     # determine highest point of top trace (ignore edge)
     if order.topTrace is None:
-        top_trace_approx = order.botTrace + order.topCalc + 1
-        highest_point = max(top_trace_approx[0], top_trace_approx[-OVERSCAN_WIDTH])
-    else:
-        highest_point = max(order.topTrace[0], order.topTrace[-OVERSCAN_WIDTH])
-        
-        
-    # get cut outs and masks
-#     if order.botMeas is None:
-#         bot = order.botCalc
-#     else:
-#         bot = order.botMeas
-        
-    if order.botTrace is None:
-        bot_trace_approx = order.topTrace - order.botCalc - 1
-        lowest_point = min(bot_trace_approx[0], bot_trace_approx[-OVERSCAN_WIDTH])
-    else:
-        lowest_point = min(order.botTrace[0], order.botTrace[-OVERSCAN_WIDTH])
-         
-    bot = lowest_point
-    order.highestPoint = highest_point
-    order.lowestPoint = lowest_point
-         
-    order.objCutout = np.array(cut_out(obj, highest_point, bot, order.padding))
-    order.flatCutout = np.array(cut_out(flat, highest_point, bot, order.padding))
-    order.shiftOffset = order.padding + order.botMeas
-
-#     if float(order.botMeas) > float(padding):
-    
-    if order.topTrace is None:
-        top_trace = top_trace_approx
+        top_trace = order.botTrace + order.topCalc + 1
     else:
         top_trace = order.topTrace
-    if float(bot) > float(order.padding):
+        
+    order.highestPoint = np.amax(top_trace[0:-OVERSCAN_WIDTH])
+        
+    if order.botTrace is None:
+        bot_trace = order.topTrace - order.botCalc - 1
+    else:
+        bot_trace = order.botTrace
+        
+    order.lowestPoint = np.amin(bot_trace[0:-OVERSCAN_WIDTH])
+         
+    order.objCutout = np.array(cut_out(obj, order.highestPoint, order.lowestPoint, order.padding))
+    order.flatCutout = np.array(cut_out(flat, order.highestPoint, order.lowestPoint, order.padding))
+    order.shiftOffset = order.padding + order.botMeas
+    
+    if float(order.lowestPoint) > float(order.padding):
         order.onOrderMask, order.offOrderMask = get_masks(
                 order.objCutout.shape, 
-#                 top_trace - order.lowestPoint + order.padding, 
-#                 order.botTrace - order.lowestPoint + order.padding)
-                top_trace - order.botTrace[0] + order.padding, 
-                order.botTrace - order.botTrace[0] + order.padding)
+                top_trace - order.lowestPoint + order.padding, 
+                bot_trace - order.lowestPoint + order.padding)
     else:
         order.onOrderMask, order.offOrderMask = get_masks(
-                order.objCutout.shape, 
-                order.topTrace, 
-                order.botTrace)
+                order.objCutout.shape, top_trace, bot_trace)
         
     order.objCutout = np.ma.masked_array(order.objCutout, mask=order.offOrderMask)
     order.flatCutout = np.ma.masked_array(order.flatCutout, mask=order.offOrderMask)
@@ -156,6 +139,9 @@ def find_edge_traces(tops, bots, order):
     if order.botMeas is not None:
         logger.debug('tracing bottom of order')
         order.botTrace = nirspec_lib.trace_order_edge(bots, order.botMeas)
+        
+    if order.topTrace is None and order.botTrace is None:
+        return
 
     if order.topTrace is not None and order.botTrace is not None:
         logger.info('using top and bottom trace')
@@ -226,14 +212,6 @@ def find_peak(edges, start, sigma):
 
     # take a vertical cut of edges
     magcrosscut = np.median(edges[:, 40:50], axis=1)
-
-#     import pylab as pl
-#     pl.figure('crosscut', facecolor='white')
-#     pl.cla()
-#     pl.plot(magcrosscut, 'k-', linewidth=2)
-#     pl.xlim(0, 1023)
-# 
-#     pl.show()
 
     # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
     extrema = argrelextrema(magcrosscut, np.greater, order=35)[0]

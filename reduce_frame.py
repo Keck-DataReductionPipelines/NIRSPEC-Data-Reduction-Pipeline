@@ -70,7 +70,27 @@ def reduce_frame(raw, out_dir):
  
  
 def reduce_orders(reduced):
+    """
+    Successively reduces each order in the frame.  
     
+    Starting order is determined from a lookup table indexed by filter name.
+    
+    The grating equation is evaluated for y-axis location of the short wavelength end
+    of the order on the detector.
+    
+    If the order is on the detector then extract_order() is called to cut out from the full
+    frame a rectangular array of pixels containing the entire order plus padding.  
+    
+    Then, reduce_order() is called to reduce the order.
+    reduce_order() returns an order object which is and instance of the Order class 
+    and contains all of the reduced data for this order.  The order object is then
+    appended to the list of order objects in the ReducedDataSet object representing 
+    the current frame.
+    
+    After the first order that should be on the detector is found, processing continues
+    through each order in descending order number, working toward higher pixel row numbers
+    on the detector, until the first off-detector order is found.
+    """
     starting_order = constants.get_starting_order(reduced.getFilter())
     first_order_found = False
     
@@ -100,14 +120,13 @@ def reduce_orders(reduced):
             
             first_order_found = True
             
-            try:
-                order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
-                        top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
-            except DrpException as e:
-                logger.warning('failed to extract order {}: {}'.format(
-                            str(order_num), e.message))
+            order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
+                    top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
+            
+            if order is None:
+                logger.warning('failed to extract order {}'.format(str(order_num)))
                 continue
-                
+
             # put integration time and wavelength scale based on 
             # grating equation into order object
             order.integrationTime = reduced.getIntegrationTime() # used in noise calc
@@ -120,9 +139,11 @@ def reduce_orders(reduced):
                 
                 # add reduced order to list of reduced orders in Reduced object
                 reduced.orders.append(order)                      
-            except DrpException as e:
+#             except DrpException as e:
+            except Exception as e:
                 logger.warning('failed to reduce order {}: {}'.format(
                         str(order_num), e.message))
+ 
                         
         # end if order is on the detector
     # end for each order

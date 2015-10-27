@@ -32,59 +32,44 @@ def reduce_order(order):
     order.smoothedTrace, order.traceMask = nirspec_lib.smooth_spatial_trace(order.avgTrace)
     logger.info('spatial trace smoothed, ' + str(order.objImg.shape[1] - np.count_nonzero(order.traceMask)) + 
             ' points ignored')
-    
-    
-    if float(order.botMeas) > float(order.padding):
-        order.smoothedTrace = order.smoothedTrace - order.botMeas + order.padding
-        order.avgTrace = order.avgTrace - order.botMeas + order.padding
-    
-#     if config.params['inter_prod']:
-#         import pylab as pl
-#         pl.figure('', facecolor='white', figsize=(8, 6))
-#         pl.cla()    
-#         f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-#         pl.show()
-         
-#     if config.params['inter_prod']:
-#         import pylab as pl
-#         pl.figure('', facecolor='white', figsize=(8, 6))
-#         pl.cla()    
-#         f = pl.imshow(order.objImg, vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-#         pl.show()
-    
-#     order.flattenedObjImg = np.ma.masked_array(order.flattenedObjImg, mask=order.offOrderMask)
 
-#     if config.params['inter_prod']:
-#         pl.figure('', facecolor='white', figsize=(8, 6))
-#         pl.cla()    
-#         f = pl.imshow(np.ma.masked_array(order.objImg, mask=order.offOrderMask), vmin=0, vmax=256, aspect='auto', cmap="gist_heat_r")
-#         pl.show()
     
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
     order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)
     order.normalizedFlatImg = image_lib.rectify_spatial(order.normalizedFlatImg, order.smoothedTrace)
     order.objImg = image_lib.rectify_spatial(order.objImg, order.smoothedTrace)
-
-    
     order.flattenedObjImg = image_lib.rectify_spatial(order.flattenedObjImg, order.smoothedTrace)
+ 
+    if order.lowestPoint > order.padding:
+        top = order.highestPoint - order.lowestPoint + order.padding - 3
+    else:
+        top = order.highestPoint - 3
+    h = np.amin(order.topTrace - order.botTrace)
+    bot = top - h + 3
+ 
 
-#     # trim?
-#     order.flatImg = order.flatImg[order.lowest_point:order.highest_point, :]
-#     order.normalizedFlatImg = order.normalizedFlatImg[order.lowest_point:order.highest_point, :]
-#     order.objImg = order.objImg[order.lowest_point:order.highest_point, :]
-#     order.flattenedObjImg = order.flattenedObjImg[order.lowest_point:order.highest_point, :]
-
+    bot = max(0, bot)
+    top = min(top, 1023)
+    
+    order.flatImg = order.flatImg[bot:top, :]
+    order.normalizedFlatImg = order.normalizedFlatImg[bot:top, :]
+    order.objImg = order.objImg[bot:top, :]
+    order.flattenedObjImg = order.flattenedObjImg[bot:top, :]
+    
+    order.srNormFlatImg = order.normalizedFlatImg
+    order.srFlatObjImg = order.flattenedObjImg
     
     order.spatialRectified = True
     
     # find spatial profile and peak
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
-    order.peakLocation = np.argmax(order.spatialProfile)
+    order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
     logger.info('peak intensity row {:d}'.format(order.peakLocation))
     p0 = order.peakLocation - (config.params['obj_window_width'] / 2)
     p1 = order.peakLocation + (config.params['obj_window_width'] / 2)
     order.centroid = (scipy.ndimage.measurements.center_of_mass(order.spatialProfile[p0:p1]))[0] + p0 
     logger.info('centroid row {:.1f}'.format(float(order.centroid)))
+    
     
     # find and smooth spectral trace
     try:
@@ -105,10 +90,6 @@ def reduce_order(order):
     # compute noise image
     order.noiseImg = nirspec_lib.calc_noise_img(
             order.objImg, order.normalizedFlatImg, order.integrationTime)
-      
-    # find spatial profile and peak
-    order.spatialProfile = order.flattenedObjImg.mean(axis=1)
-    order.peakLocation = np.argmax(order.spatialProfile)
     
     # extract spectra
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \
@@ -124,7 +105,7 @@ def reduce_order(order):
     
     order.objSpec, order.skySpec, order.noiseSpec, order.topBgMean, order.botBgMean = \
             image_lib.extract_spectra(
-                order.flattenedObjImg, order.noiseImg, order.peakLocation,
+                order.flattenedObjImg, order.noiseImg, 
                 order.objWindow, order.topSkyWindow, order.botSkyWindow)
     
     # find and identify sky lines   
@@ -181,7 +162,7 @@ def reduce_order(order):
             logger.info('per order wavelength fit: n={}, a={:.6f}, b={:.6f}, r={:.6f}'.format(
                     len(order.lines), order.perOrderIntercept, order.perOrderSlope, 
                     order.perOrderCorrCoeff))
-#             raw_input('waiting')
+
             for line in order.lines:
                 line.localFitWavelength = order.perOrderIntercept + \
                     (order.perOrderSlope * order.wavelengthScaleCalc[line.col])    
@@ -189,9 +170,7 @@ def reduce_order(order):
                 line.localFitSlope = (order.perOrderSlope * (order.wavelengthScaleCalc[1023] - order.wavelengthScaleCalc[0]))/1024.0
     else:
         logger.warning('no matched sky lines in order ' + str(order.orderNum))
-                    
-    #raw_input('waiting')
-    
+                        
     return
          
     

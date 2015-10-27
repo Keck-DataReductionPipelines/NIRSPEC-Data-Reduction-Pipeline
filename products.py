@@ -328,12 +328,12 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     wvlh = 0.01 * yrange;
     ewh = 0.05 * yrange
     
-    pl.plot((peak + ext_range[0], peak + ext_range[-1]), (profile.max(), profile.max()), 
+    pl.plot((ext_range[0], ext_range[-1]), (profile.max(), profile.max()), 
             'r', linewidth=0.5, label='extraction window')
-    pl.plot((peak + ext_range[0], peak + ext_range[0]),
+    pl.plot((ext_range[0], ext_range[0]),
             (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)
-    pl.plot((peak + ext_range[-1], peak + ext_range[-1]),
+    pl.plot((ext_range[-1], ext_range[-1]),
             (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)  
     
@@ -345,24 +345,24 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
  
     if (sky_range_top):
 
-        pl.plot((peak + sky_range_top[0], peak + sky_range_top[-1]),
+        pl.plot((sky_range_top[0], sky_range_top[-1]),
                 (top_bg_mean, top_bg_mean), 
                 'b', linewidth=0.5, label='sky window')  
-        pl.plot((peak + sky_range_top[0], peak + sky_range_top[0]),
+        pl.plot((sky_range_top[0], sky_range_top[0]),
                 (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)
-        pl.plot((peak + sky_range_top[-1], peak + sky_range_top[-1]),
+        pl.plot((sky_range_top[-1], sky_range_top[-1]),
                 (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)  
         
     if (sky_range_bot):
-        pl.plot((peak + sky_range_bot[0], peak + sky_range_bot[-1]),
+        pl.plot((sky_range_bot[0], sky_range_bot[-1]),
                 (bot_bg_mean, bot_bg_mean), 
                 'b', linewidth=0.5)   
-        pl.plot((peak + sky_range_bot[0], peak + sky_range_bot[0]),
+        pl.plot((sky_range_bot[0], sky_range_bot[0]),
                 (bot_bg_mean - wvlh, bot_bg_mean + wvlh), 
                 'b', linewidth=1.5)
-        pl.plot((peak + sky_range_bot[-1], peak + sky_range_bot[-1]),
+        pl.plot((sky_range_bot[-1], sky_range_bot[-1]),
                 (bot_bg_mean - wvlh, bot_bg_mean + wvlh), 
                 'b', linewidth=1.5)
         
@@ -760,7 +760,11 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_nu
     #pl.imshow(data, vmin=0, vmax=1024, aspect='auto')
     
     pl.imshow(data, origin='lower', vmin=np.amin(data), vmax=np.amax(data), 
-                  extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
+                  extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')      
+#     from matplotlib import colors
+#     norm = colors.LogNorm(data.mean() + 0.5 * data.std(), data.max(), clip='True')
+#     pl.imshow(data, norm=norm, origin='lower',
+#                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
     pl.colorbar()
     pl.set_cmap('jet')
     fn = constructFileName(outpath, base_name, order_num, base_filename)
