@@ -43,7 +43,7 @@ def nirspec_drp(in_dir, out_dir):
             else:
                 logger.info('data product generation inhibited by command line switch')
             
-            # if dianostics mode is enabled, then produce diagnostic data products
+            # if diagnostics mode is enabled, then produce diagnostic data products
             if config.params['dgn'] is True:
                 logger.info('diagnostic mode enabled, generating diagnostic data products')
                 dgn.gen(reducedDataSet, out_dir)
@@ -64,7 +64,7 @@ def nirspec_drp(in_dir, out_dir):
         
 def init(in_dir, out_dir):
     """
-    Sets up main logger, checks for existance of input directory, and checks that
+    Sets up main logger, checks for existence of input directory, and checks that
     output directory either exists or can be created.
     
     """

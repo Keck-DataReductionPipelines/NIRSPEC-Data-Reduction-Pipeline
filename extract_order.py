@@ -71,22 +71,18 @@ def cut_out_order(obj, flat, order):
             ' threshold = ' + str(LARGE_TILT_THRESHOLD) + 
             ' extra padding = ' + str(LARGE_TILT_EXTRA_PADDING))
         order.padding += LARGE_TILT_EXTRA_PADDING
-    logger.info('cutout padding = ' + str(round(order.padding, 0)))
+    logger.debug('cutout padding = ' + str(round(order.padding, 0)))
     
     # determine highest point of top trace (ignore edge)
     if order.topTrace is None:
-        top_trace = order.botTrace + order.topCalc + 1
-    else:
-        top_trace = order.topTrace
+        order.topTrace = order.botTrace + (order.topCalc - order.botCalc) - 5
         
-    order.highestPoint = np.amax(top_trace[0:-OVERSCAN_WIDTH])
+    order.highestPoint = np.amax(order.topTrace[0:-OVERSCAN_WIDTH])
         
     if order.botTrace is None:
-        bot_trace = order.topTrace - order.botCalc - 1
-    else:
-        bot_trace = order.botTrace
+        order.botTrace = order.topTrace - (order.topCalc - order.botCalc) + 5
         
-    order.lowestPoint = np.amin(bot_trace[0:-OVERSCAN_WIDTH])
+    order.lowestPoint = np.amin(order.botTrace[0:-OVERSCAN_WIDTH])
          
     order.objCutout = np.array(cut_out(obj, order.highestPoint, order.lowestPoint, order.padding))
     order.flatCutout = np.array(cut_out(flat, order.highestPoint, order.lowestPoint, order.padding))
@@ -95,11 +91,11 @@ def cut_out_order(obj, flat, order):
     if float(order.lowestPoint) > float(order.padding):
         order.onOrderMask, order.offOrderMask = get_masks(
                 order.objCutout.shape, 
-                top_trace - order.lowestPoint + order.padding, 
-                bot_trace - order.lowestPoint + order.padding)
+                order.topTrace - order.lowestPoint + order.padding, 
+                order.botTrace - order.lowestPoint + order.padding)
     else:
         order.onOrderMask, order.offOrderMask = get_masks(
-                order.objCutout.shape, top_trace, bot_trace)
+                order.objCutout.shape, order.topTrace, order.botTrace)
         
     order.objCutout = np.ma.masked_array(order.objCutout, mask=order.offOrderMask)
     order.flatCutout = np.ma.masked_array(order.flatCutout, mask=order.offOrderMask)

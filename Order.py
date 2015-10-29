@@ -4,10 +4,7 @@ from __builtin__ import False
 class Order:
     
     def __init__(self, orderNum):
-        
-        # temp
- 
-        
+                
         self.orderNum = orderNum
         self.integrationTime = 0.0
         self.yOffset = -1
@@ -31,9 +28,11 @@ class Order:
         self.perOrderIntercept = 0.0;
         self.perOrderCorrCoeff = 0.0;
         
+        self.topEdgeProfiles = None
+        self.botEdgeProfiles = None
+        
         # wavelength calibration lines, array of class Line
         self.lines = []
-        
         
         self.padding = 0
         self.objCutout = []

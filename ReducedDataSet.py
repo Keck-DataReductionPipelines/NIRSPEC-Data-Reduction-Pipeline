@@ -17,6 +17,13 @@ class ReducedDataSet:
         self.flat = np.zeros(self.getShape())
         self.dark = np.zeros(self.getShape())
         
+        self.topEdgesImg = None
+        self.botEdgesImg = None
+        self.topEdgesProfile = None
+        self.botEdgesProfile = None
+        self.topEdgePeaks = None
+        self.botEdgePeaks = None
+        
         self.orders = []
         
         self.coeffs = None

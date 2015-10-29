@@ -50,6 +50,9 @@ def reduce_frame(raw, out_dir):
     else:
         logger.info("not cleaning cosmic ray hits")
         
+    # find order edge peak locations on flat
+    find_order_edge_peaks(reduced)
+        
     # reduce orders
     try:
         reduce_orders(reduced)
@@ -100,7 +103,7 @@ def reduce_orders(reduced):
         
         # get expected location of order on detector
         top_calc, bot_calc, wavelength_scale_calc = \
-                grating_eq.evaluate(order_num, reduced.getFilter(), reduced.getSlit(), 
+                grating_eq.solve(order_num, reduced.getFilter(), reduced.getSlit(), 
                 reduced.getEchPos(), reduced.getDispPos(), reduced.getDate())
         
         logger.info('predicted y location: top = ' + 
@@ -153,6 +156,34 @@ def reduce_orders(reduced):
 
     return
             
+def find_order_edge_peaks(reduced):
+    
+    from scipy.signal import argrelextrema
+
+    # make top and bottom edge images
+    rolled = np.roll(reduced.flat, 5, axis=0)
+    reduced.topEdgesImg = rolled - reduced.flat
+    reduced.botEdgesImg = reduced.flat - rolled
+    
+    
+    # take a vertical cut of edges
+    reduced.topEdgesProfile = np.median(reduced.topEdgesImg[:, 40:50], axis=1)
+    reduced.botEdgesProfile = np.median(reduced.botEdgesImg[:, 40:50], axis=1)
+
+    # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
+    top_extrema = argrelextrema(reduced.topEdgesProfile, np.greater, order=35)[0]
+    bot_extrema = argrelextrema(reduced.botEdgesProfile, np.greater, order=35)[0]
+
+    # find crosscut values at those extrema
+    top_intensities = reduced.topEdgesProfile[top_extrema]
+    bot_intensities = reduced.botEdgesProfile[bot_extrema]
+
+    reduced.topEdgePeaks = zip(top_extrema, top_intensities)
+    reduced.botEdgePeaks = zip(bot_extrema, bot_intensities)
+    
+    return
+
+    
 def find_global_wavelength_soln(reduced):
     
     # create arrays of col, 1/order, accepted wavelength
@@ -250,6 +281,7 @@ def init(objFileName, out_dir):
     """    
     
     # set up obj logger
+    logger.handlers = []
     if config.params['debug']:
         logger.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s ' +
@@ -286,10 +318,17 @@ def init(objFileName, out_dir):
         return    
 
 def log_start_summary(reduced):
-    logger.info('starting reduction of ' + reduced.getFileName())
+    main_logger = logging.getLogger('main')
+    s = 'starting reduction of ' + reduced.getFileName()[reduced.getFileName().rfind('/') + 1:]
+    logger.info(s)
+    main_logger.info(s)
     logger.info('  date of observation: ' + reduced.getDate() + ' UT')
-    logger.info('          filter name: ' + reduced.getFilter())
-    logger.info('            slit name: ' + reduced.getSlit())
+    s = '          filter name: ' + reduced.getFilter()
+    logger.info(s)
+    main_logger.info(s)
+    s = '            slit name: ' + reduced.getSlit()
+    logger.info(s)
+    main_logger.info(s)
     logger.info('        echelle angle: ' + str(reduced.getEchPos()) + ' deg')
     logger.info('cross disperser angle: ' + str(reduced.getDispPos()) + ' deg')
 

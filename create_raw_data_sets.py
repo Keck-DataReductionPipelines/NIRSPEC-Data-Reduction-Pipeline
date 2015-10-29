@@ -14,7 +14,7 @@ def create(in_dir):
     """
     
     logger = logging.getLogger('main')
-    logger.info("creating raw data sets from files in " + in_dir)
+    logger.debug("creating raw data sets from files in " + in_dir)
     
     # get list of fits files
     headers = get_headers(in_dir)

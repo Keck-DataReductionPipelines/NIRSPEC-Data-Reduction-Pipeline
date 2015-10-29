@@ -746,7 +746,8 @@ def twodfit(dataX, dataY, dataZ):
 
 
         elif sigma > SIGMA_MAX:
-            logger.info('cannot remove more points! we must live with sigma=' + str(sigma))
+            logger.info('minimum number of lines reached ({}), sigma={:.3f}'.format(
+                    LOWER_LEN_POINTS, sigma))
             break
 
         k += 1

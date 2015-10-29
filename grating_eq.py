@@ -1,11 +1,12 @@
 import numpy as np
 import logging
 import datetime
-#from datetime import date
+
+import nirspec_constants as const
 
 logger = logging.getLogger('obj')
 
-def evaluate(order, filter, slit, echlpos, disppos, dateobs):
+def solve(order, filtername, slit, echlpos, disppos, dateobs):
     """
     use grating equation with coefficients empirically found for each
     filter, grating angle, and echelle angle to determine starting
@@ -14,7 +15,6 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     lambda = k1 * sin(theta_echelle) - k2 * (512 - pixel) * cos(theta_echelle) / order
 
     """
-    n_cols = 1024
     left_indent = 50
 
     coeffs = dict()
@@ -39,21 +39,21 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     coeffs['NIRSPEC-1'] = { 'c1': 0.49777509, 'c2': -38653.878, 'y0': 17488.344,
                             'r1': 0.4713783,  'r2': -38876.842, 'z0': 17880.5877};      
                          
-    c1 = coeffs[filter.upper()]['c1']
-    c2 = coeffs[filter.upper()]['c2']
-    y0 = coeffs[filter.upper()]['y0']
+    c1 = coeffs[filtername.upper()]['c1']
+    c2 = coeffs[filtername.upper()]['c2']
+    y0 = coeffs[filtername.upper()]['y0']
    
-    pixel = np.arange(n_cols, dtype=float)
+    pixel = np.arange(const.N_COLS, dtype=float)
 
     k1 = 8.528e5
     k2 = 2.413e1
 
     # solve for wavelength scale
     wavelength_scale = (k1 * np.sin(np.radians(echlpos)) -
-        k2 * ((n_cols / 2) - pixel) * np.cos(np.radians(echlpos))) / order
+        k2 * ((const.N_COLS / 2) - pixel) * np.cos(np.radians(echlpos))) / order
 
     wavelength_left = (k1 * np.sin(np.radians(echlpos)) -
-        k2 * ((n_cols / 2) - left_indent) * np.cos(np.radians(echlpos))) / order
+        k2 * ((const.N_COLS / 2) - left_indent) * np.cos(np.radians(echlpos))) / order
 
     # solve for location of the beginning of the middle of the order in spatial axis
     left_mid_row = c1 * wavelength_left + c2 * np.sin(np.radians(disppos)) + y0
@@ -95,15 +95,15 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
         left_top_row += date_y_corr
         left_bot_row += date_y_corr
         
-    elif 'NIRSPEC-6' in filter or 'NIRSPEC-5' in filter or 'NIRSPEC-4' in filter:
+    elif 'NIRSPEC-6' in filtername or 'NIRSPEC-5' in filtername or 'NIRSPEC-4' in filtername:
         logger.debug('applying +' + str(filter_4_5_6_y_corr) + 
-                    ' pixel N-4,5,6 filter y corr for filter ' + filter)
+                    ' pixel N-4,5,6 filter y corr for filter ' + filtername)
         left_top_row += filter_4_5_6_y_corr
         left_bot_row += filter_4_5_6_y_corr
         
-    elif 'NIRSPEC-3' in filter:
+    elif 'NIRSPEC-3' in filtername:
         logger.debug('applying +' + str(filter_3_y_corr) + 
-                    ' pixel N-3 filter y corr for filter ' + filter )
+                    ' pixel N-3 filter y corr for filter ' + filtername )
         left_top_row += filter_4_5_6_y_corr
         left_bot_row += filter_4_5_6_y_corr
 
@@ -128,9 +128,9 @@ def evaluate(order, filter, slit, echlpos, disppos, dateobs):
     return left_top_row, left_bot_row, wavelength_scale
 
 
-def is_on_detector(left_bot_row, left_top_row):
+def is_on_detector(left_top_row, left_bot_row):
     padding = 20.0
-    if left_top_row < (1024 + padding) and left_bot_row > -padding:
+    if left_top_row < (1024 - padding) and left_bot_row > padding:
         return True
     else:
         return False
