@@ -67,7 +67,8 @@ def reduce_order(order):
     logger.info('peak intensity row {:d}'.format(order.peakLocation))
     p0 = order.peakLocation - (config.params['obj_window_width'] / 2)
     p1 = order.peakLocation + (config.params['obj_window_width'] / 2)
-    order.centroid = (scipy.ndimage.measurements.center_of_mass(order.spatialProfile[p0:p1]))[0] + p0 
+    order.centroid = (scipy.ndimage.measurements.center_of_mass(
+            order.spatialProfile[p0:p1]))[0] + p0 
     logger.info('centroid row {:.1f}'.format(float(order.centroid)))
     
     

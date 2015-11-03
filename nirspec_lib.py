@@ -56,12 +56,25 @@ ORDER_EDGE_BG_WIDTH = 30
 ORDER_EDGE_JUMP_THRESH = 1.9
 ORDER_EDGE_JUMP_LIMIT = 200
 
+# ORDER_EDGE_SEARCH_WIDTH = 3
+# ORDER_EDGE_BG_WIDTH = 30
+# ORDER_EDGE_JUMP_THRESH = 5.0
+# ORDER_EDGE_JUMP_LIMIT = 200
+
 def trace_order_edge(data, start):
+        
     trace, nJumps =  tracer.trace_edge(
             data, start, ORDER_EDGE_SEARCH_WIDTH, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)
     if trace is None:
         logger.warning('trace failed')
         return None
+    
+#     import pylab as pl
+#     pl.figure()
+#     pl.cla()
+#     pl.plot(trace, 'ko')
+#     pl.show()
+    
     if nJumps > ORDER_EDGE_JUMP_LIMIT:
         logger.warning('order edge trace jump limit exceeded: n jumps=' + 
                 str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))

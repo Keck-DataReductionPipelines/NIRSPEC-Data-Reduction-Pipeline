@@ -48,11 +48,13 @@ def create(in_dir):
                     rawDataSet.darkFileNames.append(filename)
         rawDataSet.flatFileNames.sort()
         rawDataSet.darkFileNames.sort()
-                         
-#     for dataSet in rawDataSets:
-#         print "obj: " + dataSet.objFileName
-#         print "darks: " + str(dataSet.darkFileNames)
-#         print "flats: " + str(dataSet.flatFileNames)
+             
+    # remove data sets for which no flats are available
+    for rawDataSet in rawDataSets:
+        if len(rawDataSet.flatFileNames) == 0:
+            logger.info('no flats for {}'.format(
+                    rawDataSet.objFileName[rawDataSet.objFileName.rfind('/') + 1 :]))
+            rawDataSets.remove(rawDataSet)
           
     return(rawDataSets)
 

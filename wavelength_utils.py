@@ -769,7 +769,7 @@ def twodfit(dataX, dataY, dataZ):
         ax2.legend()
         #pl.show()
     #return p1, newoh, dataZZ
-    return p1, newoh, dataZ_new
+    return p1, newoh, dataZ_new, sigma
 
 
 def applySolution(order_object, p1):

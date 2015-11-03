@@ -9,17 +9,17 @@ def trace_edge(data, start, searchWidth, bgWidth, jumpThresh):
     # nJumps is the number of times successive centroids differed by more than threshold
     nJumps = 0
 
-    # first centroid assumed to be at startingLocation
+    # first centroid assumed to be at start
     trace[0] = start
         
     # find centroids for the rest of the columns in data
 
     for i in range(1, data.shape[1]):
-
+        
         # define search window
         ymin = int(trace[i - 1] - searchWidth)
         ymax = int(trace[i - 1] + searchWidth)
-
+        
         # clip search window at top and bottom of column
         if abs(ymax) > data.shape[0]:
             ymax = int(data.shape[0])

@@ -13,6 +13,7 @@ import nirspec_constants as constants
 import wavelength_utils
 
 logger = logging.getLogger('obj')
+main_logger = logging.getLogger('main')
 
 def reduce_frame(raw, out_dir):
     """
@@ -50,7 +51,7 @@ def reduce_frame(raw, out_dir):
     else:
         logger.info("not cleaning cosmic ray hits")
         
-    # find order edge peak locations on flat
+    # find order edge peak locations on flat, not fully moved here yet
     find_order_edge_peaks(reduced)
         
     # reduce orders
@@ -96,6 +97,7 @@ def reduce_orders(reduced):
     """
     starting_order = constants.get_starting_order(reduced.getFilter())
     first_order_found = False
+    n_orders_on_detector = 0
     
     for order_num in range(starting_order, 0, -1):
         
@@ -122,6 +124,8 @@ def reduce_orders(reduced):
             # order is on the detector
             
             first_order_found = True
+            
+            n_orders_on_detector += 1
             
             order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
                     top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
@@ -151,8 +155,14 @@ def reduce_orders(reduced):
         # end if order is on the detector
     # end for each order
     
-    logger.info('{} orders reduced'.format(len(reduced.orders)))
-    logger.info('end')
+    msg = '{} orders on the detector'.format(n_orders_on_detector)
+    logger.info(msg)
+    main_logger.info(msg)
+    msg = '{} orders reduced'.format(len(reduced.orders))
+    logger.info(msg)
+    main_logger.info(msg)
+
+    logger.info('end of frame reduction')
 
     return
             
@@ -209,7 +219,7 @@ def find_global_wavelength_soln(reduced):
     else:
         c = np.asarray(centroid, dtype='float32')
             
-    reduced.coeffs, wave_fit, wave_exp = wavelength_utils.twodfit(
+    reduced.coeffs, wave_fit, wave_exp, reduced.rmsFitRes = wavelength_utils.twodfit(
             c, 
             np.asarray(order_inv, dtype='float32'), 
             np.asarray(accepted, dtype='float32'))    
@@ -218,7 +228,12 @@ def find_global_wavelength_soln(reduced):
         #raise DrpException.DrpException('cannot find wavelength solution')
         return
     
-    logger.info('number of lines used in wavelength fit = ' + str(len(wave_fit)))
+    msg = '{} lines used in wavelength fit'.format(len(wave_fit))
+    logger.info(msg)
+    main_logger.info(msg)
+    msg = 'rms wavelength fit residual = {:.3f}'.format(reduced.rmsFitRes)
+    logger.info(msg)
+    main_logger.info(msg)
     
     # There must be a more pythonic way of doing this
     for i, exp in enumerate(wave_exp):

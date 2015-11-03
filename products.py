@@ -7,6 +7,7 @@ import pylab as pl
 from astropy.io import fits
 from astropy.table import Table, Column
 from astropy.io import ascii
+from skimage import exposure
 import Image
 
 import config
@@ -760,7 +761,7 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_nu
     #pl.imshow(img, aspect='auto')
     #pl.imshow(data, vmin=0, vmax=1024, aspect='auto')
     
-    pl.imshow(data, origin='lower', vmin=np.amin(data), vmax=np.amax(data), 
+    pl.imshow(exposure.equalize_hist(data), origin='lower', 
                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')      
 #     from matplotlib import colors
 #     norm = colors.LogNorm(data.mean() + 0.5 * data.std(), data.max(), clip='True')
@@ -768,6 +769,7 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_nu
 #                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
     pl.colorbar()
     pl.set_cmap('jet')
+#     pl.set_cmap('Blues_r')
     fn = constructFileName(outpath, base_name, order_num, base_filename)
     pl.savefig(fn)
     log_fn(fn)

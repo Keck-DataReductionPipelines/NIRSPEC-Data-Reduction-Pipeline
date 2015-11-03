@@ -26,6 +26,7 @@ class ReducedDataSet:
         
         self.orders = []
         
+        self.rmsFitRes = None
         self.coeffs = None
         
     def getFileName(self):

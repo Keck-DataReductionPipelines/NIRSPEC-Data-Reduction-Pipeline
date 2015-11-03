@@ -56,9 +56,11 @@ def nirspec_drp(in_dir, out_dir):
             logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
             sys.exit(1)
             
-    logger.info('{} out of {} object frames successfully reduced'.format(
-            n_reduced, len(rawDataSets)))   
-    logger.info('end')
+    if len(rawDataSets) > 0:
+        logger.info('{} out of {} object frames successfully reduced'.format(
+                n_reduced, len(rawDataSets)))   
+        
+    logger.info('end nirspec drp')
     return    
         
         
@@ -81,9 +83,9 @@ def init(in_dir, out_dir):
     # set up main logger
     logger = logging.getLogger('main')
     if config.params['debug']:
-        logger.setLevel(logging.INFO)
-    else:
         logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
     if config.params['debug']:
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
     else:

@@ -10,13 +10,13 @@ LARGE_TILT_THRESHOLD = 20
 LARGE_TILT_EXTRA_PADDING = 10
 OVERSCAN_WIDTH = 10
 
-def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName):
+def extract_order(order_num, obj, flat, top_calc, bot_calc, filter_name, slit_name):
     """
     
     filter and slit arguments are required to select filter and slit-specific 
     extraction tuning parameters
     """
-    params = get_extraction_params(filterName, slitName)
+    params = get_extraction_params(filter_name, slit_name)
 
     order = Order.Order(order_num)
     
@@ -39,14 +39,19 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filterName, slitName
     
     # find order edge traces   
     find_edge_traces(tops, bots, order)
+    
     if order.topTrace is None and order.botTrace is None:
         logger.info('could not trace top or bottom of order edge on flat')
         return None
     
     if order.botTrace is not None:
         order.botMeas = order.botTrace[1] 
-
-#     crosscut = np.median(flat, axis=1)
+        
+    if slit_name.endswith('24'):
+        if order.topTrace is not None:
+            order.topTrace -= 6
+        if order.botTrace is not None:
+            order.botTrace += 6
     
     # cut out order from object frame and flat and compute on and off order masks
     cut_out_order(obj, flat, order)
@@ -127,7 +132,7 @@ def cut_out(data, top, bot, padding):
     
     
 def find_edge_traces(tops, bots, order):  
-      
+    
     if order.topMeas is not None:
         logger.debug('tracing top of order')
         order.topTrace = nirspec_lib.trace_order_edge(tops, order.topMeas)
@@ -228,8 +233,6 @@ def find_peak(edges, start, sigma):
        
 def make_top_and_bots(data):
     rolled = np.roll(data, 5, axis=0)
-    
-    
     return rolled - data, data - rolled
 
 

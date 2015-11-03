@@ -3,7 +3,7 @@ import logging
 import os
 import errno
 import numpy as np
-
+from skimage import exposure
 
 import Order
 import ReducedDataSet
@@ -11,13 +11,14 @@ import ReducedDataSet
 logger = logging.getLogger('obj')
 
 subdirs = dict([
-                ('traces.png',      'traces'),
-                ('trace.npy',       'traces'),
-                ('cutouts.png',     'cutouts'),
-                ('obj_cutout.npy',  'cutouts'),
-                ('flat_cutout.npy', 'cutouts'),
-                ('sprect.png',      'sprect'),
-                ('edges.png',       'edges')
+                ('traces.png',          'traces'),
+                ('trace.npy',           'traces'),
+                ('cutouts.png',         'cutouts'),
+                ('obj_cutout.npy',      'cutouts'),
+                ('flat_cutout.npy',     'cutouts'),
+                ('sprect.png',          'sprect'),
+                ('edges.png',           'edges'),
+                ('top_bot_edges.png',   'edges')
                 ])
 
 def gen(reduced, out_dir):
@@ -36,6 +37,8 @@ def gen(reduced, out_dir):
 
     edges_plot(out_dir, reduced.baseName, reduced.topEdgesProfile, reduced.botEdgesProfile,
             reduced.topEdgePeaks, reduced.botEdgePeaks)
+    
+    tops_bots_plot(out_dir, reduced.baseName, reduced.topEdgesImg, reduced.botEdgesImg)
     
     for order in reduced.orders:
         
@@ -101,6 +104,31 @@ def edges_plot(outpath, base_name, top_profile, bot_profile, top_peaks, bot_peak
     pl.savefig(constructFileName(outpath, base_name, None, 'edges.png'))
     pl.close()
     
+def tops_bots_plot(outpath, base_name, tops, bots):
+    
+    pl.figure('edges', facecolor='white', figsize=(8, 5))
+    pl.cla()
+    pl.suptitle('top and bottom order edges, {}'.format(base_name), fontsize=14)
+#     pl.set_cmap('Blues_r')
+    pl.rcParams['ytick.labelsize'] = 8
+
+    obj_plot = pl.subplot(1, 2, 1)
+    obj_plot.imshow(exposure.equalize_hist(tops))
+    obj_plot.set_title('top edges')
+    obj_plot.set_ylim([1023, 0])
+    obj_plot.set_xlim([0, 1023])
+
+    
+    flat_plot = pl.subplot(1, 2, 2)
+    flat_plot.imshow(exposure.equalize_hist(bots))
+    flat_plot.set_title('bottom edges')
+    flat_plot.set_ylim([1023, 0])
+    flat_plot.set_xlim([0, 1023])
+ 
+    pl.tight_layout()
+    pl.savefig(constructFileName(outpath, base_name, None, 'top_bot_edges.png'))
+    pl.close()
+    
 def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
     
     pl.figure('traces', facecolor='white', figsize=(8, 5))
@@ -110,7 +138,7 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
     pl.rcParams['ytick.labelsize'] = 8
 
     obj_plot = pl.subplot(1, 2, 1)
-    obj_plot.imshow(obj, vmin=0, vmax=np.amax(obj) / 2)
+    obj_plot.imshow(exposure.equalize_hist(obj))
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
 
@@ -120,7 +148,7 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
 
     
     flat_plot = pl.subplot(1, 2, 2)
-    flat_plot.imshow(flat, vmin=0, vmax=np.amax(flat) / 2)
+    flat_plot.imshow(exposure.equalize_hist(flat))
     flat_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     flat_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)    
     flat_plot.set_title('flat')
@@ -139,7 +167,7 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace,
     pl.set_cmap('Blues_r')
 
     obj_plot = pl.subplot(2, 1, 1)
-    obj_plot.imshow(obj, vmin=0, vmax=4.0 * np.median(obj))
+    obj_plot.imshow(exposure.equalize_hist(obj))
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)
@@ -148,7 +176,7 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace,
     obj_plot.set_xlim([0, 1023])
     
     flat_plot = pl.subplot(2, 1, 2)
-    flat_plot.imshow(flat, vmin=0, vmax=4.0 * np.median(flat))
+    flat_plot.imshow(exposure.equalize_hist(flat))
     flat_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     flat_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)    
     flat_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)    
@@ -168,13 +196,13 @@ def sprect_plot(outpath, base_name, order_num, obj, flat):
     pl.set_cmap('Blues_r')
 
     obj_plot = pl.subplot(2, 1, 1)
-    obj_plot.imshow(obj, vmin=0, vmax=4.0 * np.median(obj))
+    obj_plot.imshow(exposure.equalize_hist(obj))
     obj_plot.set_title('object')
 #     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
     
     flat_plot = pl.subplot(2, 1, 2)
-    flat_plot.imshow(flat, vmin=0, vmax=4.0 * np.median(flat))
+    flat_plot.imshow(exposure.equalize_hist(flat))
     flat_plot.set_title('flat')
 #     flat_plot.set_ylim([1023, 0])
     flat_plot.set_xlim([0, 1023])
