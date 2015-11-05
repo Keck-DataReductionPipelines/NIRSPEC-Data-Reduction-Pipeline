@@ -52,7 +52,24 @@ def trace_edge(data, start, searchWidth, bgWidth, jumpThresh):
     
         trace[i] = scipy.ndimage.measurements.center_of_mass(
                 data[int(ymin):int(ymax) + 1, i] - bgMean)[0] + ymin
+                
+#         import pylab as pl
+#         x0 = max(0, int(trace[i - 1]) - 50)
+#         x1 = min(1023, int(trace[i-1]) + 50)
+#         pl.figure()
+#         pl.cla()
+#         pl.plot(np.arange(x0, x1), data[x0:x1, i])
+#         pl.plot([trace[i], trace[i]], pl.ylim())
+
         
+#         pl.plot(data[x0:x1, i], 'ro')
+#         pl.plot(data[int(ymin):int(ymax) + 1, i] - bgMean, 'go')
+#         pl.plot([trace[i], trace[i]], [0, pl.ylim()[0]], 'g-')
+#         print(trace[max(0, i-10):i])
+        
+ 
+#         pl.show()
+
         if trace[i] is np.inf or trace[i] is -np.inf:  
             # went off array
             print('went off array')

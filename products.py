@@ -155,38 +155,30 @@ def gen(reduced, out_dir):
             order.botSkyWindow, order.topBgMean, order.botBgMean)
          
         profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
-#         
-#         profileFitsTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
-#         file_count += 1
+         
+        profileFitsTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
 
         spectrumPlot(out_dir, reduced.baseName, 'flux', order.orderNum, 
             'counts', order.objSpec, order.wavelengthScaleMeas)
-#         
-#         fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
-#             'counts', order.objSpec, order.wavelengthScaleMeas)
-#         file_count += 1
+         
+        fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
+            'counts', order.objSpec, order.wavelengthScaleMeas)
 
-#         
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.wavelengthScaleMeas)
         
         skyLinesPlot(out_dir, reduced.baseName, order)
         skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
-#         
-#         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
-#             'counts', order.skySpec, order.wavelengthScaleMeas)
-#         file_count += 1
+        fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
+            'counts', order.skySpec, order.wavelengthScaleMeas)
 
-#         
         spectrumPlot(out_dir, reduced.baseName, 'noise', order.orderNum, 
             'counts', order.noiseSpec, order.wavelengthScaleMeas)
-
-#         
-#         fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
-#             'counts', order.noiseSpec, order.wavelengthScaleMeas)
-
          
+        fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
+            'counts', order.noiseSpec, order.wavelengthScaleMeas)
+
         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
 

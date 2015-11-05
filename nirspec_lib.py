@@ -56,30 +56,54 @@ ORDER_EDGE_BG_WIDTH = 30
 ORDER_EDGE_JUMP_THRESH = 1.9
 ORDER_EDGE_JUMP_LIMIT = 200
 
-# ORDER_EDGE_SEARCH_WIDTH = 3
-# ORDER_EDGE_BG_WIDTH = 30
-# ORDER_EDGE_JUMP_THRESH = 5.0
-# ORDER_EDGE_JUMP_LIMIT = 200
+# LS_ORDER_EDGE_SEARCH_WIDTH = 10
+# LS_ORDER_EDGE_BG_WIDTH = 30
+# LS_ORDER_EDGE_JUMP_THRESH = 1.9
+# LS_ORDER_EDGE_JUMP_LIMIT = 200
 
-def trace_order_edge(data, start):
+def trace_order_edge(data, start, slit_name):
         
+#     if slit_name.endswith('24'):
+#         logger.debug('using long slit edge trace parameters')
+#         trace, nJumps =  tracer.trace_edge(
+#                 data, start, LS_ORDER_EDGE_SEARCH_WIDTH, LS_ORDER_EDGE_BG_WIDTH, 
+#                 LS_ORDER_EDGE_JUMP_THRESH)
     trace, nJumps =  tracer.trace_edge(
             data, start, ORDER_EDGE_SEARCH_WIDTH, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)
+    
     if trace is None:
         logger.warning('trace failed')
         return None
     
+    x = np.arange(len(trace))
+    coeffs = np.polyfit(x, trace, 1)
+    print(coeffs)
+    y_fit = np.polyval(coeffs, x)
+    res1 = trace - y_fit
+    stdev1 = np.std(res1)
+    print('{}'.format(stdev1))
+         
 #     import pylab as pl
 #     pl.figure()
 #     pl.cla()
-#     pl.plot(trace, 'ko')
+#     pl.plot(trace)
 #     pl.show()
     
-    if nJumps > ORDER_EDGE_JUMP_LIMIT:
-        logger.warning('order edge trace jump limit exceeded: n jumps=' + 
-                str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
-        return None
-    return trace
+    if slit_name.endswith('24'):
+
+        if abs(coeffs[0]) < 1e-2:
+            logger.warning('long slit edge criteria not met')
+            return None
+        else:
+            return trace
+    else:
+    
+        if nJumps > ORDER_EDGE_JUMP_LIMIT:
+            logger.warning('order edge trace jump limit exceeded: n jumps=' + 
+                    str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
+            return None
+        else:
+            return trace
     
 SKY_LINE_SEARCH_WIDTH = 3
 SKY_LINE_BG_WIDTH = 0
@@ -124,10 +148,6 @@ def smooth_spatial_trace(y_raw):
     y_fit = np.polyval(coeffs, x)
     res2 = y_raw - y_fit
     stdev2 = np.std(res2)
-    
-    #pl.figure()
-    #pl.plot(np.absolute(res1), "r-")
-    #pl.plot(np.absolute(res2), "b-")
  
     return y_fit, mask
 
@@ -137,12 +157,19 @@ MIN_LINE_SEPARATION = 5
 
 def find_spectral_trace(data, padding):
     
+#     import pylab as pl
+#     pl.figure()
+#     pl.cla()
+#     pl.imshow(data)
+#     pl.show()
+    
     # transpose the array because spectroid can only read horizontal peaks for now
     npsts = data.transpose()
 
     # The order cutout has padding on each side. In order to find the sky lines we should 
     # only look at the central section of the cut out array
-    npsts = npsts[:, padding + 5:npsts.shape[1] - 5 - padding]
+#     npsts = npsts[:, padding + 5:npsts.shape[1] - 5 - padding]
+    npsts = npsts[:, 5:npsts.shape[1] - 5]
     cc = np.sum(npsts[:, 0:5], axis=1)
     locpeaks = argrelextrema(cc, np.greater)     
     locmaxes = np.where(cc[locpeaks[0]] > SKY_SIGMA * cc.mean())

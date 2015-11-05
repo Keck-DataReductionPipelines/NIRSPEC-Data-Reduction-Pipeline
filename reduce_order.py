@@ -64,12 +64,12 @@ def reduce_order(order):
     # find spatial profile and peak
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
     order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
-    logger.info('peak intensity row {:d}'.format(order.peakLocation))
+    logger.info('peak profile intensity row {:d}'.format(order.peakLocation))
     p0 = order.peakLocation - (config.params['obj_window_width'] / 2)
     p1 = order.peakLocation + (config.params['obj_window_width'] / 2)
     order.centroid = (scipy.ndimage.measurements.center_of_mass(
             order.spatialProfile[p0:p1]))[0] + p0 
-    logger.info('centroid row {:.1f}'.format(float(order.centroid)))
+    logger.info('profile peak centroid row {:.1f}'.format(float(order.centroid)))
     
     
     # find and smooth spectral trace
@@ -102,7 +102,8 @@ def reduce_order(order):
     logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
     logger.info('top background window separation = {}'.format(str(order.topSkyWindow[0] - order.objWindow[-1])))
     logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
-    logger.info('bottom background window separation = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
+    if len(order.botSkyWindow) > 0:
+        logger.info('bottom background window separation = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
     
     order.objSpec, order.skySpec, order.noiseSpec, order.topBgMean, order.botBgMean = \
             image_lib.extract_spectra(
@@ -145,7 +146,8 @@ def reduce_order(order):
             line.centroid = p0 + scipy.ndimage.center_of_mass(order.skySpec[p0:p1])[0]
             
             if abs(line.centroid - line.col) > 1:
-                logger.error('centroid error {} {}'.format(line.col, line.centroid))
+                logger.warning('sky line centroid error, col = {}, centroid = {:.3f}'.format(
+                        line.col, line.centroid))
                 line.centroid = line.col                
             
             order.lines.append(line)
@@ -160,7 +162,7 @@ def reduce_order(order):
             (order.perOrderSlope, order.perOrderIntercept, order.perOrderCorrCoeff, p, e) = \
                     scipy.stats.linregress(np.array(measured), np.array(accepted))  
                     
-            logger.info('per order wavelength fit: n={}, a={:.6f}, b={:.6f}, r={:.6f}'.format(
+            logger.info('per order wavelength fit: n = {}, a = {:.6f}, b = {:.6f}, r = {:.6f}'.format(
                     len(order.lines), order.perOrderIntercept, order.perOrderSlope, 
                     order.perOrderCorrCoeff))
 

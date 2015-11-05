@@ -110,7 +110,7 @@ def init(in_dir, out_dir):
     sh.setFormatter(sformatter)
     logger.addHandler(sh)
     
-    logger.info('start')
+    logger.info('start nirspec drp')
     logger.info('cwd: {}'.format(os.getcwd()))
     logger.info('input dir: {}'.format(in_dir.rstrip('/')))
     logger.info('output dir: {}'.format(out_dir.rstrip('/')))

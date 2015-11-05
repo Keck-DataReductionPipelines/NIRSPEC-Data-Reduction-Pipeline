@@ -598,7 +598,7 @@ def twodfit(dataX, dataY, dataZ):
     if len(dataX) < MIN_N_LINES:
         logger.warning('not enough lines to compute wavelength solution, n = {}, min = {}'.format(
                 str(len(dataX)), str(MIN_N_LINES)))
-        return None, None, None
+        return None, None, None, None
 
     testing = False
 

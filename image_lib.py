@@ -185,35 +185,27 @@ def extract_spectra(obj, noise, obj_range, sky_range_top, sky_range_bot):
     """
     """
     
-#     obj_sum = np.sum(obj[peak - i, :] for i in obj_range)
-#     sky_top_sum = np.sum(obj[peak + i, :] for i in sky_range_top)
-#     sky_bot_sum = np.sum(obj[peak + i, :] for i in sky_range_bot)
-    
     obj_sum = np.sum(obj[i, :] for i in obj_range)
+    
     sky_top_sum = np.sum(obj[i, :] for i in sky_range_top)
     sky_bot_sum = np.sum(obj[i, :] for i in sky_range_bot)
     
-    top_bg_mean = (sky_top_sum / len(sky_range_top)).mean()
-    bot_bg_mean = (sky_bot_sum / len(sky_range_bot)).mean()
+    if len(sky_range_top) > 0:
+        top_bg_mean = (sky_top_sum / len(sky_range_top)).mean()
+    else:
+        top_bg_mean = None
+    if len(sky_range_bot) > 0:
+        bot_bg_mean = (sky_bot_sum / len(sky_range_bot)).mean()
+    else:
+        bot_bg_mean = None
     
     sky_mean = (sky_top_sum + sky_bot_sum) / (len(sky_range_top) + len(sky_range_bot))
+
 #     sky_mean -= np.median(sky_mean) 
 
     obj_sp = obj_sum - (len(obj_range) * sky_mean)
-    
-#     import pylab as pl
-#     pl.figure()
-#     pl.cla()
-#     pl.plot((obj_sum / len(obj_range)) - np.median(obj_sum / len(obj_range)), 'r-', mfc='none')
-#     pl.plot(sky_mean, 'b-', mfc='none')
-# #     pl.plot(sky_bot_sum, 'g-', mfc='none')
-#     pl.show()
 
     sky_sp = sky_mean - sky_mean.mean() # why this?
-    
-#     obj_noise_sum = np.sum(noise[peak - i, :] for i in obj_range)
-#     sky_noise_top_sum = np.sum(noise[peak + i, :] for i in sky_range_top)
-#     sky_noise_bot_sum = np.sum(noise[peak + i, :] for i in sky_range_bot)
     
     obj_noise_sum = np.sum(noise[i, :] for i in obj_range)
     sky_noise_top_sum = np.sum(noise[i, :] for i in sky_range_top)

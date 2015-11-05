@@ -130,7 +130,7 @@ def solve(order, filtername, slit, echlpos, disppos, dateobs):
 
 def is_on_detector(left_top_row, left_bot_row):
     padding = 20.0
-    if left_top_row < (1024 - padding) and left_bot_row > padding:
+    if left_top_row < (1024 - padding) and left_bot_row > 0:
         return True
     else:
         return False
