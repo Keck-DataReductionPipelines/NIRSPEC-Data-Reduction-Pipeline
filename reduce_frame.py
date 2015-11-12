@@ -11,6 +11,7 @@ import extract_order
 import reduce_order
 import nirspec_constants as constants
 import wavelength_utils
+from logging import INFO
 
 logger = logging.getLogger('obj')
 main_logger = logging.getLogger('main')
@@ -154,17 +155,13 @@ def reduce_orders(reduced):
                         
         # end if order is on the detector
     # end for each order
-    
-    msg = '{} orders on the detector'.format(n_orders_on_detector)
-    logger.info(msg)
-    main_logger.info(msg)
-    msg = '{} orders reduced'.format(len(reduced.orders))
-    logger.info(msg)
-    main_logger.info(msg)
 
-    logger.info('end of frame reduction')
-
+    for l in ['main', 'obj']:
+        logging.getLogger(l).log(INFO, '{} orders on the detector'.format(n_orders_on_detector))
+        logging.getLogger(l).log(INFO, '{} orders reduced'.format(len(reduced.orders)))
+        
     return
+    
             
 def find_order_edge_peaks(reduced):
     
@@ -353,14 +350,16 @@ def process_darks_and_flats(raw, reduced):
     logger.info(str(len(raw.flatFileNames)) + ' flats: ' + 
             ', '.join(str(x) for x in  ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
     reduced.flat = raw.combineFlats()
-    logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
+    if len(raw.flatFileNames) > 1:
+        logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
 
     if len(raw.darkFileNames) > 0:
         reduced.hasDark = True
         logger.info(str(len(raw.darkFileNames)) + ' darks: ' + 
             ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.darkFileNames])))
         reduced.dark = raw.combineDarks()
-        logger.info(str(len(raw.darkFileNames)) + ' darks have been median combined')
+        if len(raw.darkFileNames) > 1:
+            logger.info(str(len(raw.darkFileNames)) + ' darks have been median combined')
     else:
         logger.info('no darks')
 

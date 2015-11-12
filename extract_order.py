@@ -170,8 +170,9 @@ def determine_edge_locations(tops, bots, order, sigma, thresh):
     
     if order.topMeas is None or abs(order.topMeas - order.topCalc) > thresh:
         logger.info('reducing edge detection threshold')
-        order.topMeas = find_peak(tops, order.topCalc, sigma / 2)
-        
+#         order.topMeas = find_peak(tops, order.topCalc, sigma / 2)
+        order.topMeas = find_peak(tops, order.topCalc, 0)
+
     if order.topMeas is not None:
         if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (2 * thresh)):
             s = 'top edge too far off: meas={:.0f}, diff={:.0f}, thresh={:.0f}'.format(
@@ -184,8 +185,10 @@ def determine_edge_locations(tops, bots, order, sigma, thresh):
     order.botMeas = find_peak(bots, order.botCalc, sigma)
     
     if order.botMeas is None or abs(order.botMeas - order.botCalc) > thresh:
+        logger.info('reducing edge detection threshold')
         order.botMeas = find_peak(bots, order.botCalc, sigma / 2) 
-        
+        order.botMeas = find_peak(bots, order.botCalc, 0) 
+
     if order.botMeas is not None:
         if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (2 * thresh)):
             s = 'bottom edge too far off: meas={:.0f}, diff={:.0f}, thresh={:.0f}'.format(

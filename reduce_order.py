@@ -65,8 +65,8 @@ def reduce_order(order):
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
     order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
     logger.info('peak profile intensity row {:d}'.format(order.peakLocation))
-    p0 = order.peakLocation - (config.params['obj_window_width'] / 2)
-    p1 = order.peakLocation + (config.params['obj_window_width'] / 2)
+    p0 = order.peakLocation - (config.params['obj_window'] / 2)
+    p1 = order.peakLocation + (config.params['obj_window'] / 2)
     order.centroid = (scipy.ndimage.measurements.center_of_mass(
             order.spatialProfile[p0:p1]))[0] + p0 
     logger.info('profile peak centroid row {:.1f}'.format(float(order.centroid)))
@@ -95,8 +95,7 @@ def reduce_order(order):
     # extract spectra
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \
         image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation,
-        config.params['obj_window_width'], config.params['sky_window_width'], 
-        config.params['sky_dist'])
+        config.params['obj_window'], config.params['sky_window'], config.params['sky_separation'])
         
     logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
     logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))

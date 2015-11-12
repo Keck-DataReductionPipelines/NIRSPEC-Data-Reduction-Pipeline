@@ -7,6 +7,7 @@ from skimage import exposure
 
 import Order
 import ReducedDataSet
+import config
 
 logger = logging.getLogger('obj')
 
@@ -46,14 +47,16 @@ def gen(reduced, out_dir):
                 order.topTrace, order.botTrace)
         
         # save smooted trace cutout to numpy text file
-        fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'trace.npy')
-        np.savetxt(fn, order.smoothedTrace)
+        if config.params['npy'] is True:
+            fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'trace.npy')
+            np.savetxt(fn, order.smoothedTrace)
         
         # save obj and flat cutouts to numpy text files
-        fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
-        np.savetxt(fn, order.objCutout)
-        fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
-        np.savetxt(fn, order.flatCutout)
+        if config.params['npy'] is True:
+            fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
+            np.savetxt(fn, order.objCutout)
+            fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
+            np.savetxt(fn, order.flatCutout)
         
         if order.lowestPoint > order.padding:
             cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 

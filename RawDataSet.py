@@ -38,6 +38,10 @@ class RawDataSet:
     def combineFlats(self):
         """
         """
+        if len(self.flatFileNames) == 0:
+            return None
+        if len(self.flatFileNames) == 1:
+            return(fits.getdata(self.flatFileNames[0]))
         flat_data_list = []
         for filename in self.flatFileNames:
             flat_data_list.append(fits.getdata(filename))   
@@ -46,6 +50,10 @@ class RawDataSet:
     def combineDarks(self):       
         """
         """
+        if len(self.darkFileNames) == 0:
+            return None
+        if len(self.darkFileNames) == 1:
+            return(fits.getdata(self.darkFileNames[0]))
         if len(self.darkFileNames) > 0:
             dark_data_list = []
             for filename in self.darkFileNames:

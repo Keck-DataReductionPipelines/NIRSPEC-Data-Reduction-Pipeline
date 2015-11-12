@@ -3,10 +3,7 @@ from scipy.signal._peak_finding import argrelextrema
 
 import logging
 
-import nirspec_constants as constants
-import image_lib
 import tracer
-from __builtin__ import False
 
 logger = logging.getLogger('obj')
       
@@ -19,15 +16,6 @@ def calc_noise_img(obj, flat, integration_time):
     G = 5.8     
     RN = 23.0
     DC = 0.8
-
-#     # normalize flat
-#     flat_n = image_lib.normalize(flat, on_order, off_order)
-#     
-#     # rectify obj and flat
-#     obj_r = image_lib.rectify_spatial(obj, spatial_curve)
-#     obj_r = image_lib.rectify_spectral(obj_r, spectral_curve)
-#     flat_r = image_lib.rectify_spatial(flat_n, spatial_curve)
-#     flat_r = image_lib.rectify_spectral(flat_r, spectral_curve)
     
     # calculate photon noise
     noise = obj / G
@@ -42,13 +30,6 @@ def calc_noise_img(obj, flat, integration_time):
     noise /= np.square(flat)
     
     return noise
-    
-
-#     pl.figure("")
-#     pl.plot(curve, "r", label="curve")
-#     pl.plot(curve_p, "b", label="curve_p")
-#     pl.legend(loc='best', prop={'size': 8})
-#     pl.show()
 
 
 ORDER_EDGE_SEARCH_WIDTH = 10
@@ -56,18 +37,8 @@ ORDER_EDGE_BG_WIDTH = 30
 ORDER_EDGE_JUMP_THRESH = 1.9
 ORDER_EDGE_JUMP_LIMIT = 200
 
-# LS_ORDER_EDGE_SEARCH_WIDTH = 10
-# LS_ORDER_EDGE_BG_WIDTH = 30
-# LS_ORDER_EDGE_JUMP_THRESH = 1.9
-# LS_ORDER_EDGE_JUMP_LIMIT = 200
-
 def trace_order_edge(data, start, slit_name):
         
-#     if slit_name.endswith('24'):
-#         logger.debug('using long slit edge trace parameters')
-#         trace, nJumps =  tracer.trace_edge(
-#                 data, start, LS_ORDER_EDGE_SEARCH_WIDTH, LS_ORDER_EDGE_BG_WIDTH, 
-#                 LS_ORDER_EDGE_JUMP_THRESH)
     trace, nJumps =  tracer.trace_edge(
             data, start, ORDER_EDGE_SEARCH_WIDTH, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)
     
@@ -75,35 +46,35 @@ def trace_order_edge(data, start, slit_name):
         logger.warning('trace failed')
         return None
     
-    x = np.arange(len(trace))
-    coeffs = np.polyfit(x, trace, 1)
-    print(coeffs)
-    y_fit = np.polyval(coeffs, x)
-    res1 = trace - y_fit
-    stdev1 = np.std(res1)
-    print('{}'.format(stdev1))
-         
-#     import pylab as pl
-#     pl.figure()
-#     pl.cla()
-#     pl.plot(trace)
-#     pl.show()
-    
     if slit_name.endswith('24'):
+        x = np.arange(len(trace))
+        coeffs = np.polyfit(x, trace, 1)
+        y_fit = np.polyval(coeffs, x)
+        res1 = trace - y_fit
+#         stdev1 = np.std(res1)
 
         if abs(coeffs[0]) < 1e-2:
             logger.warning('long slit edge criteria not met')
             return None
         else:
             return trace
-    else:
     
-        if nJumps > ORDER_EDGE_JUMP_LIMIT:
-            logger.warning('order edge trace jump limit exceeded: n jumps=' + 
-                    str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
-            return None
-        else:
-            return trace
+    if nJumps > ORDER_EDGE_JUMP_LIMIT:
+        
+            logger.debug('order edge trace jump limit exceeded')
+            logger.debug('reducing search width to {}'.format(ORDER_EDGE_SEARCH_WIDTH / 1.5))
+            trace, nJumps =  tracer.trace_edge(
+            data, start, ORDER_EDGE_SEARCH_WIDTH / 2, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)
+            
+            if trace is None:
+                logger.warning('trace failed')
+                return None
+            
+            if nJumps > ORDER_EDGE_JUMP_LIMIT:
+                    logger.warning('order edge trace jump limit exceeded: n jumps=' + 
+                            str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
+                    return None
+    return trace
     
 SKY_LINE_SEARCH_WIDTH = 3
 SKY_LINE_BG_WIDTH = 0
@@ -156,12 +127,6 @@ EXTRA_PADDING = 5
 MIN_LINE_SEPARATION = 5
 
 def find_spectral_trace(data, padding):
-    
-#     import pylab as pl
-#     pl.figure()
-#     pl.cla()
-#     pl.imshow(data)
-#     pl.show()
     
     # transpose the array because spectroid can only read horizontal peaks for now
     npsts = data.transpose()

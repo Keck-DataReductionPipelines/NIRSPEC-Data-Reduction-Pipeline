@@ -150,16 +150,19 @@ def main():
     parser.add_argument('-dgn', 
             help='enables storage of diagnostic data products',
             action='store_true')
+    parser.add_argument('-npy', 
+            help='enables generation of numpy text files for certain diagnostic data products',
+            action='store_true')
     parser.add_argument('-cosmic', help='inhibits cosmic ray artifact rejection', 
             action='store_false')
     parser.add_argument('-products', help='inhibits data product generation', 
             action='store_false')
 #     , default=config.DEFAULT_COSMIC)
-    parser.add_argument('-obj_window_width', help='object extraction window width in pixels')
+    parser.add_argument('-obj_window', help='object extraction window width in pixels')
     #default=config.DEFAULT_OBJ_WINDOW)
-    parser.add_argument('-sky_window_width', help='background extraction window width in pixels')
+    parser.add_argument('-sky_window', help='background extraction window width in pixels')
     #default=config.DEFAULT_SKY_WINDOW)
-    parser.add_argument('-sky_dist', help='distance be object and sky windows in pixels')
+    parser.add_argument('-sky_separation', help='separation between object and sky windows in pixels')
     #default=config.DEFAULT_SKY_DIST)
     parser.add_argument('-oh_filename', help='path and filename of OH emission line catalog file')
     parser.add_argument('-int_c', help='revert to using integer column values in wavelength fit',
@@ -167,14 +170,15 @@ def main():
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['dgn'] = args.dgn
+    config.params['npy'] = args.npy
     config.params['cosmic'] = args.cosmic
     config.params['products'] = args.products
-    if args.obj_window_width is not None:
-        config.params['obj_window_width'] = int(args.obj_window_width)
-    if args.sky_window_width is not None:
-        config.params['sky_window_width'] = int(args.sky_window_width)
-    if args.sky_dist is not None:
-        config.params['sky_dist_width'] = int(args.sky_dist)
+    if args.obj_window is not None:
+        config.params['obj_window'] = int(args.obj_window_width)
+    if args.sky_window is not None:
+        config.params['sky_window'] = int(args.sky_window_width)
+    if args.sky_separation is not None:
+        config.params['sky_separation'] = int(args.sky_separation)
     if args.oh_filename is not None:
         config.params['oh_filename'] = args.oh_filename
     config.params['int_c'] = args.int_c

@@ -97,7 +97,7 @@ def gen(reduced, out_dir):
         for line in order.lines:
             if line.usedInGlobalFit:
                 order_num.append(order.orderNum)
-                col.append(line.col)
+                col.append(line.centroid)
                 source.append('sky')
                 wave_exp.append(line.acceptedWavelength)
                 wave_fit.append(line.globalFitWavelength)
@@ -522,7 +522,7 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     
     names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
     units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
-    formats = [ 'd', '', 'd', '.6e', '.6e', '.3f', 'd', '.3e']
+    formats = [ 'd', '', '.3f', '.6e', '.6e', '.3f', 'd', '.3e']
     nominal_width = 10
     widths = []
     
@@ -534,7 +534,7 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
        
     widths[0] = 6 
     widths[1] = 6
-    widths[2] = 6
+    widths[2] = 8
     widths[3] = 13
     widths[4] = 13
     widths[5] = 9
@@ -578,7 +578,7 @@ def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, centroid, so
     
     names = ['order', 'source', 'col', 'centroid', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
     units = ['', '', 'pixels', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
-    formats = [ 'd', '', 'd', '.3e', '.6e', '.6e', '.3f', 'd', '.3e']
+    formats = [ 'd', '', 'd', '.3f', '.6e', '.6e', '.3f', 'd', '.3e']
     nominal_width = 10
     widths = []
     
