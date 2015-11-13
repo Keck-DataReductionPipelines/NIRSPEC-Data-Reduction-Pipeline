@@ -29,7 +29,7 @@ def reduce_frame(raw, out_dir):
     # if no flats in raw data set then fail
     if (len(raw.flatFileNames) < 1):
         logger.error("no flats")
-        raise StandardError('no flats');
+        raise DrpException.DrpException('no flats');
     
     # create reduced data set
     reduced = ReducedDataSet.ReducedDataSet(raw.getObjFileName(), raw.getObjHeader())
@@ -312,14 +312,15 @@ def init(objFileName, out_dir):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     
-    if config.params['debug']:
-        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
-    else:
-        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(sformatter)
-    logger.addHandler(sh) 
+    if config.params['verbose'] is True:
+        if config.params['debug']:
+            sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+        else:
+            sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+        sh = logging.StreamHandler()
+        sh.setLevel(logging.DEBUG)
+        sh.setFormatter(sformatter)
+        logger.addHandler(sh) 
     
     # if output directory does not exist try to create it
     if not os.path.exists(out_dir):

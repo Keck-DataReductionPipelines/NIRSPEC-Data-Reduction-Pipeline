@@ -14,7 +14,7 @@ import DrpException
 cosmic_clean = True
 config_params = {}
 
-def nirspec_drp(in_dir, out_dir):
+def nirspec_drp(in_dir, base_out_dir):
     """
     NIRSPEC DRP. Assembles raw data sets from FITS files in the input directory,
     then generates reduced data sets from raw data sets.  Level 1 data products
@@ -31,9 +31,21 @@ def nirspec_drp(in_dir, out_dir):
     # process each raw data set
     
     for rawDataSet in rawDataSets:
-        
-        try:
+
+        if config.params['subdirs'] is True:
+            fn = rawDataSet.objFileName
+            out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:fn.rfind('.')]
+            if not os.path.exists(out_dir):
+                try: 
+                    os.mkdir(out_dir)
+                except: 
+                    msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
+                    # logger.critical(msg) can't create log if no output directory
+                    raise IOError(msg)
+        else:
+            out_dir = base_out_dir
             
+        try:
             # generate reduced data set by reducing raw data set
             reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
             
@@ -48,7 +60,7 @@ def nirspec_drp(in_dir, out_dir):
                 logger.info('diagnostic mode enabled, generating diagnostic data products')
                 dgn.gen(reducedDataSet, out_dir)
                 
-        except DrpException as e:
+        except DrpException.DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
                     rawDataSet.objFileName, e.message))
@@ -105,10 +117,11 @@ def init(in_dir, out_dir):
     else:   
         sformatter = logging.Formatter('%(asctime)s %(levelname)s -  %(message)s')
 
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(sformatter)
-    logger.addHandler(sh)
+    if config.params['verbose'] is True:
+        sh = logging.StreamHandler()
+        sh.setLevel(logging.DEBUG)
+        sh.setFormatter(sformatter)
+        logger.addHandler(sh)
     
     logger.info('start nirspec drp')
     logger.info('cwd: {}'.format(os.getcwd()))
@@ -147,6 +160,12 @@ def main():
     parser.add_argument('-debug', 
             help='enables additional logging for debugging', 
             action='store_true')
+    parser.add_argument('-verbose', 
+            help='enables output of all log messages to stdout',
+            action='store_true')
+    parser.add_argument('-subdirs',
+            help='enables creation of per object frame subdirectories for data products',
+            action='store_true')
     parser.add_argument('-dgn', 
             help='enables storage of diagnostic data products',
             action='store_true')
@@ -169,6 +188,8 @@ def main():
             action='store_true')
     args = parser.parse_args()
     config.params['debug'] = args.debug
+    config.params['verbose'] = args.verbose
+    config.params['subdirs'] = args.subdirs
     config.params['dgn'] = args.dgn
     config.params['npy'] = args.npy
     config.params['cosmic'] = args.cosmic

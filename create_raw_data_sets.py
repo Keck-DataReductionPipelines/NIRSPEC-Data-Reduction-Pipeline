@@ -4,7 +4,10 @@ import logging
 from astropy.io import fits
 
 import RawDataSet
+import nirspec_constants as constants
+
 from __builtin__ import False
+
 
 def create(in_dir):
     """
@@ -28,8 +31,7 @@ def create(in_dir):
     rawDataSets = []
 
     for filename, header in headers.items():
-        if (header['IMAGETYP'] == 'object'):
-            if (header['DISPERS'].lower() == 'high'):
+            if obj_criteria_met(header):
                 rawDataSets.append(RawDataSet.RawDataSet(filename, header))
             else:
                 logger.info('{} is in low dispersion mode, not reduced'.format(
@@ -78,7 +80,17 @@ def get_headers(in_dir):
 
     return headers
 
-
+def obj_criteria_met(header):
+    if header['IMAGETYP'].lower() != 'object':
+        return False
+    if header['DISPERS'].lower() != 'high':
+        return False
+    if header['NAXIS1'] != constants.N_COLS:
+        return False
+    if header['NAXIS2'] != constants.N_ROWS:
+        return False
+    return True
+    
 def flat_criteria_met(obj_header, flat_header):
     eq_kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers']
     for kwd in eq_kwds:

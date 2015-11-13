@@ -602,7 +602,8 @@ def twodfit(dataX, dataY, dataZ):
 
     testing = False
 
-    newoh = 9999
+#     newoh = 9999
+    newoh = None
 
     dataXX, dataYY = scipy.meshgrid(dataX, dataY)
 
@@ -754,11 +755,13 @@ def twodfit(dataX, dataY, dataZ):
 
     #ax2.plot(__residual(p1, dataZ_new_forplot, dataX_new_forplot, dataY_new_forplot), 'ko-')
     
-    logger.info('wavelength calibration rms fit residual = ' + str(round(sigma, 3)))
-    #logger.info('sigma='+str(sigma))
 
-#     logger.info('final wavelength solution = '+str(p1[0])+' + '+str(p1[1])+' * pixel + '+str(p1[2])+'* pixel ** 2 +'+\
-#                 str(p1[3])+' * (1/order) + '+str(p1[4])+" * pixel * (1/order) * " + str(p1[5])+" * (pixel ** 2) * (1/order)")
+    if sigma >= 100.0:
+        logger.warning('wavelength calibration failed, fit residual too large')
+        return None, None, None, None
+
+    logger.info('wavelength calibration rms fit residual = ' + str(round(sigma, 3)))
+
 
     logger.info('wavelength eq coefficients: ' + ', '.join('{:.2E}'.format(k) for k in p1))
     

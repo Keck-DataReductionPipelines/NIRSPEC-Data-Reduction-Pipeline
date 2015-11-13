@@ -10,4 +10,6 @@ params['oh_filename']           = './ir_ohlines.dat'
 params['int_c']                 = False
 params['dgn']                   = False
 params['npy']                   = False
+params['verbose']               = False
+params['subdirs']               = False
 
