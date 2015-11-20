@@ -64,12 +64,12 @@ def reduce_order(order):
     # find spatial profile and peak
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
     order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
-    logger.info('peak profile intensity row {:d}'.format(order.peakLocation))
+    logger.info('spatial profile peak intensity row {:d}'.format(order.peakLocation))
     p0 = order.peakLocation - (config.params['obj_window'] / 2)
     p1 = order.peakLocation + (config.params['obj_window'] / 2)
     order.centroid = (scipy.ndimage.measurements.center_of_mass(
             order.spatialProfile[p0:p1]))[0] + p0 
-    logger.info('profile peak centroid row {:.1f}'.format(float(order.centroid)))
+    logger.info('spatial profile peak centroid row {:.1f}'.format(float(order.centroid)))
     
     
     # find and smooth spectral trace
@@ -99,14 +99,17 @@ def reduce_order(order):
         
     logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
     logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
-    logger.info('top background window separation = {}'.format(str(order.topSkyWindow[0] - order.objWindow[-1])))
+    if len(order.topSkyWindow) > 0:
+        logger.info('top background window separation = {}'.format(
+                str(order.topSkyWindow[0] - order.objWindow[-1])))
     logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
     if len(order.botSkyWindow) > 0:
-        logger.info('bottom background window separation = {}'.format(str(order.objWindow[0] - order.botSkyWindow[-1])))
+        logger.info('bottom background window separation = {}'.format(
+                str(order.objWindow[0] - order.botSkyWindow[-1])))
     
-    order.objSpec, order.skySpec, order.noiseSpec, order.topBgMean, order.botBgMean = \
-            image_lib.extract_spectra(
-                order.flattenedObjImg, order.noiseImg, 
+    order.objSpec, order.flatSpec, order.skySpec, order.noiseSpec, order.topBgMean, \
+            order.botBgMean = image_lib.extract_spectra(
+                order.flattenedObjImg, order.normalizedFlatImg, order.noiseImg, 
                 order.objWindow, order.topSkyWindow, order.botSkyWindow)
     
     # find and identify sky lines   

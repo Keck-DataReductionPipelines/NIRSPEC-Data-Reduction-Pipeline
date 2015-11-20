@@ -10,6 +10,8 @@ class ReducedDataSet:
         self.header = header
        
         self.hasDark = False
+        self.darkKOAId = None
+        self.flatKOAIds = []
         self.darkSubtracted = False
         self.cosmicCleaned = False;
         

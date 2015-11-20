@@ -169,7 +169,7 @@ def determine_edge_locations(tops, bots, order, sigma, thresh):
     order.topMeas = find_peak(tops, order.topCalc, sigma)
     
     if order.topMeas is None or abs(order.topMeas - order.topCalc) > thresh:
-        logger.info('reducing edge detection threshold')
+        logger.debug('reducing edge detection threshold')
 #         order.topMeas = find_peak(tops, order.topCalc, sigma / 2)
         order.topMeas = find_peak(tops, order.topCalc, 0)
 

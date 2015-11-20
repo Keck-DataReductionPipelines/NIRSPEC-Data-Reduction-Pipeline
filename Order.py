@@ -80,6 +80,7 @@ class Order:
         self.botBgMean = None
         
         self.objSpec = []
+        self.flatSpec = []
         self.noiseSpec = []
         self.skySpec = []
         self.synthesizedSkySpec = []

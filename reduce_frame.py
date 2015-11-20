@@ -18,9 +18,8 @@ main_logger = logging.getLogger('main')
 
 def reduce_frame(raw, out_dir):
     """
-    
     raw - RawDataSet object
-    out_dir - 
+    out_dir - data product root directory
     """
          
     # initialize per-object logger and check output directory
@@ -33,6 +32,16 @@ def reduce_frame(raw, out_dir):
     
     # create reduced data set
     reduced = ReducedDataSet.ReducedDataSet(raw.getObjFileName(), raw.getObjHeader())
+    
+    # save KOA IDs of first dark (if any) and flat(s), these are added
+    # to FITS headers later.
+    if len(raw.darkFileNames) > 0:
+        reduced.darkKOAId = raw.darkFileNames[0]
+    else:
+        reduced.darkKOAId = 'none'
+        
+    for flat_name in raw.flatFileNames:
+        reduced.flatKOAIds.append(flat_name[flat_name.rfind('/') + 1:flat_name.rfind('.')])
     
     # put object summary info into per-object log
     log_start_summary(reduced)

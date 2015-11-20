@@ -89,6 +89,8 @@ def obj_criteria_met(header):
         return False
     if header['NAXIS2'] != constants.N_ROWS:
         return False
+    if header['FILNAME'].lower().find('nirspec') < 0:
+        return False
     return True
     
 def flat_criteria_met(obj_header, flat_header):

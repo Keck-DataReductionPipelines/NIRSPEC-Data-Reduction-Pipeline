@@ -62,7 +62,7 @@ def trace_order_edge(data, start, slit_name):
     if nJumps > ORDER_EDGE_JUMP_LIMIT:
         
             logger.debug('order edge trace jump limit exceeded')
-            logger.debug('reducing search width to {}'.format(ORDER_EDGE_SEARCH_WIDTH / 1.5))
+            logger.debug('reducing search width to {:.1f}'.format(ORDER_EDGE_SEARCH_WIDTH / 1.5))
             trace, nJumps =  tracer.trace_edge(
             data, start, ORDER_EDGE_SEARCH_WIDTH / 2, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)
             

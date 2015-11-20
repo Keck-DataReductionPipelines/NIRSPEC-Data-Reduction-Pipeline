@@ -29,6 +29,8 @@ showPlots = False
 saveJpgs = False
 UNDERLINE = False
 
+# This dictionary maps data product filename suffix (e.g. flux.tbl)
+# to output subdirectory (e.g. fitstbl/flux).
 subdirs = dict([
                 ('flux.tbl',        'fitstbl/flux'      ),
                 ('flux.txt',        'ascii/flux'        ),
@@ -54,7 +56,15 @@ subdirs = dict([
                 ('skylines.txt',    'ascii/skylines'    )
                ])
 
+
 def constructFileName(outpath, base_name, order, fn_suffix):
+    """
+    Constructs data product filename, including directory path given:
+    outpath - data product root directory path
+    base_name - base object file name, e.g. NS.20000325.49894
+    order - order number, or None if this is not a per-order file
+    fn_suffix - filename suffix, e.g. flux.tbl
+    """
     fn = outpath + '/' + subdirs[fn_suffix] + '/' + base_name + '_' + fn_suffix
     if order is None:
         return fn
@@ -67,7 +77,10 @@ def log_fn(fn):
         return
 
 def gen(reduced, out_dir):
-            
+    """
+    Given a ReducedDataSet object and a root output directory, generate all
+    data products and store results in output directory and subdirectories.
+    """
     obj_logger.info('generating data products...')
     
     warnings.filterwarnings('ignore', category=UserWarning, append=True)
@@ -81,9 +94,22 @@ def gen(reduced, out_dir):
                 main_logger.critical('failed to create output directory ' + v)
                 obj_logger.critical('failed to create output directory ' + v)
                 raise IOError('failed to create output directory ' + v)
+            
+    # prepare extended fits header
+    header = reduced.header
+    header['COMMENT'] = ('NIRSPEC DRP', 'NIRSPEC DRP')
+    header['WFITRMS'] = (round(reduced.rmsFitRes, 4), 'RMS wavelength fit residual')
+    for i in range(6):
+        header['WFIT{}'.format(i)] = (round(reduced.coeffs[i], 6), 'wavelength fit coefficient {}'.format(i))
+    header['DARK'] = (reduced.darkKOAId, 'KOAID of dark frame or none')
+    for i in range(len(reduced.flatKOAIds)):
+        header['FLAT' + str(i)] = (reduced.flatKOAIds[i], 'KOAID of flat {}'.format(i))
+    
     
     # per frame data products
+    # -----------------------
     
+    # construct arrays for global wavelength cal table
     order_num = []
     col = []
     source = []
@@ -105,9 +131,17 @@ def gen(reduced, out_dir):
                 peak.append(line.peak)
                 slope.append(line.globalFitSlope)
                 
+    # global wavelength cal tables
+    
     wavelengthCalAsciiTable(
             out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, res, peak, slope)
     
+    wavelengthCalFitsTable(
+            out_dir, reduced.baseName, order_num, col, source, 
+            wave_exp, wave_fit, res, peak, slope)
+ 
+    
+    # construct arrays for per-order wavelength table
     order_num = []
     col = []
     centroid = []
@@ -131,10 +165,12 @@ def gen(reduced, out_dir):
                 peak.append(line.peak)
                 slope.append(line.localFitSlope)
                 
+    # per-order wavelength table
     perOrderWavelengthCalAsciiTable(
             out_dir, reduced.baseName, order_num, col, centroid, source, wave_exp, wave_fit, res, peak, slope)
             
     # per order data products
+    
     for order in reduced.orders:
         
         if reduced.coeffs is None:
@@ -142,14 +178,35 @@ def gen(reduced, out_dir):
         else:
             wavelength_scale = order.wavelengthScaleCalc
             
+        # extend header further with per-order data
+        header['FLATSCAL'] = (round(order.flatMean, 5), 'flat field normalization scale factor')
+        header['ECHLORD'] = (order.orderNum, 'Echelle order number')
+        header['OBJEXTRW'] = (len(order.objWindow), 'width of object extraction window in pixels')
+        header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
+                              'width of sky subtraction window in pixels')
+
+        if len(order.topSkyWindow) > 0:
+            header['SKYDIST'] = (order.topSkyWindow[0] - order.objWindow[-1], )
+        else:
+            header['SKYDIST'] = (order.objWindow[0] - order.botSkyWindow[-1], )
+            
+        header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
+
         fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, wavelength_scale, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
-                np.arange(1024), order.topTrace, order.botTrace, order.avgTrace, 
+                order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
              
+        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, wavelength_scale, 
+                order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
+                order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
+                order.smoothedTrace, order.smoothedTrace - order.avgTrace)
+                
         tracePlot(out_dir, reduced.baseName, order.orderNum, order.avgTrace, 
                 order.smoothedTrace, order.traceMask, order.botMeas + order.padding)
      
+        traceFits(out_dir, reduced.baseName, order.orderNum, order.avgTrace)
+        
         profilePlot(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, 
             order.peakLocation, order.centroid, order.objWindow, order.topSkyWindow, 
             order.botSkyWindow, order.topBgMean, order.botBgMean)
@@ -157,12 +214,14 @@ def gen(reduced, out_dir):
         profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
          
         profileFitsTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
+        
+        profileFits(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'flux', order.orderNum, 
             'counts', order.objSpec, order.wavelengthScaleMeas)
          
         fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.wavelengthScaleMeas)
+            'counts', order.objSpec, order.wavelengthScaleMeas, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.wavelengthScaleMeas)
@@ -171,19 +230,19 @@ def gen(reduced, out_dir):
         skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.wavelengthScaleMeas)
+            'counts', order.skySpec, order.wavelengthScaleMeas, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'noise', order.orderNum, 
             'counts', order.noiseSpec, order.wavelengthScaleMeas)
          
         fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.wavelengthScaleMeas)
+            'counts', order.noiseSpec, order.wavelengthScaleMeas, header)
 
         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
 
 
-        twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg)
+        twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg, header)
 
         if len(order.wavelengthScaleMeas) > 0:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
@@ -210,9 +269,7 @@ def tracePlot(outpath, base_name, order_num, raw, fit, mask, shift_offset):
     pl.xlabel('column (pixels)')
     pl.ylabel('row (pixels)')
     
-    yrange = offraw.max() - offraw.min()
-#     ymin = offraw.min() - (0.1 * yrange)
-#     ymax = offraw.max() + (0.1 * yrange)
+#     yrange = offraw.max() - offraw.min()
  
     x = np.arange(offraw.shape[0])
     
@@ -235,6 +292,14 @@ def tracePlot(outpath, base_name, order_num, raw, fit, mask, shift_offset):
     pl.close()
     log_fn(fn)
     
+    return
+
+def traceFits(outpath, base_name, order_num, trace):
+    hdu = fits.PrimaryHDU(trace)
+    hdulist = fits.HDUList(hdu)
+    fn = constructFileName(outpath, base_name, order_num, 'trace.fits')     
+    hdulist.writeto(fn, clobber=True)
+    log_fn(fn)
     return
 
 def profileAsciiTable(outpath, base_name, order_num, profile):
@@ -291,7 +356,18 @@ def profileFitsTable(outpath, base_name, order_num, profile):
     fn = constructFileName(outpath, base_name, order_num, 'profile.tbl')
     thdulist.writeto(fn, clobber=True)  
     log_fn(fn)
-    return         
+    return  
+
+def profileFits(outpath, base_name, order_num, profile, header):
+    hdu = fits.PrimaryHDU(profile)
+    hdulist = fits.HDUList(hdu)
+    hdr = hdulist[0].header
+    for k, v in header.iteritems():
+        hdr[k] = v
+    fn = constructFileName(outpath, base_name, order_num, 'profile.fits')     
+    hdulist.writeto(fn, clobber=True)
+    log_fn(fn)
+    return
     
 def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             ext_range, sky_range_top, sky_range_bot, top_bg_mean, bot_bg_mean):
@@ -332,8 +408,12 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             'r', linewidth=1.5)  
     
     # indicate centroid location
-    pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
-                (peak + ext_range[-1] + 5, (ymax - ymin) * 4 / 5))
+    if peak > (len(profile) / 2):
+        pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
+                    (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 4 / 5) + ymin))
+    else:
+        pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
+                    (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 4 / 5) + ymin))
         
     # draw sky windows
  
@@ -368,11 +448,11 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     log_fn(fn)
     return
 
-def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, sigma,
+def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, error,
                      flat, trace_upper, trace_lower, trace_mean, trace_fit, fit_res):
      
     names = [   'col',         'wave',         'flux',         'sky', 
-                'synth_sky',   'sigma',        'flat',         'trace_upper', 
+                'synth_sky',   'error',        'flat',         'trace_upper', 
                 'trace_lower', 'trace_mean',   'trace_fit',    'fit_res']
     units = [   'pixels',      'Angstroms',    'counts',       'counts', 
                 '',            '',             '',             'pixel', 
@@ -416,7 +496,7 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, si
         buff.append('--'.join(line))
     
     for col in range(wave.shape[0]):
-        data = [col, wave[col], flux[col], sky[col], synth_sky[col], sigma[col], flat[col],
+        data = [col, wave[col], flux[col], sky[col], synth_sky[col], error[col], flat[col],
                 trace_upper[col], trace_lower[col], trace_mean[col], trace_fit[col], fit_res[col]]
         line = []
         for i, val in enumerate(data):
@@ -432,28 +512,29 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, si
     log_fn(fn)
     return
 
-
     
-def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky,
-                     trace_upper, trace_lower, trace_mean, trace_fit):
+def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, error,
+                     flat, trace_upper, trace_lower, trace_mean, trace_fit, fit_res):
     # create binary FITS table
     prihdr = fits.Header()
     prihdr['COMMENT'] = "flux table"
+    
     prihdu = fits.PrimaryHDU(header=prihdr)
     tbhdu = fits.new_table(
-            fits.ColDefs([fits.Column(name='col', format='1I', array=np.arange(1024, dtype=int)),
-                         fits.Column(name='wave (A)', format='1D', array=wave),
-                         fits.Column(name='flux (cnts)', format='1D', array=flux),
-                         fits.Column(name='error (cnts)', format='1D', array=np.arange(1024, dtype=float)),
-                         fits.Column(name='sky (cnts)', format='1D', array=sky),
-                         fits.Column(name='synth_sky', format='1D', array=synth_sky),
-                         fits.Column(name='sig_to_noise', format='1D', array=np.arange(1024, dtype=float)),
-                         fits.Column(name='flat (cnts)', format='1D', array=np.arange(1024, dtype=float)),
-                         fits.Column(name='trace_upper (pix)', format='1D', array=trace_upper),
-                         fits.Column(name='trace_lower (pix)', format='1D', array=trace_lower),
-                         fits.Column(name='trace_mean (pix)', format='1D', array=trace_mean),
-                         fits.Column(name='trace_fit (pix)', format='1D', array=trace_fit),
-                         fits.Column(name='fit_res (pix)', format='1D', array=trace_mean - trace_fit)]))
+            fits.ColDefs([
+                fits.Column(name='col', format='1I', array=np.arange(1024, dtype=int)),
+                fits.Column(name='wave (A)', format='1D', array=wave),
+                fits.Column(name='flux (cnts)', format='1D', array=flux),
+                fits.Column(name='error (cnts)', format='1D', array=error),
+                fits.Column(name='sky (cnts)', format='1D', array=sky),
+                fits.Column(name='synth_sky', format='1D', array=synth_sky),
+                fits.Column(name='sig_to_noise', format='1D', array=np.arange(1024, dtype=float)),
+                fits.Column(name='flat (cnts)', format='1D', array=flat),
+                fits.Column(name='trace_upper (pix)', format='1D', array=trace_upper),
+                fits.Column(name='trace_lower (pix)', format='1D', array=trace_lower),
+                fits.Column(name='trace_mean (pix)', format='1D', array=trace_mean),
+                fits.Column(name='trace_fit (pix)', format='1D', array=trace_fit),
+                fits.Column(name='fit_res (pix)', format='1D', array=trace_mean - trace_fit)]))
     thdulist = fits.HDUList([prihdu, tbhdu]) 
     fn = constructFileName(outpath, base_name, order_num, 'flux.tbl')   
     thdulist.writeto(fn, clobber=True)         
@@ -478,10 +559,13 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
     log_fn(fn)
     return
     
-def fitsSpectrum(outpath, base_name, title, order_num, y_units, cont, wave):
+def fitsSpectrum(outpath, base_name, title, order_num, y_units, cont, wave, header):
     
     hdu = fits.PrimaryHDU(cont)
     hdulist = fits.HDUList(hdu)
+    hdr = hdulist[0].header
+    for k, v in header.iteritems():
+        hdr[k] = v
     fn = constructFileName(outpath, base_name, order_num, title + '.fits')     
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
@@ -630,26 +714,26 @@ def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, centroid, so
     fptr.close()
     log_fn(fn)
     return
-    
-def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wave_fit, peak, slope):
 
-    # create binary FITS table
+def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
     prihdr = fits.Header()
     prihdr['COMMENT'] = "wavelength calibration table"
     prihdu = fits.PrimaryHDU(header=prihdr)
     tbhdu = fits.new_table(
-            fits.ColDefs([fits.Column(name='order', format='B', array=order),
-                         fits.Column(name='source', format='16A', array=source),
-                         fits.Column(name='col (pix)', format='I', array=col),
-                         fits.Column(name='wave_exp (A)', format='D', array=wave_exp),
-                         fits.Column(name='wave_fit (A)', format='D', array=wave_fit),
-                         fits.Column(name='peak (cnts)', format='D', array=peak),
-                         fits.Column(name='disp (A/pix)', format='D', array=slope)]))
-    thdulist = fits.HDUList([prihdu, tbhdu])   
-    fn = constructFileName(outpath, base_name, order, 'calid_tbl.fits')
-    thdulist.writeto(fn, clobber=True)                
+            fits.ColDefs([
+                fits.Column(name='order', format='1I', array=order),
+                fits.Column(name='source', format='1A', array=source),
+                fits.Column(name='col (pixels)', format='1D', array=col),
+                fits.Column(name='wave_exp (Angstroms)', format='1D', array=wave_exp),
+                fits.Column(name='wave_fit (Angstroms)', format='1D', array=wave_fit),
+                fits.Column(name='res (Angstroms)', format='1D', array=res),
+                fits.Column(name='peak (counts)', format='1D', array=peak),
+                fits.Column(name='disp (Angstroms/pixel)', format='1D', array=slope)]))
+    thdulist = fits.HDUList([prihdu, tbhdu]) 
+    fn = constructFileName(outpath, base_name, None, 'calids.tbl')   
+    thdulist.writeto(fn, clobber=True)         
     log_fn(fn)
-    return 
+    return
 
 def skyLinesPlot(outpath, base_name, order):
     pl.figure('sky lines', facecolor='white', figsize=(8,5))
@@ -772,10 +856,12 @@ def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_nu
     return
     
 
-def twoDimOrderFits(outpath, base_name, order_num, data):     
+def twoDimOrderFits(outpath, base_name, order_num, data, header):     
     hdu = fits.PrimaryHDU(data)
     hdulist = fits.HDUList(hdu)
-#     hdulist[0].header['object'] = '511 Davida'
+    hdr = hdulist[0].header
+    for k, v in header.iteritems():
+        hdr[k] = v
     fn = constructFileName(outpath, base_name, order_num, 'order.fits')
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)

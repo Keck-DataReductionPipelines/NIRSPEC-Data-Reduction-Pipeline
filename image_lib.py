@@ -180,13 +180,16 @@ def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
 
 
 # def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
-def extract_spectra(obj, noise, obj_range, sky_range_top, sky_range_bot):
+def extract_spectra(obj, flat, noise, obj_range, sky_range_top, sky_range_bot):
     
     """
     """
     
     obj_sum = np.sum(obj[i, :] for i in obj_range)
+    flat_sum = np.sum(flat[i, :] for i in obj_range)
     
+    flat_sp = flat_sum / len(obj_range)
+
     sky_top_sum = np.sum(obj[i, :] for i in sky_range_top)
     sky_bot_sum = np.sum(obj[i, :] for i in sky_range_bot)
     
@@ -214,5 +217,5 @@ def extract_spectra(obj, noise, obj_range, sky_range_top, sky_range_bot):
     k = np.square(len(obj_range)) / np.square((len(sky_range_top) + len(sky_range_bot)))
     noise_sp = np.sqrt(obj_noise_sum + (k * (sky_noise_top_sum + sky_noise_bot_sum)))
     
-    return obj_sp, sky_sp, noise_sp, top_bg_mean, bot_bg_mean
+    return obj_sp, flat_sp, sky_sp, noise_sp, top_bg_mean, bot_bg_mean
 
