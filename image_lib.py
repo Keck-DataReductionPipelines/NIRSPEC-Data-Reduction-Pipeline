@@ -1,5 +1,4 @@
 import numpy as np
-import pylab as pl
 import scipy.ndimage as ndimage
 from skimage.feature.peak import peak_local_max
 import cosmics
@@ -218,4 +217,7 @@ def extract_spectra(obj, flat, noise, obj_range, sky_range_top, sky_range_bot):
     noise_sp = np.sqrt(obj_noise_sum + (k * (sky_noise_top_sum + sky_noise_bot_sum)))
     
     return obj_sp, flat_sp, sky_sp, noise_sp, top_bg_mean, bot_bg_mean
+
+def gaussian(x, a, b, c):
+    return(a * np.exp(-(x - b)**2 / c**2))
 

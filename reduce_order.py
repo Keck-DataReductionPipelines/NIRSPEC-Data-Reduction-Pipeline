@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import scipy.stats
+import scipy.optimize
 import scipy.ndimage
 
 import config
@@ -71,7 +72,24 @@ def reduce_order(order):
             order.spatialProfile[p0:p1]))[0] + p0 
     logger.info('spatial profile peak centroid row {:.1f}'.format(float(order.centroid)))
     
+    # characterize spatial profile by fitting to Gaussian
+#     x = range(len(order.spatialProfile))
+#     order.gaussianParams, pcov = scipy.optimize.curve_fit(image_lib.gaussian, x, order.spatialProfile)
     
+    for w in range(10, 30, 10):
+        logger.debug('gaussian window width = {}'.format(2 * w))
+        x0 = max(0, order.peakLocation - w)
+        x1 = min(len(order.spatialProfile) - 1, order.peakLocation + w)
+        x = range(x1 - x0)
+        order.gaussianParams, pcov = scipy.optimize.curve_fit(
+                image_lib.gaussian, x, order.spatialProfile[x0:x1] - np.amin(order.spatialProfile[x0:x1]))
+        order.gaussianParams[1] += x0
+        if order.gaussianParams[2] > 1.0:
+            break
+    
+    logger.info('spatial peak width = {:.1f} pixels'.format(abs(order.gaussianParams[2])))
+
+
     # find and smooth spectral trace
     try:
         order.spectral_trace = nirspec_lib.smooth_spectral_trace(
@@ -111,7 +129,18 @@ def reduce_order(order):
             order.botBgMean = image_lib.extract_spectra(
                 order.flattenedObjImg, order.normalizedFlatImg, order.noiseImg, 
                 order.objWindow, order.topSkyWindow, order.botSkyWindow)
-    
+            
+    # calculate SNR
+    bg = 0.0
+    if order.topBgMean is not None:
+        bg += order.topBgMean
+    if order.botBgMean is not None:
+        bg += order.botBgMean
+    if order.topBgMean is not None and order.botBgMean is not None:
+        bg /= 2
+    order.snr = np.mean(order.flattenedObjImg[order.peakLocation:order.peakLocation + 1, :]) / bg
+    logger.info('signal-to-noise ratio = {:.1f}'.format(order.snr))
+            
     # find and identify sky lines   
     line_pairs = None # line_pairs are (column number, accepted wavelength
     try:

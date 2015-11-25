@@ -14,7 +14,7 @@ import wavelength_utils
 from logging import INFO
 
 logger = logging.getLogger('obj')
-main_logger = logging.getLogger('main')
+# main_logger = logging.getLogger('main')
 
 def reduce_frame(raw, out_dir):
     """
@@ -169,6 +169,14 @@ def reduce_orders(reduced):
         logging.getLogger(l).log(INFO, '{} orders on the detector'.format(n_orders_on_detector))
         logging.getLogger(l).log(INFO, '{} orders reduced'.format(len(reduced.orders)))
         
+    logging.getLogger('main').log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
+                    sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
+                    len(reduced.orders)))
+    
+    logging.getLogger('main').log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
+                    sum(abs(reduced.orders[i].gaussianParams[2]) for i in range(len(reduced.orders))) / 
+                    len(reduced.orders)))
+                
     return
     
             
@@ -234,12 +242,9 @@ def find_global_wavelength_soln(reduced):
         #raise DrpException.DrpException('cannot find wavelength solution')
         return
     
-    msg = '{} lines used in wavelength fit'.format(len(wave_fit))
-    logger.info(msg)
-    main_logger.info(msg)
-    msg = 'rms wavelength fit residual = {:.3f}'.format(reduced.rmsFitRes)
-    logger.info(msg)
-    main_logger.info(msg)
+    for l in ['main', 'obj']:
+        logging.getLogger(l).log(INFO, '{} lines used in wavelength fit'.format(len(wave_fit)))
+        logging.getLogger(l).log(INFO, 'rms wavelength fit residual = {:.3f}'.format(reduced.rmsFitRes))
     
     # There must be a more pythonic way of doing this
     for i, exp in enumerate(wave_exp):

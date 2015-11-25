@@ -9,6 +9,7 @@ from astropy.table import Table, Column
 from astropy.io import ascii
 from skimage import exposure
 import Image
+import image_lib
 
 import config
 
@@ -98,9 +99,11 @@ def gen(reduced, out_dir):
     # prepare extended fits header
     header = reduced.header
     header['COMMENT'] = ('NIRSPEC DRP', 'NIRSPEC DRP')
-    header['WFITRMS'] = (round(reduced.rmsFitRes, 4), 'RMS wavelength fit residual')
-    for i in range(6):
-        header['WFIT{}'.format(i)] = (round(reduced.coeffs[i], 6), 'wavelength fit coefficient {}'.format(i))
+    if reduced.rmsFitRes is not None: 
+        header['WFITRMS'] = (round(reduced.rmsFitRes, 4), 'RMS wavelength fit residual')
+    if reduced.coeffs is not None:
+        for i in range(6):
+            header['WFIT{}'.format(i)] = (round(reduced.coeffs[i], 6), 'wavelength fit coefficient {}'.format(i))
     header['DARK'] = (reduced.darkKOAId, 'KOAID of dark frame or none')
     for i in range(len(reduced.flatKOAIds)):
         header['FLAT' + str(i)] = (reduced.flatKOAIds[i], 'KOAID of flat {}'.format(i))
@@ -191,6 +194,7 @@ def gen(reduced, out_dir):
             header['SKYDIST'] = (order.objWindow[0] - order.botSkyWindow[-1], )
             
         header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
+        header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ration for order')
 
         fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, wavelength_scale, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
@@ -209,7 +213,7 @@ def gen(reduced, out_dir):
         
         profilePlot(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, 
             order.peakLocation, order.centroid, order.objWindow, order.topSkyWindow, 
-            order.botSkyWindow, order.topBgMean, order.botBgMean)
+            order.botSkyWindow, order.topBgMean, order.botBgMean, order.gaussianParams, order.snr)
          
         profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
          
@@ -370,7 +374,7 @@ def profileFits(outpath, base_name, order_num, profile, header):
     return
     
 def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
-            ext_range, sky_range_top, sky_range_bot, top_bg_mean, bot_bg_mean):
+            ext_range, sky_range_top, sky_range_bot, top_bg_mean, bot_bg_mean, gaussian, snr):
 
     pl.figure('spatial profile', facecolor='white')
     pl.cla()
@@ -387,7 +391,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     pl.ylim(ymin, ymax)
     
     pl.minorticks_on()
-    pl.grid(True)
+    pl.grid(False)
     
     pl.plot(profile, "ko-", mfc='none', ms=3.0, linewidth=1)
     
@@ -409,11 +413,13 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     
     # indicate centroid location
     if peak > (len(profile) / 2):
-        pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
-                    (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 4 / 5) + ymin))
+        pl.annotate('centroid = {:.1f} pixels\nwidth = {:.1f} pixels\nSNR = {:.1f}'.format(
+                centroid, abs(gaussian[2]), snr), 
+                    (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 3 / 5) + ymin))
     else:
-        pl.annotate('centroid = ' + "{:.1f} pixels".format(centroid), 
-                    (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 4 / 5) + ymin))
+        pl.annotate('centroid = {:.1f} pixels\nwidth = {:.1f} pixels\nSNR = {:.1f}'.format(
+                centroid, abs(gaussian[2]), snr), 
+                    (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 3 / 5) + ymin))
         
     # draw sky windows
  
@@ -439,6 +445,10 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
         pl.plot((sky_range_bot[-1], sky_range_bot[-1]),
                 (bot_bg_mean - wvlh, bot_bg_mean + wvlh), 
                 'b', linewidth=1.5)
+        
+    # draw best fit Gaussian
+    pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + np.amin(profile), 
+            'k--', linewidth=0.5, label='Gaussian fit')
         
     pl.legend(loc='best', prop={'size': 8})
     
@@ -748,9 +758,11 @@ def skyLinesPlot(outpath, base_name, order):
 
     if synmax > skymax:
         syn = order.synthesizedSkySpec
+#         sky = (order.skySpec - np.amin(order.skySpec)) * (synmax / skymax)
         sky = order.skySpec * (synmax / skymax)
     else:
         syn = order.synthesizedSkySpec * (skymax / synmax)
+#         sky = (order.skySpec - np.amin(order.skySpec))
         sky = order.skySpec
 
     pl.plot((syn * 0.4) + (max(synmax, skymax) / 2), 'g-', linewidth=1, label='synthesized sky')

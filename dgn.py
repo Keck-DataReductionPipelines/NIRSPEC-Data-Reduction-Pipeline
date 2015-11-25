@@ -17,7 +17,7 @@ subdirs = dict([
                 ('cutouts.png',         'cutouts'),
                 ('obj_cutout.npy',      'cutouts'),
                 ('flat_cutout.npy',     'cutouts'),
-                ('sprect.png',          'sprect'),
+                ('sparect.png',         'sparect'),
                 ('edges.png',           'edges'),
                 ('top_bot_edges.png',   'edges')
                 ])
@@ -67,7 +67,7 @@ def gen(reduced, out_dir):
             cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
                     order.topTrace, order.botTrace, order.smoothedTrace)
             
-        sprect_plot(out_dir, reduced.baseName, order.orderNum, 
+        sparect_plot(out_dir, reduced.baseName, order.orderNum, 
                 order.srFlatObjImg, order.srNormFlatImg)
         
     logger.info('done generating diagnostic data products')
@@ -191,7 +191,7 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace,
     pl.savefig(constructFileName(outpath, base_name, order_num, 'cutouts.png'))
     pl.close()
     
-def sprect_plot(outpath, base_name, order_num, obj, flat):
+def sparect_plot(outpath, base_name, order_num, obj, flat):
 
     pl.figure('spatially rectified', facecolor='white', figsize=(8, 5))
     pl.cla()
@@ -211,5 +211,5 @@ def sprect_plot(outpath, base_name, order_num, obj, flat):
     flat_plot.set_xlim([0, 1023])
  
     pl.tight_layout()
-    pl.savefig(constructFileName(outpath, base_name, order_num, 'sprect.png'))
+    pl.savefig(constructFileName(outpath, base_name, order_num, 'sparect.png'))
     pl.close()

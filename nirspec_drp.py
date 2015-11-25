@@ -49,6 +49,10 @@ def nirspec_drp(in_dir, base_out_dir):
             # generate reduced data set by reducing raw data set
             reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
             
+#             logger.info('mean snr = {:.3f}'.format(
+#                     sum(reducedDataSet.orders[i].snr for i in range(len(reducedDataSet.orders))) / 
+#                     len(reducedDataSet.orders)))
+            
             # produce data products from reduced data set
             if config.params['products'] is True:
                 products.gen(reducedDataSet, out_dir)

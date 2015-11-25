@@ -71,6 +71,7 @@ class Order:
         self.spatialProfile = []
         self.peakLocation = 0
         self.centroid = None
+        self.gaussianParams = None
         
         self.objWindow = []
         self.topSkyWindow = []
@@ -78,6 +79,7 @@ class Order:
         
         self.topBgMean = None
         self.botBgMean = None
+        self.snr = None
         
         self.objSpec = []
         self.flatSpec = []
