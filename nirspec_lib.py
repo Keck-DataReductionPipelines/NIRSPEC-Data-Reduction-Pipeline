@@ -46,18 +46,18 @@ def trace_order_edge(data, start, slit_name):
         logger.warning('trace failed')
         return None
     
-    if slit_name.endswith('24'):
-        x = np.arange(len(trace))
-        coeffs = np.polyfit(x, trace, 1)
-        y_fit = np.polyval(coeffs, x)
-        res1 = trace - y_fit
-#         stdev1 = np.std(res1)
-
-        if abs(coeffs[0]) < 1e-2:
-            logger.warning('long slit edge criteria not met')
-            return None
-        else:
-            return trace
+#     if slit_name.endswith('24'):
+#         x = np.arange(len(trace))
+#         coeffs = np.polyfit(x, trace, 1)
+#         y_fit = np.polyval(coeffs, x)
+#         res1 = trace - y_fit
+# #         stdev1 = np.std(res1)
+# 
+#         if abs(coeffs[0]) < 1e-2:
+#             logger.warning('long slit edge criteria not met')
+#             return None
+#         else:
+#             return trace
     
     if nJumps > ORDER_EDGE_JUMP_LIMIT:
         

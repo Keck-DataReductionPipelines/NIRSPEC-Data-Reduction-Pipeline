@@ -64,6 +64,19 @@ def reduce_order(order):
     
     # find spatial profile and peak
     order.spatialProfile = order.flattenedObjImg.mean(axis=1)
+    
+#     import pylab as pl
+#     
+#     pl.figure()
+#     pl.cla()
+#     pl.imshow(order.flattenedObjImg)
+#     pl.show()
+#     
+#     pl.figure(str(order.orderNum))
+#     pl.cla()
+#     pl.plot(order.spatialProfile)
+#     pl.show()
+    
     order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
     logger.info('spatial profile peak intensity row {:d}'.format(order.peakLocation))
     p0 = order.peakLocation - (config.params['obj_window'] / 2)
@@ -73,21 +86,22 @@ def reduce_order(order):
     logger.info('spatial profile peak centroid row {:.1f}'.format(float(order.centroid)))
     
     # characterize spatial profile by fitting to Gaussian
-#     x = range(len(order.spatialProfile))
-#     order.gaussianParams, pcov = scipy.optimize.curve_fit(image_lib.gaussian, x, order.spatialProfile)
-    
-    for w in range(10, 30, 10):
-        logger.debug('gaussian window width = {}'.format(2 * w))
-        x0 = max(0, order.peakLocation - w)
-        x1 = min(len(order.spatialProfile) - 1, order.peakLocation + w)
-        x = range(x1 - x0)
-        order.gaussianParams, pcov = scipy.optimize.curve_fit(
-                image_lib.gaussian, x, order.spatialProfile[x0:x1] - np.amin(order.spatialProfile[x0:x1]))
-        order.gaussianParams[1] += x0
-        if order.gaussianParams[2] > 1.0:
-            break
-    
-    logger.info('spatial peak width = {:.1f} pixels'.format(abs(order.gaussianParams[2])))
+    try:
+        for w in range(10, 30, 10):
+            logger.debug('gaussian window width = {}'.format(2 * w))
+            x0 = max(0, order.peakLocation - w)
+            x1 = min(len(order.spatialProfile) - 1, order.peakLocation + w)
+            x = range(x1 - x0)
+            order.gaussianParams, pcov = scipy.optimize.curve_fit(
+                    image_lib.gaussian, x, order.spatialProfile[x0:x1] - np.amin(order.spatialProfile[x0:x1]))
+            order.gaussianParams[1] += x0
+            if order.gaussianParams[2] > 1.0:
+                break
+    except Exception as e:
+        logger.warning('cannot fit spatial profile to Gaussian')
+        order.gaussianParams = None
+    else:
+        logger.info('spatial peak width = {:.1f} pixels'.format(abs(order.gaussianParams[2])))
 
 
     # find and smooth spectral trace

@@ -70,6 +70,7 @@ def solve(order, filtername, slit, echlpos, disppos, dateobs):
     long_slit_y_corr = 20
     low_res_slit_y_corr = 30
     date_y_corr = 50
+    filter_7_y_corr = 45
     filter_4_5_6_y_corr = 30
     filter_3_y_corr = 50
 
@@ -94,6 +95,11 @@ def solve(order, filtername, slit, echlpos, disppos, dateobs):
                     ' pixel post-' + shift_date.strftime('%x') + ' y correction')
         left_top_row += date_y_corr
         left_bot_row += date_y_corr
+        
+    if 'NIRSPEC-7' in filtername:
+        logger.debug('applying + ' + str(filter_7_y_corr) + ' pixel y corr for filter ' + filtername)
+        left_top_row += filter_7_y_corr
+        left_bot_row += filter_7_y_corr
         
     elif 'NIRSPEC-6' in filtername or 'NIRSPEC-5' in filtername or 'NIRSPEC-4' in filtername:
         logger.debug('applying +' + str(filter_4_5_6_y_corr) + 

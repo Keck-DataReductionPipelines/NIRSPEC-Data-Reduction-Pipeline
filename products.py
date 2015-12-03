@@ -84,6 +84,8 @@ def gen(reduced, out_dir):
     """
     obj_logger.info('generating data products...')
     
+    file_count[0] = 0
+    
     warnings.filterwarnings('ignore', category=UserWarning, append=True)
     
     # make sub directories
@@ -412,13 +414,17 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             'r', linewidth=1.5)  
     
     # indicate centroid location
+    if gaussian is None:
+        width = 'unknown'
+    else:
+        width = '{:.1f}'.format(abs(gaussian[2]))
     if peak > (len(profile) / 2):
-        pl.annotate('centroid = {:.1f} pixels\nwidth = {:.1f} pixels\nSNR = {:.1f}'.format(
-                centroid, abs(gaussian[2]), snr), 
+        pl.annotate('centroid = {:.1f} pixels\nwidth = {} pixels\nSNR = {:.1f}'.format(
+                centroid, width, snr), 
                     (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 3 / 5) + ymin))
     else:
-        pl.annotate('centroid = {:.1f} pixels\nwidth = {:.1f} pixels\nSNR = {:.1f}'.format(
-                centroid, abs(gaussian[2]), snr), 
+        pl.annotate('centroid = {:.1f} pixels\nwidth = {} pixels\nSNR = {:.1f}'.format(
+                centroid, width, snr), 
                     (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 3 / 5) + ymin))
         
     # draw sky windows
@@ -447,8 +453,9 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
                 'b', linewidth=1.5)
         
     # draw best fit Gaussian
-    pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + np.amin(profile), 
-            'k--', linewidth=0.5, label='Gaussian fit')
+    if gaussian is not None:
+        pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + np.amin(profile), 
+                'k--', linewidth=0.5, label='Gaussian fit')
         
     pl.legend(loc='best', prop={'size': 8})
     

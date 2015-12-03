@@ -151,9 +151,10 @@ def reduce_orders(reduced):
             order.wavelengthScaleMeas = wavelength_scale_calc
             
 #             try:
+                
             # reduce order, i.e. rectify, extract spectra, identify sky lines
             reduce_order.reduce_order(order)
-            
+        
             # add reduced order to list of reduced orders in Reduced object
             reduced.orders.append(order)                      
 
@@ -169,13 +170,33 @@ def reduce_orders(reduced):
         logging.getLogger(l).log(INFO, '{} orders on the detector'.format(n_orders_on_detector))
         logging.getLogger(l).log(INFO, '{} orders reduced'.format(len(reduced.orders)))
         
+    if len(reduced.orders) == 0:
+        return
+    
     logging.getLogger('main').log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
                     sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
                     len(reduced.orders)))
     
-    logging.getLogger('main').log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
-                    sum(abs(reduced.orders[i].gaussianParams[2]) for i in range(len(reduced.orders))) / 
-                    len(reduced.orders)))
+    snr = []
+    for i in range(len(reduced.orders)):
+        snr.append(reduced.orders[i].snr)
+    
+    logging.getLogger('main').log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
+                    np.amin(snr)))
+    
+    try:
+        logging.getLogger('main').log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
+                        sum(abs(reduced.orders[i].gaussianParams[2]) for i in range(len(reduced.orders))) / 
+                        len(reduced.orders)))
+    except:
+        logging.getLogger('main').log(logging.WARNING, 'cannot calculate mean spatial peak width') 
+    
+    w = []
+    for i in range(len(reduced.orders)):
+        if reduced.orders[i].gaussianParams is not None:
+            w.append(reduced.orders[i].gaussianParams[2])
+    logging.getLogger('main').log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
+                    np.amax(w)))
                 
     return
     
