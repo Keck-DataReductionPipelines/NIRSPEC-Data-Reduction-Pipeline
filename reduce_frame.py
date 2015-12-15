@@ -115,7 +115,7 @@ def reduce_orders(reduced):
         
         # get expected location of order on detector
         top_calc, bot_calc, wavelength_scale_calc = \
-                grating_eq.solve(order_num, reduced.getFilter(), reduced.getSlit(), 
+                grating_eq.evaluate(order_num, reduced.getFilter(), reduced.getSlit(), 
                 reduced.getEchPos(), reduced.getDispPos(), reduced.getDate())
         
         logger.info('predicted y location: top = ' + 

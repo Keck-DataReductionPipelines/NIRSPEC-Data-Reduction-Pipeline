@@ -397,7 +397,8 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     
     pl.plot(profile, "ko-", mfc='none', ms=3.0, linewidth=1)
     
-    pl.plot([centroid, centroid], [ymin, profile[peak]], "g-", linewidth=0.5, label='peak')
+#     pl.plot([centroid, centroid], [ymin, profile[peak]], "g-", linewidth=0.5, label='peak')
+    pl.plot([centroid, centroid], [ymin, profile.max()], "g-", linewidth=0.5, label='peak')
 
     
     # draw extraction window
@@ -413,7 +414,6 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)  
     
-    # indicate centroid location
     if gaussian is None:
         width = 'unknown'
     else:
@@ -797,7 +797,7 @@ def skyLinesPlot(outpath, base_name, order):
 
     
     #pl.minorticks_on()
-    pl.grid(True)
+    #pl.grid(True)
 
     fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.png')
         

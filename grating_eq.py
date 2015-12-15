@@ -6,7 +6,7 @@ import nirspec_constants as const
 
 logger = logging.getLogger('obj')
 
-def solve(order, filtername, slit, echlpos, disppos, dateobs):
+def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
     """
     use grating equation with coefficients empirically found for each
     filter, grating angle, and echelle angle to determine starting

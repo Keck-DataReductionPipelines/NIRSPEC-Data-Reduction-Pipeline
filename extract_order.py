@@ -32,10 +32,17 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filter_name, slit_na
     # find actual top and bottom of order using edge detection
     determine_edge_locations(tops, bots, order, params['sigma'], params['thresh'])
     
-    if order.topMeas is None and order.botMeas is None:
-        msg = 'could not find top or bottom of order'
-        logger.debug(msg)
-#         raise DrpException.DrpException(msg)
+#     if order.topMeas is None and order.botMeas is None:
+#         msg = 'could not find top or bottom of order'
+#         logger.debug(msg)
+# #         raise DrpException.DrpException(msg)
+#         return None
+
+    if order.topMeas is None:
+        logger.warning('could not find top of order')
+    if order.botMeas is None:
+        logger.warning('could not find bottom of order')
+    if order.topMeas is None or order.botMeas is None:
         return None
     
     # find order edge traces   
@@ -162,37 +169,37 @@ def find_edge_traces(tops, bots, order, slit_name):
     return
     
     
-def determine_edge_locations(tops, bots, order, sigma, thresh):
+def determine_edge_locations(tops, bots, order, min_intensity, max_delta):
     
     # find top edge
     
-    order.topMeas = find_peak(tops, order.topCalc, sigma)
+    order.topMeas = find_peak(tops, order.topCalc, min_intensity)
     
-    if order.topMeas is None or abs(order.topMeas - order.topCalc) > thresh:
+    if order.topMeas is None or abs(order.topMeas - order.topCalc) > max_delta:
         logger.debug('reducing edge detection threshold')
 #         order.topMeas = find_peak(tops, order.topCalc, sigma / 2)
         order.topMeas = find_peak(tops, order.topCalc, 0)
 
     if order.topMeas is not None:
-        if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (2 * thresh)):
-            s = 'top edge too far off: meas={:.0f}, diff={:.0f}, thresh={:.0f}'.format(
-                    order.topMeas, abs(order.topMeas - order.topCalc), thresh)
+        if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (2 * max_delta)):
+            s = 'top edge too far off: meas={:.0f}, diff={:.0f}, max_delta={:.0f}'.format(
+                    order.topMeas, abs(order.topMeas - order.topCalc), max_delta)
             logger.warning(s)
             order.topMeas = None
             
     # find bottom edge
     
-    order.botMeas = find_peak(bots, order.botCalc, sigma)
+    order.botMeas = find_peak(bots, order.botCalc, min_intensity)
     
-    if order.botMeas is None or abs(order.botMeas - order.botCalc) > thresh:
+    if order.botMeas is None or abs(order.botMeas - order.botCalc) > max_delta:
         logger.info('reducing edge detection threshold')
-        order.botMeas = find_peak(bots, order.botCalc, sigma / 2) 
+        order.botMeas = find_peak(bots, order.botCalc, min_intensity / 2) 
         order.botMeas = find_peak(bots, order.botCalc, 0) 
 
     if order.botMeas is not None:
-        if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (2 * thresh)):
-            s = 'bottom edge too far off: meas={:.0f}, diff={:.0f}, thresh={:.0f}'.format(
-                    order.botMeas, abs(order.botMeas - order.botCalc), thresh)
+        if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (2 * max_delta)):
+            s = 'bottom edge too far off: meas={:.0f}, diff={:.0f}, max_delta={:.0f}'.format(
+                    order.botMeas, abs(order.botMeas - order.botCalc), max_delta)
             logger.warning(s)
             order.botMeas = None
         
@@ -213,7 +220,7 @@ def determine_edge_locations(tops, bots, order, sigma, thresh):
     return
 
     
-def find_peak(edges, row_approximate , threshold):
+def find_peak(edges, row_approximate , min_intensity):
     """
     Takes an order edge image, formed by shifting and subtracting a flat field image, 
     and finds the edge closest row_approximate.  Order edges appear as intensity peaks in
@@ -225,7 +232,7 @@ def find_peak(edges, row_approximate , threshold):
     
     row_approximate is the approximate location of the desired edge
     
-    threshold - peaks of intensity less than threshold are ignored 
+    min_intensity - peaks of intensity less than min_intensity are ignored 
     """
     from scipy.signal import argrelextrema
 
@@ -243,7 +250,8 @@ def find_peak(edges, row_approximate , threshold):
     
     # find the indices in peak_intensities of peaks with 
     # intensities greater than threshold
-    tall_peaks_i = np.where(peak_intensities > threshold)
+#     tall_peaks_i = np.where(peak_intensities > min_intensity)
+    tall_peaks_i = np.where(peak_intensities > (np.amax(peak_intensities) / 2.0))
 
     # narrow peak_rows to those corresponding to tall peaks
     peak_rows = peak_rows[tall_peaks_i[0]]
@@ -333,7 +341,7 @@ def get_extraction_params(filterName, slitName):
             
     elif 'NIRSPEC-7' in filterName.upper():
         params = {'padding': 30, 
-                  'sigma': 100.0,
+                  'sigma': 200.0,
                   'thresh': 20.0, 
                   'spw': 3.0, 
                   'trace_width': 1.1}

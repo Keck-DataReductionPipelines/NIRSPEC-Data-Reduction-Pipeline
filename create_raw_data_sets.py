@@ -11,9 +11,16 @@ from __builtin__ import False
 
 def create(in_dir):
     """
-    Given an input directory path, creates and returns a list of raw data sets.
-    A raw data set is an instance of the class RawDataSet and consists of an
-    object file name, it's header, and associated flatas and darks.
+    Given an input directory path, creates and returns a list of RawDataSet objects.
+    A raw data set consists of an object file name, it's header, and associated flats 
+    and darks.
+    
+    param 
+        in_dir Input directory path.
+        
+    return 
+        list of RawDataSet objects.
+    
     """
     
     logger = logging.getLogger('main')
@@ -63,8 +70,15 @@ def create(in_dir):
 
 def get_headers(in_dir):
     """
-    Make a list of fits files found in in_dir, unzip them as needed.
-    Return a dictionary of headers indexed by file name
+    Makes a list of FITS files found in in_dir, unzips them as needed and.
+    returns a dictionary of headers indexed by file name.
+    
+    param
+        in_dir Input directory path.
+        
+    return
+        Dictionary of headers indexed by file name.
+        
     """
     cmnd = "find " + in_dir + " -name \*fits\* | sort"
     filenames, err = subprocess.Popen([cmnd], stdout=subprocess.PIPE, shell=True).communicate()
@@ -81,6 +95,18 @@ def get_headers(in_dir):
     return headers
 
 def obj_criteria_met(header):
+    """
+    Takes an object frame header and determines if it is a frame that can be 
+    reduced by the DRP.
+    
+    param
+        header Object file header.
+        
+    return
+        True if the object file can be reduced by the DRP, False otherwise
+        
+    """
+    
     if header['IMAGETYP'].lower() != 'object':
         return False
     if header['DISPERS'].lower() != 'high':
@@ -94,6 +120,18 @@ def obj_criteria_met(header):
     return True
     
 def flat_criteria_met(obj_header, flat_header):
+    """
+    Takes an object frame header and a flat frame header and determines if 
+    the flat satisfies the criteria for association with the object frame
+    
+    params
+        obj_header Object frame header.
+        flat_header Flat frame header.
+        
+    return
+        True if the flat corresponds to the object frame, False otherwise.
+        
+    """
     eq_kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers']
     for kwd in eq_kwds:
         if obj_header[kwd] != flat_header[kwd]:
@@ -102,6 +140,18 @@ def flat_criteria_met(obj_header, flat_header):
 
 
 def dark_criteria_met(obj_header, dark_header):
+    """
+    Takes an object frame header and a dark field frame header and determines if 
+    the dark satisfies the criteria for association with the object frame
+    
+    params
+        obj_header Object frame header.
+        dark_header Dark frame header.
+        
+    return
+        True if the dark corresponds to the object frame, False otherwise.
+        
+    """
     eq_kwds = ['elaptime']
     for kwd in eq_kwds:
         if obj_header[kwd] != dark_header[kwd]:

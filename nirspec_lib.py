@@ -136,6 +136,16 @@ def find_spectral_trace(data, padding):
 #     npsts = npsts[:, padding + 5:npsts.shape[1] - 5 - padding]
     npsts = npsts[:, 5:npsts.shape[1] - 5]
     cc = np.sum(npsts[:, 0:5], axis=1)
+    
+#     import pylab as pl
+#     pl.figure(facecolor='white')
+#     pl.cla()
+#     pl.plot(cc, 'k-')
+#     pl.xlim(0, 1024)
+#     pl.xlabel('column (pixels)')
+#     pl.ylabel('intensity summed over 5 rows (DN)')
+#     pl.show()
+
     locpeaks = argrelextrema(cc, np.greater)     
     locmaxes = np.where(cc[locpeaks[0]] > SKY_SIGMA * cc.mean())
     maxes = np.array(locpeaks[0][locmaxes[0]])
