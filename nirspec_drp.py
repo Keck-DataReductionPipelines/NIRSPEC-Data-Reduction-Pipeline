@@ -87,14 +87,21 @@ def init(in_dir, out_dir):
     
     """
     
+    # create output directory and log subdirectory if -subdirs not set
     if not os.path.exists(out_dir):
         try: 
-            os.mkdir(out_dir)
+            os.makedirs(out_dir)
         except: 
             msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
             # logger.critical(msg) can't create log if no output directory
             raise IOError(msg)
-        
+    if config.params['subdirs'] is False:
+        log_dir = out_dir + '/log'
+        if not os.path.exists(log_dir):
+            try:
+                os.makedirs(log_dir)
+            except:
+                raise IOError('log directory {} does not exist and cannot be created'.format(log_dir))
         
     # set up main logger
     logger = logging.getLogger('main')
@@ -107,11 +114,25 @@ def init(in_dir, out_dir):
     else:
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
-    fn = out_dir + '/nirspec_drp.log'
-    if os.path.exists(fn):
-        os.rename(fn, fn + '.prev')
+#     log_fn = None
+#     fns = os.listdir(in_dir)
+#     for fn in fns:
+#         if fn.startswith('NS.'):
+#             log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
+#             break
+#     if log_fn is None:
+#         log_fn = out_dir + '/nirspec_drp.log'
+#     if config.params['subdirs'] is False:
+#         parts = log_fn.split('/')
+#         parts.insert(len(parts)-1, 'log')
+#         log_fn = '/'.join(parts)
+
+    log_fn = get_log_fn(in_dir, out_dir)
+            
+    if os.path.exists(log_fn):
+        os.rename(log_fn, log_fn + '.prev')
         
-    fh = logging.FileHandler(filename=fn)
+    fh = logging.FileHandler(filename=log_fn)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -137,10 +158,23 @@ def init(in_dir, out_dir):
         msg = 'input directory {} does not exist'.format(in_dir)
         logger.critical(msg)
         raise IOError(msg)
-    
-
 
     return
+
+def get_log_fn(in_dir, out_dir):
+    log_fn = None
+    fns = os.listdir(in_dir)
+    for fn in fns:
+        if fn.startswith('NS.'):
+            log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
+            break
+    if log_fn is None:
+        log_fn = out_dir + '/nirspec_drp.log'
+    if config.params['subdirs'] is False:
+        parts = log_fn.split('/')
+        parts.insert(len(parts)-1, 'log')
+        log_fn = '/'.join(parts)
+        return(log_fn)
      
 def main():
     """

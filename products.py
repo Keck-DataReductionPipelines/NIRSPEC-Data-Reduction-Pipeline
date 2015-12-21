@@ -43,7 +43,6 @@ subdirs = dict([
                 ('profile.png',     'previews/profile'  ),
                 ('calids.tbl',      'fitstbl/cal'       ),
                 ('calids.txt',      'ascii/cal'         ),
-                ('localcalids.txt', 'ascii/cal'         ),
                 ('order.fits',      'fits/order'        ),
                 ('order.png',       'previews/order'    ),
                 ('sky.fits',        'fits/sky'          ),
@@ -52,9 +51,7 @@ subdirs = dict([
                 ('noise.png',       'previews/noise'    ),
                 ('trace.fits',      'fits/trace'        ),
                 ('trace.png',       'previews/trace'    ),
-                ('spectra.png',     'previews/spectra'  ),
-                ('skylines.png',    'previews/skylines' ),
-                ('skylines.txt',    'ascii/skylines'    )
+#                 ('spectra.png',     'previews/spectra'  ),
                ])
 
 
@@ -145,43 +142,15 @@ def gen(reduced, out_dir):
             out_dir, reduced.baseName, order_num, col, source, 
             wave_exp, wave_fit, res, peak, slope)
  
-    
-    # construct arrays for per-order wavelength table
-    order_num = []
-    col = []
-    centroid = []
-    source = []
-    wave_exp = []
-    wave_fit = []
-    res = []
-    peak = []
-    slope = []
-    
-    for order in reduced.orders:
-        if order.perOrderSlope > 0.95 and order.perOrderSlope < 1.05:
-            for line in order.lines:
-                order_num.append(order.orderNum)
-                col.append(line.col)
-                centroid.append(line.centroid)
-                source.append('sky')
-                wave_exp.append(line.acceptedWavelength)
-                wave_fit.append(line.localFitWavelength)
-                res.append(line.localFitResidual)
-                peak.append(line.peak)
-                slope.append(line.localFitSlope)
-                
-    # per-order wavelength table
-    perOrderWavelengthCalAsciiTable(
-            out_dir, reduced.baseName, order_num, col, centroid, source, wave_exp, wave_fit, res, peak, slope)
             
     # per order data products
     
     for order in reduced.orders:
         
-        if reduced.coeffs is None:
-            wavelength_scale = order.wavelengthScaleMeas
-        else:
-            wavelength_scale = order.wavelengthScaleCalc
+#         if reduced.coeffs is None:
+#             wavelength_scale = order.wavelengthScaleMeas
+#         else:
+#             wavelength_scale = order.wavelengthScaleCalc
             
         # extend header further with per-order data
         header['FLATSCAL'] = (round(order.flatMean, 5), 'flat field normalization scale factor')
@@ -196,14 +165,14 @@ def gen(reduced, out_dir):
             header['SKYDIST'] = (order.objWindow[0] - order.botSkyWindow[-1], )
             
         header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
-        header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ration for order')
+        header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ratio for order')
 
-        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, wavelength_scale, 
+        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
              
-        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, wavelength_scale, 
+        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
@@ -232,8 +201,8 @@ def gen(reduced, out_dir):
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.wavelengthScaleMeas)
         
-        skyLinesPlot(out_dir, reduced.baseName, order)
-        skyLinesAsciiTable(out_dir, reduced.baseName, order)
+#         skyLinesPlot(out_dir, reduced.baseName, order)
+#         skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.wavelengthScaleMeas, header)
@@ -244,8 +213,8 @@ def gen(reduced, out_dir):
         fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
             'counts', order.noiseSpec, order.wavelengthScaleMeas, header)
 
-        multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
-            'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
+#         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
+#             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
 
 
         twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg, header)
@@ -258,7 +227,7 @@ def gen(reduced, out_dir):
         else:
             twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image *', 
                     reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                    order.wavelengthScaleCalc)
+                    order.wavelengthScaleMeas)
 
     main_logger.info('{} data products generated for {}'.format(
             str(file_count[0]), reduced.baseName))
@@ -534,11 +503,10 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
                      flat, trace_upper, trace_lower, trace_mean, trace_fit, fit_res):
     # create binary FITS table
     prihdr = fits.Header()
-    prihdr['COMMENT'] = "flux table"
-    
+
     prihdu = fits.PrimaryHDU(header=prihdr)
-    tbhdu = fits.new_table(
-            fits.ColDefs([
+
+    tbhdu = fits.BinTableHDU.from_columns([
                 fits.Column(name='col', format='1I', array=np.arange(1024, dtype=int)),
                 fits.Column(name='wave (A)', format='1D', array=wave),
                 fits.Column(name='flux (cnts)', format='1D', array=flux),
@@ -551,10 +519,9 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
                 fits.Column(name='trace_lower (pix)', format='1D', array=trace_lower),
                 fits.Column(name='trace_mean (pix)', format='1D', array=trace_mean),
                 fits.Column(name='trace_fit (pix)', format='1D', array=trace_fit),
-                fits.Column(name='fit_res (pix)', format='1D', array=trace_mean - trace_fit)]))
-    thdulist = fits.HDUList([prihdu, tbhdu]) 
+                fits.Column(name='fit_res (pix)', format='1D', array=trace_mean - trace_fit)])
     fn = constructFileName(outpath, base_name, order_num, 'flux.tbl')   
-    thdulist.writeto(fn, clobber=True)         
+    tbhdu.writeto(fn, clobber=True)
     log_fn(fn)
     return
 
@@ -675,62 +642,7 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     log_fn(fn)
     return
 
-def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, centroid, source, wave_exp, wave_fit, res, peak, slope):
-    
-    names = ['order', 'source', 'col', 'centroid', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
-    units = ['', '', 'pixels', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
-    formats = [ 'd', '', 'd', '.3f', '.6e', '.6e', '.3f', 'd', '.3e']
-    nominal_width = 10
-    widths = []
-    
-    for name in names:
-        widths.append(max(len(name), nominal_width))
-            
-    for i in range(len(names)):
-        widths[i] = max(len(units[i]), widths[i])
-       
-    widths[0] = 6 
-    widths[1] = 6
-    widths[2] = 6
-    widths[3] = 8
-    widths[4] = 13
-    widths[5] = 13
-    widths[6] = 9
-    widths[7] = 6
 
-    buff = []
-    
-    line = []
-    for i, name in enumerate(names):
-        line.append('{:>{w}}'.format(name, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-    
-    line = []
-    for i, unit in enumerate(units):
-        line.append('{:>{w}}'.format(unit, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-      
-    if UNDERLINE:  
-        line = []
-        for i, unit in enumerate(units):
-            line.append('{:->{w}}'.format('', w=widths[i]))
-        buff.append('| {} |'.format('--'.join(line)))
-    
-    for i in range(len(order)):
-        data = [order[i], source[i], col[i], centroid[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]
-        line = []
-        for i, val in enumerate(data):
-            line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
-        buff.append('  {}  '.format('  '.join(line)))
-        
-    #print('\n'.join(buff))
-        
-    fn = constructFileName(outpath, base_name, None, 'localcalids.txt')
-    fptr = open(fn, 'w')
-    fptr.write('\n'.join(buff))
-    fptr.close()
-    log_fn(fn)
-    return
 
 def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
     prihdr = fits.Header()
@@ -750,101 +662,6 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
     fn = constructFileName(outpath, base_name, None, 'calids.tbl')   
     thdulist.writeto(fn, clobber=True)         
     log_fn(fn)
-    return
-
-def skyLinesPlot(outpath, base_name, order):
-    pl.figure('sky lines', facecolor='white', figsize=(8,5))
-    pl.cla()
-    pl.title("sky lines" + ', ' + base_name + ", order " + str(order.orderNum), fontsize=14)
-    pl.xlabel('x (pixels)', fontsize=12)
-    #pl.ylabel('row (pixel)', fontsize=12)
-    
-    synmax = np.amax(order.synthesizedSkySpec);
-    skymax = np.amax(order.skySpec);
-    
-
-    if synmax > skymax:
-        syn = order.synthesizedSkySpec
-#         sky = (order.skySpec - np.amin(order.skySpec)) * (synmax / skymax)
-        sky = order.skySpec * (synmax / skymax)
-    else:
-        syn = order.synthesizedSkySpec * (skymax / synmax)
-#         sky = (order.skySpec - np.amin(order.skySpec))
-        sky = order.skySpec
-
-    pl.plot((syn * 0.4) + (max(synmax, skymax) / 2), 'g-', linewidth=1, label='synthesized sky')
-    pl.plot(sky * 0.4, 'b-', linewidth=1, label='sky')
-
-    ymin, ymax = pl.ylim()
-    ymax = max(synmax, skymax) * 1.1
-    ymin = -200
-    pl.ylim(ymin, ymax)
-    pl.xlim(0, 1024)
-
-    pl.legend(loc='best', prop={'size': 8})
-    
-    pl.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
-                (0.3, 0.8), xycoords="figure fraction")
-    
-    dy = 0
-    for line in order.lines:
-        pl.plot([line.col, line.col], [ymin, ymax], "k--", linewidth=0.5)
-        pl.annotate(str(line.acceptedWavelength), (line.col, ((ymax - ymin) / 2) + dy), size=8)
-        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), (line.col, ((ymax - ymin) / 3) - dy), size=8)
-        dy += 300
-        if dy > 1500:
-            dy = 0
-
-    
-    #pl.minorticks_on()
-    #pl.grid(True)
-
-    fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.png')
-        
-    pl.savefig(fn)
-    log_fn(fn)
-    pl.close()
-    return
-    
-
-def skyLinesAsciiTable(outpath, base_name, order):
-    
-    names = ['order', 'col', 'calc', 'accepted'] 
-    units = [' ', 'pixels', '$\AA$', '$\AA$']
-    formats = ['.0f', '.0f', '.1f', '.1f']
-    widths = [6, 6, 6, 9] 
-    
-    buff = []
-    
-    line = []
-    for i, name in enumerate(names):
-        line.append('{:>{w}}'.format(name, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-    
-    line = []
-    for i, unit in enumerate(units):
-        line.append('{:>{w}}'.format(unit, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-        
-    if UNDERLINE:
-        line = []
-        for i, unit in enumerate(units):
-            line.append('{:->{w}}'.format('', w=widths[i]))
-        buff.append('--'.join(line))
-    
-    for l in order.lines:
-        data = [order.orderNum, l.col, order.wavelengthScaleCalc[l.col], l.acceptedWavelength]
-        line = []
-        for i, val in enumerate(data):
-            line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
-        buff.append('  {}  '.format('  '.join(line)))
-                
-    fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.txt')
-    fptr = open(fn, 'w')
-    fptr.write('\n'.join(buff))
-    fptr.close()
-    log_fn(fn)
- 
     return
     
 def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_num, data, x):

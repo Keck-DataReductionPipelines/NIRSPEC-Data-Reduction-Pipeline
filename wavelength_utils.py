@@ -216,6 +216,7 @@ def find_wavelength_shift(sky, gauss_sky, wavelength_scale_calc):
 SKY_LINE_MIN = 10
 SKY_OVERLAP_THRESHOLD = 0.6
 SKY_THRESHOLD = 3.0
+SKY_THRESHOLD = 3.0
 
     
 def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
@@ -278,6 +279,10 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
         bigdx = relx[np.where(rely > SKY_THRESHOLD * rely.mean())]
         # bigidx are the intensities of the sky peak maximums
         bigidx = idx1[np.where(rely > SKY_THRESHOLD * rely.mean())]
+#         ymin = rely.mean() + 2.0 * rely.std()
+#         bigdx = relx[np.where(rely > ymin)]
+#         bigidx = idx1[np.where(rely > ymin)]
+
  
     else:
         # couldn't find any relative maxes in sky

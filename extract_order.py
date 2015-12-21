@@ -251,7 +251,8 @@ def find_peak(edges, row_approximate , min_intensity):
     # find the indices in peak_intensities of peaks with 
     # intensities greater than threshold
 #     tall_peaks_i = np.where(peak_intensities > min_intensity)
-    tall_peaks_i = np.where(peak_intensities > (np.amax(peak_intensities) / 2.0))
+#     tall_peaks_i = np.where(peak_intensities > (np.amax(peak_intensities) / 2.0))
+    tall_peaks_i = np.where(peak_intensities > (np.amax(peak_intensities) * 0.10))
 
     # narrow peak_rows to those corresponding to tall peaks
     peak_rows = peak_rows[tall_peaks_i[0]]

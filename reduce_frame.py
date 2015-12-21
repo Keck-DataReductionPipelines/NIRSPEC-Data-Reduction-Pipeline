@@ -71,14 +71,11 @@ def reduce_frame(raw, out_dir):
         # might want to do something else here
         raise
     
-    try:
-        # find wavelength solution
-        find_global_wavelength_soln(reduced)
-    except DrpException as e:
-        logger.info('not applying wavelength solution')
-    else:
-        # apply wavelength solution
+    # find wavelength solution
+    if find_global_wavelength_soln(reduced) is True:
         apply_wavelength_soln(reduced)
+    else:
+        logger.info('not applying wavelength solution')
     
     return(reduced)
  
@@ -173,16 +170,18 @@ def reduce_orders(reduced):
     if len(reduced.orders) == 0:
         return
     
-    logging.getLogger('main').log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
-                    sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
-                    len(reduced.orders)))
+    for l in ['main', 'obj']:
+        logging.getLogger(l).log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
+                        sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
+                        len(reduced.orders)))
     
     snr = []
     for i in range(len(reduced.orders)):
         snr.append(reduced.orders[i].snr)
     
-    logging.getLogger('main').log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
-                    np.amin(snr)))
+    for l in ['main', 'obj']:
+        logging.getLogger(l).log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
+                np.amin(snr)))
     
     try:
         logging.getLogger('main').log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
@@ -260,8 +259,8 @@ def find_global_wavelength_soln(reduced):
             np.asarray(accepted, dtype='float32'))    
     
     if wave_fit is None:
-        #raise DrpException.DrpException('cannot find wavelength solution')
-        return
+#         raise DrpException.DrpException('cannot find wavelength solution')
+        return False
     
     for l in ['main', 'obj']:
         logging.getLogger(l).log(INFO, '{} lines used in wavelength fit'.format(len(wave_fit)))
@@ -300,7 +299,7 @@ def find_global_wavelength_soln(reduced):
 #     print('wave_exp: ' + str(wave_exp))
 #     raw_input('waiting')
     
-    return
+    return True
 
 def apply_wavelength_soln(reduced):
     
@@ -338,6 +337,10 @@ def init(objFileName, out_dir):
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
     fn = out_dir + '/' + objFileName[objFileName.find("NS"):objFileName.rfind(".")]  + '.log'
+    if config.params['subdirs'] is False:
+        parts = fn.split('/')
+        parts.insert(len(parts)-1, 'log')
+        fn = '/'.join(parts)
         
     if os.path.exists(fn):
         os.rename(fn, fn + '.prev')
