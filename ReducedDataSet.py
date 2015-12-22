@@ -34,6 +34,9 @@ class ReducedDataSet:
     def getFileName(self):
         return self.fileName
     
+    def getTargetName(self):
+        return self.header['TARGNAME']
+    
     def getShape(self):
         return self.header['NAXIS1'], self.header['NAXIS2']
         

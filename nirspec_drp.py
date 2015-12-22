@@ -174,7 +174,7 @@ def get_log_fn(in_dir, out_dir):
         parts = log_fn.split('/')
         parts.insert(len(parts)-1, 'log')
         log_fn = '/'.join(parts)
-        return(log_fn)
+    return(log_fn)
      
 def main():
     """

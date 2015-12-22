@@ -14,6 +14,7 @@ import wavelength_utils
 from logging import INFO
 
 logger = logging.getLogger('obj')
+main_logger = logging.getLogger('main')
 # main_logger = logging.getLogger('main')
 
 def reduce_frame(raw, out_dir):
@@ -164,8 +165,8 @@ def reduce_orders(reduced):
     # end for each order
 
     for l in ['main', 'obj']:
-        logging.getLogger(l).log(INFO, '{} orders on the detector'.format(n_orders_on_detector))
-        logging.getLogger(l).log(INFO, '{} orders reduced'.format(len(reduced.orders)))
+        logging.getLogger(l).log(INFO, 'n orders on the detector = {}'.format(n_orders_on_detector))
+        logging.getLogger(l).log(INFO, 'n orders reduced = {}'.format(len(reduced.orders)))
         
     if len(reduced.orders) == 0:
         return
@@ -183,18 +184,18 @@ def reduce_orders(reduced):
         logging.getLogger(l).log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
                 np.amin(snr)))
     
-    try:
-        logging.getLogger('main').log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
+        try:
+            logging.getLogger(l).log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
                         sum(abs(reduced.orders[i].gaussianParams[2]) for i in range(len(reduced.orders))) / 
                         len(reduced.orders)))
-    except:
-        logging.getLogger('main').log(logging.WARNING, 'cannot calculate mean spatial peak width') 
+        except:
+            logging.getLogger(l).log(logging.WARNING, 'mean spatial peak width = unknown') 
     
-    w = []
-    for i in range(len(reduced.orders)):
-        if reduced.orders[i].gaussianParams is not None:
-            w.append(reduced.orders[i].gaussianParams[2])
-    logging.getLogger('main').log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
+        w = []
+        for i in range(len(reduced.orders)):
+            if reduced.orders[i].gaussianParams is not None:
+                w.append(reduced.orders[i].gaussianParams[2])
+        logging.getLogger(l).log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
                     np.amax(w)))
                 
     return
@@ -244,8 +245,8 @@ def find_global_wavelength_soln(reduced):
             order_inv.append(1.0 / order.orderNum)
             accepted.append(line.acceptedWavelength)
             
-            
-    logger.info('total number of identified lines = ' + str(len(col)))
+    for l in [logger, main_logger]:
+        l.info('n sky lines identified = ' + str(len(col)))
     
     if config.params['int_c'] is True:
         logger.warning('using integer column numbers in wavelength fit')
@@ -263,7 +264,7 @@ def find_global_wavelength_soln(reduced):
         return False
     
     for l in ['main', 'obj']:
-        logging.getLogger(l).log(INFO, '{} lines used in wavelength fit'.format(len(wave_fit)))
+        logging.getLogger(l).log(INFO, 'n lines used in wavelength fit = {}'.format(len(wave_fit)))
         logging.getLogger(l).log(INFO, 'rms wavelength fit residual = {:.3f}'.format(reduced.rmsFitRes))
     
     # There must be a more pythonic way of doing this
@@ -369,19 +370,16 @@ def init(objFileName, out_dir):
         return    
 
 def log_start_summary(reduced):
-    main_logger = logging.getLogger('main')
-    s = 'starting reduction of ' + reduced.getFileName()[reduced.getFileName().rfind('/') + 1:]
-    logger.info(s)
-    main_logger.info(s)
-    logger.info('  date of observation: ' + reduced.getDate() + ' UT')
-    s = '          filter name: ' + reduced.getFilter()
-    logger.info(s)
-    main_logger.info(s)
-    s = '            slit name: ' + reduced.getSlit()
-    logger.info(s)
-    main_logger.info(s)
-    logger.info('        echelle angle: ' + str(reduced.getEchPos()) + ' deg')
-    logger.info('cross disperser angle: ' + str(reduced.getDispPos()) + ' deg')
+    
+    for l in [main_logger, logger]:
+        l.info('starting reduction of ' + reduced.getFileName()[reduced.getFileName().rfind('/') + 1:])
+        l.info('   date of observation = ' + reduced.getDate() + ' UT')
+        l.info('           target name = ' + reduced.getTargetName())
+        l.info('           filter name = ' + reduced.getFilter())
+        l.info('             slit name = ' + reduced.getSlit())
+    logger.info('        echelle angle = ' + str(reduced.getEchPos()) + ' deg')
+    logger.info('cross disperser angle = ' + str(reduced.getDispPos()) + ' deg')
+    return
 
 def process_darks_and_flats(raw, reduced):
     
