@@ -23,6 +23,11 @@ def reduce_order(order):
         
     # flatten obj but keep original for noise calc
     order.flattenedObjImg = np.array(order.objCutout / order.normalizedFlatImg)
+    #***
+    if np.amin(order.flattenedObjImg) < 0:
+        print('order {} min {}'.format(order.orderNum, np.amin(order.flattenedObjImg)))
+        order.flattenedObjImg -= np.amin(order.flattenedObjImg)
+    #***
     order.flattened = True
     order.objImg = np.array(order.objCutout) # should probably use objImg instead of objCutout to begin with
     order.flatImg = np.array(order.flatCutout)
@@ -152,7 +157,7 @@ def reduce_order(order):
         bg += order.botBgMean
     if order.topBgMean is not None and order.botBgMean is not None:
         bg /= 2
-    order.snr = np.mean(order.flattenedObjImg[order.peakLocation:order.peakLocation + 1, :]) / bg
+    order.snr = np.absolute(np.mean(order.flattenedObjImg[order.peakLocation:order.peakLocation + 1, :]) / bg)
     logger.info('signal-to-noise ratio = {:.1f}'.format(order.snr))
             
     # find and identify sky lines   

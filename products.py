@@ -229,8 +229,8 @@ def gen(reduced, out_dir):
                     reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
                     order.wavelengthScaleMeas)
 
-    main_logger.info('{} data products generated for {}'.format(
-            str(file_count[0]), reduced.baseName))
+    main_logger.info('n data products generated for {} = {}'.format(
+            reduced.baseName, str(file_count[0])))
     return 
     
     

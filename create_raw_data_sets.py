@@ -24,7 +24,7 @@ def create(in_dir):
     """
     
     logger = logging.getLogger('main')
-    logger.debug("creating raw data sets from files in " + in_dir)
+    logger.debug('creating raw data sets from files in ' + in_dir)
     
     # get list of fits files
     headers = get_headers(in_dir)
@@ -33,7 +33,7 @@ def create(in_dir):
         logger.critical('no fits files found')
         return
     
-    logger.info(str(len(headers)) + ' fits files found')
+    logger.info('n fits files found = {}'.format(str(len(headers))))
     
     rawDataSets = []
 
@@ -44,7 +44,7 @@ def create(in_dir):
                 logger.info('{} is in low dispersion mode, not reduced'.format(
                         filename[filename.rfind('/') + 1:]))
     
-    logger.info(str(len(rawDataSets)) + " object frame(s) found")
+    logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
     
     # associate darks and flats with each object frame
     for rawDataSet in rawDataSets:

@@ -14,8 +14,10 @@ import itertools
 from scipy.signal import argrelextrema
 import statsmodels.api as smapi
 from statsmodels.formula.api import ols
+import config
 
 import logging
+from scipy.signal._peak_finding import argrelextrema
 
 logger = logging.getLogger('obj')
 
@@ -71,7 +73,7 @@ def line_id(order, oh_wavelengths, oh_intensities):
                 order.wavelengthShift, MAX_SHIFT))
         return None
         
-    logger.info('wavelength scale shifted by ' + str(round(order.wavelengthShift, 3)) + ' pixels')   
+    logger.info('wavelength scale shift = ' + str(round(order.wavelengthShift, 3)) + ' pixels')   
     wavelength_scale_shifted = order.wavelengthScaleCalc + order.wavelengthShift   
 
     # match sky lines
@@ -182,16 +184,6 @@ def gen_synthesized_sky(oh_wavelengths, oh_intensities, wavelength_scale_calc):
 
 def find_wavelength_shift(sky, gauss_sky, wavelength_scale_calc):
     
-#     import pylab as pl
-#     pl.figure()
-#     pl.cla()
-#     pl.plot(sky, 'b-')
-#     pl.plot(gauss_sky, 'g-')
-#     pl.show()
-
-#     print wavelength_scale_calc
-#     raw_input('wavelength_scale_calc')
-#     
     if len(sky) > 0:
         sky_n = sky - sky.mean()
     else:
@@ -215,7 +207,6 @@ def find_wavelength_shift(sky, gauss_sky, wavelength_scale_calc):
 
 SKY_LINE_MIN = 10
 SKY_OVERLAP_THRESHOLD = 0.6
-SKY_THRESHOLD = 3.0
 SKY_THRESHOLD = 3.0
 
     
@@ -263,37 +254,27 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
         logger.info('could not find known sky lines in expected wavelength range')
         return []
  
-#     print('bigohx ' + str(bigohx))
-#     print('bigohy ' + str(bigohy))
-#     print('dy ' + str(dy))
-#     raw_input('waiting')
         
     # ## Open, narrow down, clean up sky line list
     # look for relative maxes in dy (real sky line peak values)
-    if argrelextrema(dy, np.greater)[0].any():
-        relx = theory_x[argrelextrema(dy, np.greater)[0]]
-        rely = dy[argrelextrema(dy, np.greater)[0]]
-        idx1 = argrelextrema(dy, np.greater)[0]
- 
-        # bixdx is the locations (in x) of any sky peak maximums greater than threshold sig
-        bigdx = relx[np.where(rely > SKY_THRESHOLD * rely.mean())]
-        # bigidx are the intensities of the sky peak maximums
-        bigidx = idx1[np.where(rely > SKY_THRESHOLD * rely.mean())]
-#         ymin = rely.mean() + 2.0 * rely.std()
-#         bigdx = relx[np.where(rely > ymin)]
-#         bigidx = idx1[np.where(rely > ymin)]
+#     if argrelextrema(dy, np.greater)[0].any():
+#         relx = theory_x[argrelextrema(dy, np.greater)[0]]
+#         rely = dy[argrelextrema(dy, np.greater)[0]]
+#         idx1 = argrelextrema(dy, np.greater)[0]
+#  
+#         # bixdx is the locations (in x) of any sky peak maximums greater than threshold sig
+#         bigdx = relx[np.where(rely > SKY_THRESHOLD * rely.mean())]
+#         # bigidx are the intensities of the sky peak maximums
+#         bigidx = idx1[np.where(rely > SKY_THRESHOLD * rely.mean())]
+#         
+#     else:
+#         # couldn't find any relative maxes in sky
+#         logger.info('could not find any relative maxes in sky lines')
+#         return []
 
- 
-    else:
-        # couldn't find any relative maxes in sky
-        logger.info('could not find any relative maxes in sky lines')
-        return []
- 
-#     print('sky thresh ' + str(SKY_THRESHOLD))
-#     print('bigdx: ' + str(bigdx))
-#     print('bigidx: ' + str(bigidx))
-#     raw_input('waiting')
-    
+    bigidx = find_peaks_2(dy)
+    bigdx = theory_x[bigidx]
+    logger.debug('n sky line peaks = {}'.format(len(bigidx)))
     
     deletelist = []
  
@@ -523,20 +504,6 @@ def max_corr(a, b):
     if not a.shape == b.shape:
         logger.error('cannot cross correlate arrays of different shapes')
         return None
-
-#     import pylab
-#     #pylab.figure(2)
-#     #pylab.clf()
-#     #pylab.plot(np.correlate(a,b,mode='full'))
-# 
-#     # real sky lines vs synthesized
-#     if False:
-#         pylab.figure(3)
-#         pylab.clf()
-#         pylab.plot(b)
-#         pylab.plot(a)
-#         pylab.show()
-
 
     # Start by finding the coarse discretised arg_max
     coarse_max = np.argmax(np.correlate(a, b, mode='full')) - length + 1
@@ -795,3 +762,38 @@ def applySolution(order_object, p1):
         return newoh
     else:
         return []
+   
+def find_peaks_1(s):
+    """
+    """
+    logger.info('using calibration line location algorithm 1')
+    peaks_i = argrelextrema(s, np.greater)[0]
+    peaks_y = s[peaks_i]
+    return(peaks_i[np.where(peaks_y > 3.0 * peaks_y.mean())])
+    
+def find_peaks_2(s):
+    """ 
+    """
+    logger.info('using calibration line location algorithm 2')
+    s = s[:-20]
+    s -= np.amin(s)
+    coeffs = np.polyfit(np.arange(len(s)), s, 9)
+    s_fit = np.polyval(coeffs, np.arange(len(s)))
+    sp = s - s_fit
+    sp -= np.amin(sp)
+    peaks_i = argrelextrema(sp, np.greater)
+    peaks_y = sp[peaks_i]
+#     big_peaks = peaks_i[0][np.where(peaks_y > 1.7 * peaks_y.mean())]
+    big_peaks = peaks_i[0][np.where(peaks_y > 1.4 * peaks_y.mean())]
+
+#     import pylab as pl
+#     pl.figure(figsize=(20, 5))
+#     pl.cla()
+#     pl.plot(s + 20, 'r-')
+#     pl.plot(sp, 'k-')
+#     pl.plot(s_fit + 20, 'r-')
+#     pl.plot(big_peaks, sp[big_peaks], 'ro')
+#     pl.show()
+    
+    return(big_peaks)
+    

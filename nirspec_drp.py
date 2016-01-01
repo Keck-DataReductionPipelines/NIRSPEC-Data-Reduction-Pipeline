@@ -73,7 +73,7 @@ def nirspec_drp(in_dir, base_out_dir):
             sys.exit(1)
             
     if len(rawDataSets) > 0:
-        logger.info('{} out of {} object frames successfully reduced'.format(
+        logger.info('n object frames reduced = {}'.format(
                 n_reduced, len(rawDataSets)))   
         
     logger.info('end nirspec drp')
@@ -224,6 +224,7 @@ def main():
     parser.add_argument('-oh_filename', help='path and filename of OH emission line catalog file')
     parser.add_argument('-int_c', help='revert to using integer column values in wavelength fit',
             action='store_true')
+    parser.add_argument('-lla', help='calibration line location algorithm, 1 or [2]')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
@@ -241,6 +242,7 @@ def main():
     if args.oh_filename is not None:
         config.params['oh_filename'] = args.oh_filename
     config.params['int_c'] = args.int_c
+    config.params['lla'] = args.lla
 
     # initialize environment, setup main logger, check directories
     try:

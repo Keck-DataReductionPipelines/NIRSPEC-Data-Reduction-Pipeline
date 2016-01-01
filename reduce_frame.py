@@ -50,6 +50,11 @@ def reduce_frame(raw, out_dir):
     # read raw object data into reduced data set object
     reduced.obj = fits.getdata(raw.objFileName)
     
+#     if np.amin(reduced.obj) < 0.0:
+#         print('min = {}'.format(np.amin(reduced.obj)))
+#         reduced.obj -= np.amin(reduced.obj)
+    
+    
     # combine flats and darks, if darks exist then subtract from obj and flat,
     # store results in processed data set
     process_darks_and_flats(raw, reduced)
