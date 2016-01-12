@@ -307,59 +307,53 @@ def perOrderWavelengthCalAsciiTable(outpath, base_name, order, col, centroid, so
     fptr.close()
     return
 
+    
 def skyLinesPlot(outpath, base_name, order):
-    pl.figure('sky lines', facecolor='white', figsize=(8,5))
+    
+    pl.figure('sky lines', facecolor='white', figsize=(8, 6))
     pl.cla()
-    pl.title("sky lines" + ', ' + base_name + ", order " + str(order.orderNum), fontsize=14)
-    pl.xlabel('x (pixels)', fontsize=12)
-    #pl.ylabel('row (pixel)', fontsize=12)
-    
-    synmax = np.amax(order.synthesizedSkySpec);
-    skymax = np.amax(order.skySpec);
-    
+    pl.suptitle("sky lines" + ', ' + base_name + ", order " + str(order.orderNum), fontsize=14)
+#     pl.rcParams['ytick.labelsize'] = 8
 
-    if synmax > skymax:
-        syn = order.synthesizedSkySpec
-#         sky = (order.skySpec - np.amin(order.skySpec)) * (synmax / skymax)
-        sky = order.skySpec * (synmax / skymax)
-    else:
-        syn = order.synthesizedSkySpec * (skymax / synmax)
-#         sky = (order.skySpec - np.amin(order.skySpec))
-        sky = order.skySpec
-
-    pl.plot((syn * 0.4) + (max(synmax, skymax) / 2), 'g-', linewidth=1, label='synthesized sky')
-    pl.plot(sky * 0.4, 'b-', linewidth=1, label='sky')
-
-    ymin, ymax = pl.ylim()
-    ymax = max(synmax, skymax) * 1.1
-    ymin = -200
-    pl.ylim(ymin, ymax)
-    pl.xlim(0, 1024)
-
-    pl.legend(loc='best', prop={'size': 8})
+    syn_plot = pl.subplot(2, 1, 1)
+    syn_plot.set_title('synthesized sky')
+    syn_plot.set_xlim([0, 1024])
+    ymin = np.amin(order.synthesizedSkySpec) - ((np.amax(order.synthesizedSkySpec) - np.amin(order.synthesizedSkySpec)) * 0.1)
+    ymax = np.amax(order.synthesizedSkySpec) + ((np.amax(order.synthesizedSkySpec) - np.amin(order.synthesizedSkySpec)) * 0.1)
+    syn_plot.set_ylim(ymin, ymax)
+    syn_plot.plot(order.synthesizedSkySpec, 'g-', linewidth=1)
+    syn_plot.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
+                 (0.3, 0.8), xycoords="figure fraction")
     
-    pl.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
-                (0.3, 0.8), xycoords="figure fraction")
+    sky_plot = pl.subplot(2, 1, 2)
+    sky_plot.set_title('sky')
+    sky_plot.set_xlim([0, 1024])
+    ymin = np.amin(order.skySpec) - ((np.amax(order.skySpec) - np.amin(order.skySpec)) * 0.1)
+    ymax = np.amax(order.skySpec) + ((np.amax(order.skySpec) - np.amin(order.skySpec)) * 0.1)
+    sky_plot.set_ylim([ymin, ymax])
+    sky_plot.plot(order.skySpec, 'b-', linewidth=1)
     
-    dy = 0
+    ymin, ymax = sky_plot.get_ylim()
+    dy = (ymax - ymin) / 4
+    y = ymin + dy/8
     for line in order.lines:
-        pl.plot([line.col, line.col], [ymin, ymax], "k--", linewidth=0.5)
-        pl.annotate(str(line.acceptedWavelength), (line.col, ((ymax - ymin) / 2) + dy), size=8)
-        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), (line.col, ((ymax - ymin) / 3) - dy), size=8)
-        dy += 300
-        if dy > 1500:
-            dy = 0
-
-    
-    #pl.minorticks_on()
-    #pl.grid(True)
+        if line.usedInGlobalFit:
+            c = 'k--'
+        else:
+            c = 'r--'
+        sky_plot.plot([line.col, line.col], [ymin, ymax], c, linewidth=0.5)
+        pl.annotate(str(line.acceptedWavelength), (line.col, y), size=8)
+        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), 
+                    (line.col, y + (dy / 4)), size=8)
+        y += dy
+        if y > (ymax - dy):
+            y = ymin + dy/8
 
     fn = constructFileName(outpath, base_name, order.orderNum, 'skylines.png')
         
     pl.savefig(fn)
     pl.close()
     return
-    
 
 def skyLinesAsciiTable(outpath, base_name, order):
     

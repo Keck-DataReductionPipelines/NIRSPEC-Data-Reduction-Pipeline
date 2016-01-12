@@ -224,7 +224,8 @@ def main():
     parser.add_argument('-oh_filename', help='path and filename of OH emission line catalog file')
     parser.add_argument('-int_c', help='revert to using integer column values in wavelength fit',
             action='store_true')
-    parser.add_argument('-lla', help='calibration line location algorithm, 1 or [2]')
+    parser.add_argument('-lla', type=int, default=2, 
+            help='calibration line location algorithm, 1 or [2]')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose

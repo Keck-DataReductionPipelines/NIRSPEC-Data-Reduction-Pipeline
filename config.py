@@ -12,5 +12,5 @@ params['dgn']                   = False
 params['npy']                   = False
 params['verbose']               = False
 params['subdirs']               = False
-params['sky_line_id_mode']      = 2
+params['lla']                   = 2         # sky line location algorithm
 

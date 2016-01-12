@@ -220,9 +220,11 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
     dy = sky
     
 #     import pylab as pl
-#     pl.figure()
+#     pl.figure(facecolor="white")
 #     pl.cla()
-#     pl.plot(dy)
+#     pl.xlabel('wavelength (Angstroms')
+#     pl.ylabel('relative intensity')
+#     pl.plot(oh_wavelengths, oh_intensities, 'kx', mfc="none", ms=4.0)
 #     pl.show()
     
     # ## Open, narrow down, and clean up line list ###
@@ -272,7 +274,10 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
 #         logger.info('could not find any relative maxes in sky lines')
 #         return []
 
-    bigidx = find_peaks_2(dy)
+    if config.params['lla'] == 1:
+        bigidx = find_peaks_1(dy)
+    else:
+        bigidx = find_peaks_2(dy)
     bigdx = theory_x[bigidx]
     logger.debug('n sky line peaks = {}'.format(len(bigidx)))
     
