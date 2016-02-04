@@ -13,4 +13,6 @@ params['npy']                   = False
 params['verbose']               = False
 params['subdirs']               = False
 params['lla']                   = 2         # sky line location algorithm
+params['pipes']                 = False
+params['shortsubdir']           = True
 

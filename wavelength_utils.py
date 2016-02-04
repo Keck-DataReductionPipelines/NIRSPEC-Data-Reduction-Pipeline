@@ -717,10 +717,14 @@ def twodfit(dataX, dataY, dataZ):
             #logger.info('removing residual val='+str(residual[residual.argmax()])+' index = '+str(residual.argmax()))
             #logger.info(' removing datax='+str(dataX_new[residual.argmax()])+' datay='+str(1/dataY_new[residual.argmax()])+' dataz=',dataZ_new[residual.argmax()])
 
-            dataZ_new = np.delete(dataZ_new, residual.argmax())
-            dataX_new = np.delete(dataX_new, residual.argmax())
-            dataY_new = np.delete(dataY_new, residual.argmax())
-            happened +=1
+            try:
+                dataZ_new = np.delete(dataZ_new, residual.argmax())
+                dataX_new = np.delete(dataX_new, residual.argmax())
+                dataY_new = np.delete(dataY_new, residual.argmax())
+                happened +=1
+            except:
+                logger.error('failed to delete outlier, continuing')
+#                 exit()
 
 
         elif sigma > SIGMA_MAX:

@@ -200,9 +200,14 @@ def reduce_orders(reduced):
         for i in range(len(reduced.orders)):
             if reduced.orders[i].gaussianParams is not None:
                 w.append(reduced.orders[i].gaussianParams[2])
-        logging.getLogger(l).log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
+        try:
+            logging.getLogger(l).log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
                     np.amax(w)))
-                
+        except:
+            logging.getLogger(l).error('maximum spatial peak width cannot be determined')
+            logging.getLogger(l).log(INFO, 'maximum spatial peak width = unknown')
+
+
     return
     
             
@@ -382,6 +387,8 @@ def log_start_summary(reduced):
         l.info('           target name = ' + reduced.getTargetName())
         l.info('           filter name = ' + reduced.getFilter())
         l.info('             slit name = ' + reduced.getSlit())
+        l.info('      integration time = ' + str(reduced.getITime()) + ' sec')
+        l.info('              n coadds = ' + str(reduced.getNCoadds()))
     logger.info('        echelle angle = ' + str(reduced.getEchPos()) + ' deg')
     logger.info('cross disperser angle = ' + str(reduced.getDispPos()) + ' deg')
     return

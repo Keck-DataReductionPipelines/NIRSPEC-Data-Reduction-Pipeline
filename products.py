@@ -28,7 +28,6 @@ saveAsciiTables = True
 savePlots = True
 showPlots = False
 saveJpgs = False
-UNDERLINE = False
 
 # This dictionary maps data product filename suffix (e.g. flux.tbl)
 # to output subdirectory (e.g. fitstbl/flux).
@@ -277,6 +276,47 @@ def traceFits(outpath, base_name, order_num, trace):
     log_fn(fn)
     return
 
+# def profileAsciiTable(outpath, base_name, order_num, profile):
+#     
+#     names = ['row', 'mean_flux'] 
+#     units = ['pixels', 'counts']
+#     formats = ['.0f', '.0f']
+#     widths = [6, 9] 
+#     
+#     buff = []
+#     
+#     line = []
+#     for i, name in enumerate(names):
+#         line.append('{:>{w}}'.format(name, w=widths[i]))
+#     buff.append('| {} |'.format('| '.join(line)))
+#     
+#     line = []
+#     for i, unit in enumerate(units):
+#         line.append('{:>{w}}'.format(unit, w=widths[i]))
+#     buff.append('| {} |'.format('| '.join(line)))
+#         
+#     if UNDERLINE:
+#         line = []
+#         for i, unit in enumerate(units):
+#             line.append('{:->{w}}'.format('', w=widths[i]))
+#         buff.append('--'.join(line))
+#     
+#     for row in range(profile.shape[0]):
+#         data = [row, profile[row]]
+#         line = []
+#         for i, val in enumerate(data):
+#             line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
+#         buff.append('  {}  '.format('  '.join(line)))
+#                 
+#     fn = constructFileName(outpath, base_name, order_num, 'profile.txt')
+#     fptr = open(fn, 'w')
+#     fptr.write('\n'.join(buff))
+#     fptr.close()
+#     log_fn(fn)
+#  
+#     return
+
+
 def profileAsciiTable(outpath, base_name, order_num, profile):
     
     names = ['row', 'mean_flux'] 
@@ -286,21 +326,20 @@ def profileAsciiTable(outpath, base_name, order_num, profile):
     
     buff = []
     
+    if config.params['pipes'] is True:
+        p_char = '|'
+    else:
+        p_char = ' '
+    
     line = []
     for i, name in enumerate(names):
         line.append('{:>{w}}'.format(name, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     line = []
     for i, unit in enumerate(units):
         line.append('{:>{w}}'.format(unit, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-        
-    if UNDERLINE:
-        line = []
-        for i, unit in enumerate(units):
-            line.append('{:->{w}}'.format('', w=widths[i]))
-        buff.append('--'.join(line))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     for row in range(profile.shape[0]):
         data = [row, profile[row]]
@@ -449,6 +488,11 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, er
     nominal_width = 10
     widths = []
     
+    if config.params['pipes'] is True:
+        p_char = '|'
+    else:
+        p_char = ' '
+        
     if trace_lower is None:
         trace_lower = np.zeros(1024, dtype=float)
     if trace_mean is None:
@@ -468,18 +512,12 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, er
     line = []
     for i, name in enumerate(names):
         line.append('{:>{w}}'.format(name, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     line = []
     for i, unit in enumerate(units):
         line.append('{:>{w}}'.format(unit, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-        
-    if UNDERLINE:
-        line = []
-        for i, unit in enumerate(units):
-            line.append('| {} |'.format('{:->{w}}'.format('', w=widths[i])))
-        buff.append('--'.join(line))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     for col in range(wave.shape[0]):
         data = [col, wave[col], flux[col], sky[col], synth_sky[col], error[col], flat[col],
@@ -535,7 +573,11 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
     pl.grid(True)
     pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1)
     
-    axes = pl.gca()
+    ymin, ymax = pl.ylim()
+    pl.plot(wave, cont, "k-", mfc="none", ms=3.0, linewidth=1)
+    pl.ylim(ymin, ymax)
+    
+#     axes = pl.gca()
     #axes.set_ylim(0, 300)
     
     fn = constructFileName(outpath, base_name, order_num, title + '.png')
@@ -594,6 +636,11 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     nominal_width = 10
     widths = []
     
+    if config.params['pipes'] is True:
+        p_char = '|'
+    else:
+        p_char = ' '
+        
     for name in names:
         widths.append(max(len(name), nominal_width))
             
@@ -613,18 +660,12 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
     line = []
     for i, name in enumerate(names):
         line.append('{:>{w}}'.format(name, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     line = []
     for i, unit in enumerate(units):
         line.append('{:>{w}}'.format(unit, w=widths[i]))
-    buff.append('| {} |'.format('| '.join(line)))
-      
-    if UNDERLINE:  
-        line = []
-        for i, unit in enumerate(units):
-            line.append('{:->{w}}'.format('', w=widths[i]))
-        buff.append('| {} |'.format('--'.join(line)))
+    buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     for i in range(len(order)):
         data = [order[i], source[i], col[i], wave_exp[i], wave_fit[i], res[i], (int)(peak[i]), slope[i]]

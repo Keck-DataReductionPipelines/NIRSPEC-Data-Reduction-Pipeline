@@ -52,6 +52,12 @@ class ReducedDataSet:
     def getSlit(self):
         return self.header['slitname']
     
+    def getITime(self):
+        return self.header['itime']
+    
+    def getNCoadds(self):
+        return self.header['coadds']
+    
     def getDate(self):
         return self.header['DATE-OBS']
     

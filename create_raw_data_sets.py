@@ -40,9 +40,9 @@ def create(in_dir):
     for filename, header in headers.items():
             if obj_criteria_met(header):
                 rawDataSets.append(RawDataSet.RawDataSet(filename, header))
-            else:
-                logger.info('{} is in low dispersion mode, not reduced'.format(
-                        filename[filename.rfind('/') + 1:]))
+#             else:
+#                 logger.info('{} is in low dispersion mode, not reduced'.format(
+#                         filename[filename.rfind('/') + 1:]))
     
     logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
     

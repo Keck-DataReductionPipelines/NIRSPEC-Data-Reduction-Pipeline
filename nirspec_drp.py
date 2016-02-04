@@ -34,16 +34,20 @@ def nirspec_drp(in_dir, base_out_dir):
 
         if config.params['subdirs'] is True:
             fn = rawDataSet.objFileName
-            out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:fn.rfind('.')]
-            if not os.path.exists(out_dir):
+            if config.params['shortsubdir']:
+                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:fn.rfind('.')]
+            else:
+                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):fn.rfind('.')]
+        else:
+            out_dir = base_out_dir        
+        if not os.path.exists(out_dir):
                 try: 
                     os.mkdir(out_dir)
                 except: 
                     msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
                     # logger.critical(msg) can't create log if no output directory
                     raise IOError(msg)
-        else:
-            out_dir = base_out_dir
+ 
             
         try:
             # generate reduced data set by reducing raw data set
@@ -226,6 +230,12 @@ def main():
             action='store_true')
     parser.add_argument('-lla', type=int, default=2, 
             help='calibration line location algorithm, 1 or [2]')
+    parser.add_argument('-pipes', 
+            help='enables pipe character seperators in ASCII table headers',
+            action='store_true')
+    parser.add_argument('-shortsubdir',
+            help='use file ID only, rather than full KOA ID, for subdirectory names',
+            action='store_true')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
@@ -244,6 +254,8 @@ def main():
         config.params['oh_filename'] = args.oh_filename
     config.params['int_c'] = args.int_c
     config.params['lla'] = args.lla
+    config.params['pipes'] = args.pipes
+    config.params['shortsubdir'] = args.shortsubdir
 
     # initialize environment, setup main logger, check directories
     try:
