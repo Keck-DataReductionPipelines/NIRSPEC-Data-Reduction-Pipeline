@@ -13,6 +13,9 @@ import image_lib
 
 import config
 
+import warnings
+warnings.filterwarnings('ignore')
+
 main_logger = logging.getLogger('main')
 obj_logger = logging.getLogger('obj')
 file_count = [0]

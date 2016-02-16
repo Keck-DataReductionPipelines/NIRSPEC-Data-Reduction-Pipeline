@@ -50,24 +50,7 @@ def nirspec_drp(in_dir, base_out_dir):
  
             
         try:
-            # generate reduced data set by reducing raw data set
-            reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
-            
-#             logger.info('mean snr = {:.3f}'.format(
-#                     sum(reducedDataSet.orders[i].snr for i in range(len(reducedDataSet.orders))) / 
-#                     len(reducedDataSet.orders)))
-            
-            # produce data products from reduced data set
-            if config.params['products'] is True:
-                products.gen(reducedDataSet, out_dir)
-            else:
-                logger.info('data product generation inhibited by command line switch')
-            
-            # if diagnostics mode is enabled, then produce diagnostic data products
-            if config.params['dgn'] is True:
-                logger.info('diagnostic mode enabled, generating diagnostic data products')
-                dgn.gen(reducedDataSet, out_dir)
-                
+            reduce_data_set(rawDataSet, out_dir)    
         except DrpException.DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
@@ -83,6 +66,24 @@ def nirspec_drp(in_dir, base_out_dir):
     logger.info('end nirspec drp')
     return    
         
+def reduce_data_set(rawDataSet, out_dir):    
+    
+    logger = logging.getLogger('main')
+
+    # generate reduced data set by reducing raw data set
+    reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
+    
+    # produce data products from reduced data set
+    if config.params['products'] is True:
+        products.gen(reducedDataSet, out_dir)
+    else:
+        logger.info('data product generation inhibited by command line switch')
+    
+    # if diagnostics mode is enabled, then produce diagnostic data products
+    if config.params['dgn'] is True:
+        logger.info('diagnostic mode enabled, generating diagnostic data products')
+        dgn.gen(reducedDataSet, out_dir)
+                 
         
 def init(in_dir, out_dir):
     """
@@ -167,17 +168,23 @@ def init(in_dir, out_dir):
 
 def get_log_fn(in_dir, out_dir):
     log_fn = None
-    fns = os.listdir(in_dir)
-    for fn in fns:
-        if fn.startswith('NS.'):
-            log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
-            break
-    if log_fn is None:
-        log_fn = out_dir + '/nirspec_drp.log'
+    
+    if config.params['ut'] is not None:
+        log_fn = '{}/NS.{}.log'.format(out_dir, config.params['ut'])
+    else:
+        fns = os.listdir(in_dir)
+        for fn in fns:
+            if fn.startswith('NS.'):
+                log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
+                break
+        if log_fn is None:
+            log_fn = out_dir + '/nirspec_drp.log'
+            
     if config.params['subdirs'] is False:
         parts = log_fn.split('/')
         parts.insert(len(parts)-1, 'log')
         log_fn = '/'.join(parts)
+        
     return(log_fn)
      
 def main():
@@ -236,6 +243,8 @@ def main():
     parser.add_argument('-shortsubdir',
             help='use file ID only, rather than full KOA ID, for subdirectory names',
             action='store_true')
+    parser.add_argument('-ut',
+            help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
@@ -245,9 +254,9 @@ def main():
     config.params['cosmic'] = args.cosmic
     config.params['products'] = args.products
     if args.obj_window is not None:
-        config.params['obj_window'] = int(args.obj_window_width)
+        config.params['obj_window'] = int(args.obj_window)
     if args.sky_window is not None:
-        config.params['sky_window'] = int(args.sky_window_width)
+        config.params['sky_window'] = int(args.sky_window)
     if args.sky_separation is not None:
         config.params['sky_separation'] = int(args.sky_separation)
     if args.oh_filename is not None:
@@ -256,6 +265,8 @@ def main():
     config.params['lla'] = args.lla
     config.params['pipes'] = args.pipes
     config.params['shortsubdir'] = args.shortsubdir
+    if args.ut is not None:
+        config.params['ut'] = args.ut
 
     # initialize environment, setup main logger, check directories
     try:

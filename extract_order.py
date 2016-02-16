@@ -32,12 +32,6 @@ def extract_order(order_num, obj, flat, top_calc, bot_calc, filter_name, slit_na
     # find actual top and bottom of order using edge detection
     determine_edge_locations(tops, bots, order, params['sigma'], params['thresh'])
     
-#     if order.topMeas is None and order.botMeas is None:
-#         msg = 'could not find top or bottom of order'
-#         logger.debug(msg)
-# #         raise DrpException.DrpException(msg)
-#         return None
-
     if order.topMeas is None:
         logger.warning('could not find top of order')
     if order.botMeas is None:
@@ -343,7 +337,7 @@ def get_extraction_params(filterName, slitName):
     elif 'NIRSPEC-7' in filterName.upper():
         params = {'padding': 30, 
                   'sigma': 200.0,
-                  'thresh': 20.0, 
+                  'thresh': 60.0, 
                   'spw': 3.0, 
                   'trace_width': 1.1}
         

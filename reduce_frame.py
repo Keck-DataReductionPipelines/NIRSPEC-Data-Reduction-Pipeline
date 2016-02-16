@@ -78,6 +78,7 @@ def reduce_frame(raw, out_dir):
         raise
     
     # find wavelength solution
+    reload(wavelength_utils)
     if find_global_wavelength_soln(reduced) is True:
         apply_wavelength_soln(reduced)
     else:

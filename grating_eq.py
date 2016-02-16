@@ -80,6 +80,11 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
         left_top_row += long_slit_y_corr
         left_bot_row -= long_slit_y_corr
         
+        if '6' in filtername:
+            logger.info('applying N-6 long slit correction')
+            left_top_row -= 25
+            left_bot_row -= 25 
+        
     elif '42x' in slit:
         logger.debug('applying +/-' + str(low_res_slit_y_corr) + 
                     ' pixel low res slit y correction for slit ' + slit)
@@ -136,8 +141,8 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
 
 def is_on_detector(left_top_row, left_bot_row):
     padding = 20.0
-    if left_top_row < (1024 - padding) and left_bot_row > 0:
-        return True
+    if left_top_row < (1024 - padding + 50) and left_bot_row > 0:
+       return True
     else:
         return False
     

@@ -23,11 +23,8 @@ def reduce_order(order):
         
     # flatten obj but keep original for noise calc
     order.flattenedObjImg = np.array(order.objCutout / order.normalizedFlatImg)
-    #***
     if np.amin(order.flattenedObjImg) < 0:
-        print('order {} min {}'.format(order.orderNum, np.amin(order.flattenedObjImg)))
         order.flattenedObjImg -= np.amin(order.flattenedObjImg)
-    #***
     order.flattened = True
     order.objImg = np.array(order.objCutout) # should probably use objImg instead of objCutout to begin with
     order.flatImg = np.array(order.flatCutout)
