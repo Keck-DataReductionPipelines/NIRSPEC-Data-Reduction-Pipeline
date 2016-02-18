@@ -50,11 +50,6 @@ def reduce_frame(raw, out_dir):
     # read raw object data into reduced data set object
     reduced.obj = fits.getdata(raw.objFileName)
     
-#     if np.amin(reduced.obj) < 0.0:
-#         print('min = {}'.format(np.amin(reduced.obj)))
-#         reduced.obj -= np.amin(reduced.obj)
-    
-    
     # combine flats and darks, if darks exist then subtract from obj and flat,
     # store results in processed data set
     process_darks_and_flats(raw, reduced)
@@ -348,7 +343,7 @@ def init(objFileName, out_dir):
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
-    fn = out_dir + '/' + objFileName[objFileName.find("NS"):objFileName.rfind(".")]  + '.log'
+    fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
     if config.params['subdirs'] is False:
         parts = fn.split('/')
         parts.insert(len(parts)-1, 'log')
@@ -383,10 +378,11 @@ def init(objFileName, out_dir):
 def log_start_summary(reduced):
     
     for l in [main_logger, logger]:
-        l.info('starting reduction of ' + reduced.getFileName()[reduced.getFileName().rfind('/') + 1:])
+        l.info('starting reduction of ' + 
+               reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
         l.info('   date of observation = ' + reduced.getDate() + ' UT')
         l.info('           target name = ' + reduced.getTargetName())
-        l.info('           filter name = ' + reduced.getFilter())
+        l.info('           filter name = ' + reduced.getFullFilterName())
         l.info('             slit name = ' + reduced.getSlit())
         l.info('      integration time = ' + str(reduced.getITime()) + ' sec')
         l.info('              n coadds = ' + str(reduced.getNCoadds()))

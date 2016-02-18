@@ -97,7 +97,7 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
     
     if obs_date < shift_date:
         logger.debug('applying +' + str(date_y_corr) + 
-                    ' pixel post-' + shift_date.strftime('%x') + ' y correction')
+                    ' pixel pre-' + shift_date.strftime('%x') + ' y correction')
         left_top_row += date_y_corr
         left_bot_row += date_y_corr
         
@@ -142,7 +142,7 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
 def is_on_detector(left_top_row, left_bot_row):
     padding = 20.0
     if left_top_row < (1024 - padding + 50) and left_bot_row > 0:
-       return True
+        return True
     else:
         return False
     

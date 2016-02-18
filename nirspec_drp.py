@@ -11,7 +11,8 @@ import reduce_frame
 import products
 import DrpException
 
-cosmic_clean = True
+VERSION = '0.9.1'
+
 config_params = {}
 
 def nirspec_drp(in_dir, base_out_dir):
@@ -33,11 +34,11 @@ def nirspec_drp(in_dir, base_out_dir):
     for rawDataSet in rawDataSets:
 
         if config.params['subdirs'] is True:
-            fn = rawDataSet.objFileName
+            fn = rawDataSet.objFileName.rstrip('.gz').rstrip('.fits')
             if config.params['shortsubdir']:
-                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:fn.rfind('.')]
+                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
             else:
-                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):fn.rfind('.')]
+                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
         else:
             out_dir = base_out_dir        
         if not os.path.exists(out_dir):
@@ -47,8 +48,7 @@ def nirspec_drp(in_dir, base_out_dir):
                     msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
                     # logger.critical(msg) can't create log if no output directory
                     raise IOError(msg)
- 
-            
+                
         try:
             reduce_data_set(rawDataSet, out_dir)    
         except DrpException.DrpException as e:
@@ -119,19 +119,6 @@ def init(in_dir, out_dir):
     else:
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
-#     log_fn = None
-#     fns = os.listdir(in_dir)
-#     for fn in fns:
-#         if fn.startswith('NS.'):
-#             log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
-#             break
-#     if log_fn is None:
-#         log_fn = out_dir + '/nirspec_drp.log'
-#     if config.params['subdirs'] is False:
-#         parts = log_fn.split('/')
-#         parts.insert(len(parts)-1, 'log')
-#         log_fn = '/'.join(parts)
-
     log_fn = get_log_fn(in_dir, out_dir)
             
     if os.path.exists(log_fn):
@@ -153,7 +140,7 @@ def init(in_dir, out_dir):
         sh.setFormatter(sformatter)
         logger.addHandler(sh)
     
-    logger.info('start nirspec drp')
+    logger.info('start nirspec drp version {}'.format(VERSION))
     logger.info('cwd: {}'.format(os.getcwd()))
     logger.info('input dir: {}'.format(in_dir.rstrip('/')))
     logger.info('output dir: {}'.format(out_dir.rstrip('/')))
@@ -199,9 +186,6 @@ def main():
     Run with -h to see command line arguments
     """
      
-#     global cosmic_clean
-#     global config_params
-    
     # parse command line arguments
     parser = argparse.ArgumentParser(description="NIRSPEC DRP")
     parser.add_argument('in_dir', help='input directory')
@@ -245,6 +229,9 @@ def main():
             action='store_true')
     parser.add_argument('-ut',
             help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
+    parser.add_argument('-gunzip',
+            help='forces gzipped files to be gunzipped', 
+            action='store_true')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
@@ -267,6 +254,7 @@ def main():
     config.params['shortsubdir'] = args.shortsubdir
     if args.ut is not None:
         config.params['ut'] = args.ut
+    config.params['gunzip'] = args.gunzip
 
     # initialize environment, setup main logger, check directories
     try:

@@ -6,7 +6,7 @@ class ReducedDataSet:
     def __init__(self, fileName, header):
         
         self.fileName = fileName
-        self.baseName = fileName[fileName.find('NS'):fileName.rfind('.')]
+        self.baseName = fileName[fileName.find('NS'):].rstrip('.gz').rstrip('.fits')
         self.header = header
        
         self.hasDark = False
@@ -41,6 +41,12 @@ class ReducedDataSet:
         return self.header['NAXIS1'], self.header['NAXIS2']
         
     def getFilter(self):
+        if self.header['filname'].startswith('NIRSPEC') and len(self.header['filname']) > 9:
+            return self.header['filname'][:9]
+        else:
+            return self.header['filname']
+        
+    def getFullFilterName(self):
         return self.header['filname']
         
     def getEchPos(self):

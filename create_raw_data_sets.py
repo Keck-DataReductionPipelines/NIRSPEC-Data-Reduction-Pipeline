@@ -1,10 +1,12 @@
 import os
 import subprocess
+import fnmatch
 import logging
 from astropy.io import fits
 
 import RawDataSet
 import nirspec_constants as constants
+import config
 
 from __builtin__ import False
 
@@ -50,11 +52,13 @@ def create(in_dir):
     for rawDataSet in rawDataSets:
         for filename, header in headers.items():
             if (header['IMAGETYP'] == 'flatlamp'):
-                if flat_criteria_met(rawDataSet.objHeader, header):
-                    rawDataSet.flatFileNames.append(filename)
+                if len(rawDataSet.flatFileNames) < config.params['max_n_flats']:
+                    if flat_criteria_met(rawDataSet.objHeader, header):
+                        rawDataSet.flatFileNames.append(filename)
             elif (header['IMAGETYP'] == 'dark'):
-                if dark_criteria_met(rawDataSet.objHeader, header):
-                    rawDataSet.darkFileNames.append(filename)
+                if len(rawDataSet.darkFileNames) < config.params['max_n_darks']:
+                    if dark_criteria_met(rawDataSet.objHeader, header):
+                        rawDataSet.darkFileNames.append(filename)
         rawDataSet.flatFileNames.sort()
         rawDataSet.darkFileNames.sort()
              
@@ -80,18 +84,17 @@ def get_headers(in_dir):
         Dictionary of headers indexed by file name.
         
     """
-    cmnd = "find " + in_dir + " -name \*fits\* | sort"
-    filenames, err = subprocess.Popen([cmnd], stdout=subprocess.PIPE, shell=True).communicate()
-    filenames = filter(None, filenames.split('\n'))
     
     headers = dict()
-    
-    for filename in filenames:
-        if filename.endswith('gz'):
-            os.system('gunzip ' + filename)
-            filename = filename.rstrip('.gz')
-        headers[filename] = fits.getheader(filename)
-
+        
+    for filename in os.listdir(in_dir):
+        full_filename = in_dir + '/' + filename
+        if fnmatch.fnmatch(filename, '*.fits*'):
+            if config.params['gunzip'] is True and filename.endswith('gz'):
+                os.system('gunzip ' + full_filename)
+                full_filename = full_filename.rstrip('.gz')
+            headers[full_filename] = fits.getheader(full_filename)
+        
     return headers
 
 def obj_criteria_met(header):

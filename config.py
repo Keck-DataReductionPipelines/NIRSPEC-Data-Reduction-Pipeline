@@ -16,4 +16,7 @@ params['lla']                   = 2         # sky line location algorithm
 params['pipes']                 = False
 params['shortsubdir']           = True
 params['ut']                    = None
+params['gunzip']                = False
+params['max_n_flats']           = 8
+params['max_n_darks']           = 8
 
