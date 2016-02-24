@@ -49,7 +49,7 @@ def create(in_dir):
                 
     if obj_criteria_met(header, failed2reduce) is False:
         if failed.get('itype') > 0:
-            logger.info('Failed to reduced {} files because they are not object frames'.format(failed2reduce.get('itype')))
+            logger.info('Ignored {} files because they are not object frames'.format(failed2reduce.get('itype')))
         if failed.get('dismode') > 0:
             logger.info('Failed to reduced {} files because of low dispersion mode'.format(failed2reduce.get('dispmode')))
         if failed.get('n1') > 0:
