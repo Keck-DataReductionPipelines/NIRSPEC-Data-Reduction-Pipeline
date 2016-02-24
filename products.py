@@ -10,10 +10,10 @@ from astropy.io import ascii
 from skimage import exposure
 import Image
 import image_lib
-
+import PIL
 import config
-
 import warnings
+
 warnings.filterwarnings('ignore')
 
 main_logger = logging.getLogger('main')
