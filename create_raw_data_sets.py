@@ -10,6 +10,7 @@ import config
 
 from __builtin__ import False
 
+failed2reduce = {'itype':0, 'dispmode':0, 'n1':0, 'n2':0, 'fil':0}
 
 def create(in_dir):
     """
@@ -45,6 +46,18 @@ def create(in_dir):
 #             else:
 #                 logger.info('{} is in low dispersion mode, not reduced'.format(
 #                         filename[filename.rfind('/') + 1:]))
+                
+    if obj_criteria_met(header, failed2reduce) is False:
+        if failed.get('itype') > 0:
+            logger.info('Failed to reduced {} files because they are not object frames'.format(failed2reduce.get('itype')))
+        if failed.get('dismode') > 0:
+            logger.info('Failed to reduced {} files because of low dispersion mode'.format(failed2reduce.get('dispmode')))
+        if failed.get('n1') > 0:
+            logger.info('Failed to reduced {} files because NAXIS1 != 1024'.format(failed2reduce.get('n1')))
+        if failed.get('n2') > 0:
+            logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(failed2reduce.get('n2')))
+        if failed.get('fil') > 0:
+            logger.info('Failed to reduce {} files because of invalid filter'.format(failed2reduce.get('fil')))
     
     logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
     
@@ -97,7 +110,7 @@ def get_headers(in_dir):
         
     return headers
 
-def obj_criteria_met(header):
+def obj_criteria_met(header, failed2reduce):
     """
     Takes an object frame header and determines if it is a frame that can be 
     reduced by the DRP.
@@ -111,14 +124,19 @@ def obj_criteria_met(header):
     """
     
     if header['IMAGETYP'].lower() != 'object':
+        failed2reduce['itype'] += 1
         return False
     if header['DISPERS'].lower() != 'high':
+        failed2reduce['dispmode'] += 1
         return False
     if header['NAXIS1'] != constants.N_COLS:
+        failed2reduce['n1'] += 1
         return False
     if header['NAXIS2'] != constants.N_ROWS:
+        failed2reduce['n2'] += 1
         return False
     if header['FILNAME'].lower().find('nirspec') < 0:
+        failed2reduce['fil'] += 1
         return False
     return True
     
