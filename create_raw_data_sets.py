@@ -48,15 +48,15 @@ def create(in_dir):
 #                         filename[filename.rfind('/') + 1:]))
                 
     if obj_criteria_met(header, failed2reduce) is False:
-        if failed.get('itype') > 0:
+        if failed2reduce.get('itype') > 0:
             logger.info('Ignored {} files because they are not object frames'.format(failed2reduce.get('itype')))
-        if failed.get('dismode') > 0:
+        if failed2reduce.get('dismode') > 0:
             logger.info('Failed to reduced {} files because of low dispersion mode'.format(failed2reduce.get('dispmode')))
-        if failed.get('n1') > 0:
+        if failed2reduce.get('n1') > 0:
             logger.info('Failed to reduced {} files because NAXIS1 != 1024'.format(failed2reduce.get('n1')))
-        if failed.get('n2') > 0:
+        if failed2reduce.get('n2') > 0:
             logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(failed2reduce.get('n2')))
-        if failed.get('fil') > 0:
+        if failed2reduce.get('fil') > 0:
             logger.info('Failed to reduce {} files because of invalid filter'.format(failed2reduce.get('fil')))
     
     logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
