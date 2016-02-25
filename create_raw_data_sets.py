@@ -41,7 +41,7 @@ def create(in_dir):
     rawDataSets = []
 
     for filename, header in headers.items():
-            if obj_criteria_met(header):
+            if obj_criteria_met(header, failed2reduce):
                 rawDataSets.append(RawDataSet.RawDataSet(filename, header))
 #             else:
 #                 logger.info('{} is in low dispersion mode, not reduced'.format(
