@@ -15,7 +15,7 @@ VERSION = '0.9.2'
 
 config_params = {}
 
-def nirspec_drp(in_dir, base_out_dir):
+def nsdrp(in_dir, base_out_dir):
     """
     NIRSPEC DRP. Assembles raw data sets from FITS files in the input directory,
     then generates reduced data sets from raw data sets.  Level 1 data products
@@ -265,12 +265,12 @@ def main():
     
     # process data
 #     try: 
-#         nirspec_drp(args.in_dir, args.out_dir)
+#         nsdrp(args.in_dir, args.out_dir)
 #     except Exception as e:
 #         print(e)
 #         sys.exit(1)
         
-    nirspec_drp(args.in_dir, args.out_dir)
+    nsdrp(args.in_dir, args.out_dir)
 
     sys.exit(0)
     
