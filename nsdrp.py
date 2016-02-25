@@ -11,7 +11,7 @@ import reduce_frame
 import products
 import DrpException
 
-VERSION = '0.9.1'
+VERSION = '0.9.2'
 
 config_params = {}
 
