@@ -17,7 +17,7 @@ config_params = {}
 
 def nsdrp(in_dir, base_out_dir):
     """
-    NIRSPEC DRP. Assembles raw data sets from FITS files in the input directory,
+    NSDRP. Assembles raw data sets from FITS files in the input directory,
     then generates reduced data sets from raw data sets.  Level 1 data products
     are generated from the reduced data sets and saved in the output directory.
     """
@@ -165,7 +165,7 @@ def get_log_fn(in_dir, out_dir):
                 log_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '.log'
                 break
         if log_fn is None:
-            log_fn = out_dir + '/nirspec_drp.log'
+            log_fn = out_dir + '/nsdrp.log'
             
     if config.params['subdirs'] is False:
         parts = log_fn.split('/')
