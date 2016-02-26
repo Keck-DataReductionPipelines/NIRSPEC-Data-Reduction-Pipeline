@@ -36,5 +36,5 @@ that it completes without any errors. The descriptions of the output products ar
 
 2)    Advanced Usage
     
-      Additional command line arguments are available. These are listed and described after executing: python nirspec_drp.py -h
+      Additional command line arguments are available. These are listed and described after executing: python nsdrp.py -h
 
