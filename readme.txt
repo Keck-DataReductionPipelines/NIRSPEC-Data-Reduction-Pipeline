@@ -18,6 +18,8 @@ high-dispersion mode, and is optimized for and works best on frames having:
 	- NIRSPEC-1 through NIRSPEC-7 filters
 	- well-separated orders without overlapping
 	- sufficient exposure times (~> 30s) with detectable sky lines
+	
+Finally, the NSDRP should be run only on files downloaded from the Keck Observatory Archive (KOA, http://koa.ipac.caltech.edu/) since it needs to know the correct image type (on-sky object or calibrations) of the data frames. Only NIRSPEC files ingested into the archive are guaranteed to contain this information.
 
 EXECUTING NIRSPEC DRP:
 
