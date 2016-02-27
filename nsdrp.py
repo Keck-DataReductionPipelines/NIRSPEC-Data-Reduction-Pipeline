@@ -63,7 +63,7 @@ def nsdrp(in_dir, base_out_dir):
         logger.info('n object frames reduced = {}'.format(
                 n_reduced, len(rawDataSets)))   
         
-    logger.info('end nirspec drp')
+    logger.info('end nsdrp')
     return    
         
 def reduce_data_set(rawDataSet, out_dir):    
@@ -140,7 +140,7 @@ def init(in_dir, out_dir):
         sh.setFormatter(sformatter)
         logger.addHandler(sh)
     
-    logger.info('start nirspec drp version {}'.format(VERSION))
+    logger.info('start nsdrp version {}'.format(VERSION))
     logger.info('cwd: {}'.format(os.getcwd()))
     logger.info('input dir: {}'.format(in_dir.rstrip('/')))
     logger.info('output dir: {}'.format(out_dir.rstrip('/')))
