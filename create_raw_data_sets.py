@@ -34,6 +34,8 @@ def create(in_dir):
             
     if (len(headers) == 0):
         logger.critical('no fits files found')
+        print "CRITICAL - no fits files found in: " + in_dir
+        os.sys.exit(2)
         return
     
     logger.info('n fits files found = {}'.format(str(len(headers))))
