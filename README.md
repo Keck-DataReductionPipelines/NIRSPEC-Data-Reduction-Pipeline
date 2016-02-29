@@ -17,11 +17,12 @@ addition, it is intended to produce only quick-look, browse extracted spectra fo
 purpose of assessing the scientific quality and content of the raw data. It may not be able
 to reduce all types of NIRSPEC data. Specifically, it can only reduce data obtained in
 high-dispersion mode, and is optimized for and works best on frames having:
-	- single point source in slit
-	- reasonably bright targets with detectable continuum 
-	- NIRSPEC-1 through NIRSPEC-7 filters
-	- well-separated orders without overlapping
-	- sufficient exposure times (~> 30s) with detectable sky lines
+
+- single point source in slit
+- reasonably bright targets with detectable continuum 
+- NIRSPEC-1 through NIRSPEC-7 filters
+- well-separated orders without overlapping
+- sufficient exposure times (~> 30s) with detectable sky lines
 	
 Finally, the NSDRP should be run only on files downloaded from the Keck Observatory Archive 
 (KOA, http://koa.ipac.caltech.edu/) since it needs to know the correct image type 
