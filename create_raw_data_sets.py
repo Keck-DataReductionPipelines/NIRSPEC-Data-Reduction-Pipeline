@@ -60,8 +60,8 @@ def create(in_dir):
             logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(failed2reduce.get('n2')))
         if failed2reduce.get('fil') > 0:
             logger.info('Failed to reduce {} files because of invalid filter'.format(failed2reduce.get('fil')))
-        if failed2reduce.get('dmode') > 0:
-            logger.info('Failed to reduce {} files because SCAM mode'.format(failed2reduce.get('dmode')))
+#        if failed2reduce.get('dmode') > 0:
+#            logger.info('Failed to reduce {} files because SCAM mode'.format(failed2reduce.get('dmode')))
     
     logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
     
@@ -127,9 +127,9 @@ def obj_criteria_met(header, failed2reduce):
         
     """
 
-    if header['DETMODE'].lower != 'spec':
-        failed2reduce['dmode'] += 1
-        return False
+#    if header['DETMODE'].lower != 'spec':
+#        failed2reduce['dmode'] += 1
+#        return False
     if header['IMAGETYP'].lower() != 'object':
         failed2reduce['itype'] += 1
         return False
