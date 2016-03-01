@@ -99,7 +99,7 @@ def gen(reduced, out_dir):
             
     # prepare extended fits header
     header = reduced.header
-    header['COMMENT'] = ('NIRSPEC DRP', 'NIRSPEC DRP')
+    header['COMMENT'] = ('NSDRP', 'NSDRP')
     if reduced.rmsFitRes is not None: 
         header['WFITRMS'] = (round(reduced.rmsFitRes, 4), 'RMS wavelength fit residual')
     if reduced.coeffs is not None:
