@@ -29,7 +29,7 @@ Finally, the NSDRP should be run only on files downloaded from the Keck Observat
 (on-sky object or calibrations) of the data frames. Only NIRSPEC files ingested into the archive 
 are guaranteed to contain this information.
 
-EXECUTING NIRSPEC DRP:
+EXECUTING NSDRP:
 
 1)    Simple command line usage: python nsdrp.py in_dir out_dir
 
