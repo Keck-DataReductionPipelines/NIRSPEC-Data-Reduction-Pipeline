@@ -50,8 +50,8 @@ def create(in_dir):
 #                         filename[filename.rfind('/') + 1:]))
                 
     if obj_criteria_met(header, failed2reduce) is False:
-        if failed2reduce.get('itype') > 0:
-            logger.info('Ignored {} files because they are not object frames'.format(failed2reduce.get('itype')))
+#        if failed2reduce.get('itype') > 0:
+#            logger.info('Ignored {} files because they are not object frames'.format(failed2reduce.get('itype')))
         if failed2reduce.get('dismode') > 0:
             logger.info('Failed to reduced {} files because of low dispersion mode'.format(failed2reduce.get('dispmode')))
         if failed2reduce.get('n1') > 0:
@@ -130,9 +130,9 @@ def obj_criteria_met(header, failed2reduce):
 #    if header['DETMODE'].lower != 'spec':
 #        failed2reduce['dmode'] += 1
 #        return False
-    if header['IMAGETYP'].lower() != 'object':
-        failed2reduce['itype'] += 1
-        return False
+#    if header['IMAGETYP'].lower() != 'object':
+#        failed2reduce['itype'] += 1
+#        return False
     if header['DISPERS'].lower() != 'high':
         failed2reduce['dispmode'] += 1
         return False
