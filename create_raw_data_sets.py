@@ -10,7 +10,7 @@ import config
 
 from __builtin__ import False
 
-failed2reduce = {'itype':0, 'dispmode':0, 'n1':0, 'n2':0, 'fil':0, 'dmode':0}
+failed2reduce = {'itype':0, 'dispmode':0, 'n1':0, 'n2':0, 'fil':0} #, 'dmode':0}
 
 def create(in_dir):
     """
