@@ -187,7 +187,7 @@ def main():
     """
      
     # parse command line arguments
-    parser = argparse.ArgumentParser(description="NIRSPEC DRP")
+    parser = argparse.ArgumentParser(description="NSDRP")
     parser.add_argument('in_dir', help='input directory')
     parser.add_argument('out_dir', help='output directory')
     parser.add_argument('-debug', 
