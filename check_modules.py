@@ -1,8 +1,9 @@
-import os
+import imp
 
-modules = ['numpy', 'math', 'subprocess', 'fnmatch', 'logging', 'pylab', 'errno', 'datetime', 'warnings', 'astropy', 'scipy', 'argparse', 'statsmodels']
+modules = ['os', 'numpy', 'math', 'subprocess', 'fnmatch', 'logging', 'pylab', 'errno', 'datetime', 'warnings', 'astropy', 'scipy', 'argparse', 'statsmodels']
 
 for m in modules:
-    if m not in os.sys.modules:
+    try:
+        imp.find_module(m)
+    except ImportError:
         print 'Module %s not installed' % m
-        
