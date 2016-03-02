@@ -74,7 +74,7 @@ def reduce_data_set(rawDataSet, out_dir):
     reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
     
     # produce data products from reduced data set
-    if config.params['products'] is True:
+    if config.params['no_products'] is True:
         products.gen(reducedDataSet, out_dir)
     else:
         logger.info('data product generation inhibited by command line switch')
@@ -205,9 +205,9 @@ def main():
     parser.add_argument('-npy', 
             help='enables generation of numpy text files for certain diagnostic data products',
             action='store_true')
-    parser.add_argument('-cosmic', help='inhibits cosmic ray artifact rejection', 
+    parser.add_argument('-no_cosmic', help='inhibits cosmic ray artifact rejection', 
             action='store_false')
-    parser.add_argument('-products', help='inhibits data product generation', 
+    parser.add_argument('-no_products', help='inhibits data product generation', 
             action='store_false')
 #     , default=config.DEFAULT_COSMIC)
     parser.add_argument('-obj_window', help='object extraction window width in pixels')
@@ -238,8 +238,8 @@ def main():
     config.params['subdirs'] = args.subdirs
     config.params['dgn'] = args.dgn
     config.params['npy'] = args.npy
-    config.params['cosmic'] = args.cosmic
-    config.params['products'] = args.products
+    config.params['no_cosmic'] = args.no_cosmic
+    config.params['no_products'] = args.no_products
     if args.obj_window is not None:
         config.params['obj_window'] = int(args.obj_window)
     if args.sky_window is not None:
