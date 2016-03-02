@@ -230,7 +230,7 @@ def main():
     parser.add_argument('-ut',
             help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
     parser.add_argument('-gunzip',
-            help='gunip .gz files (not necessary for processing)', 
+            help='gunzip .gz files (not necessary for processing)', 
             action='store_true')
     args = parser.parse_args()
     config.params['debug'] = args.debug
