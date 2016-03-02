@@ -55,7 +55,7 @@ def reduce_frame(raw, out_dir):
     process_darks_and_flats(raw, reduced)
         
     # clean cosmic ray hits
-    if config.params['cosmic']:
+    if config.params['no_cosmic']:
         logger.info('starting cosmic ray cleaning')
         reduced.cleanCosmicRayHits()
         logger.info('cosmic ray cleaning complete')
