@@ -130,9 +130,9 @@ def obj_criteria_met(header, failed2reduce):
 #    if header['DETMODE'].lower != 'spec':
 #        failed2reduce['dmode'] += 1
 #        return False
-#    if header['IMAGETYP'].lower() != 'object':
+    if header['IMAGETYP'].lower() != 'object':
 #        failed2reduce['itype'] += 1
-#        return False
+        return False
     if header['DISPERS'].lower() != 'high':
         failed2reduce['dispmode'] += 1
         return False
