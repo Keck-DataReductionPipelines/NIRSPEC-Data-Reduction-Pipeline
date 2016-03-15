@@ -69,7 +69,8 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
     
     long_slit_y_corr = 20
     low_res_slit_y_corr = 30
-    date_y_corr = 50
+#     date_y_corr = 50
+    date_y_corr = 0
     filter_7_y_corr = 45
     filter_4_5_6_y_corr = 30
     filter_3_y_corr = 50
@@ -115,8 +116,8 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
     elif 'NIRSPEC-3' in filtername:
         logger.debug('applying +' + str(filter_3_y_corr) + 
                     ' pixel N-3 filter y corr for filter ' + filtername )
-        left_top_row += filter_4_5_6_y_corr
-        left_bot_row += filter_4_5_6_y_corr
+        left_top_row += filter_3_y_corr
+        left_bot_row += filter_3_y_corr
 
     wavelength_shift = 0
     

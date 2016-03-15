@@ -126,29 +126,42 @@ SKY_SIGMA = 2.25
 EXTRA_PADDING = 5
 MIN_LINE_SEPARATION = 5
 
-def find_spectral_trace(data, padding):
+def find_spectral_trace(data):
+    """
+    Locates sky lines in the bottom 5 rows (is this really optimal?) of the order image data. 
+    Finds strongest peaks, sorts them, traces them, returns the average of the traces.
+    Rejects line pairs that are too close together.
+    Returns spectral trace as 1-d array.  Throws exception if can't find or trace lines.
+    """
     
     # transpose the array because spectroid can only read horizontal peaks for now
-    npsts = data.transpose()
+    data_t = data.transpose()
 
-    # The order cutout has padding on each side. In order to find the sky lines we should 
-    # only look at the central section of the cut out array
-#     npsts = npsts[:, padding + 5:npsts.shape[1] - 5 - padding]
-    npsts = npsts[:, 5:npsts.shape[1] - 5]
-    cc = np.sum(npsts[:, 0:5], axis=1)
+#     data_t = data_t[:, padding + 5:data_t.shape[1] - 5 - padding]
+    data_t = data_t[:, 5:data_t.shape[1] - 5]
+    s = np.sum(data_t[:, 0:5], axis=1)
     
 #     import pylab as pl
 #     pl.figure(facecolor='white')
 #     pl.cla()
-#     pl.plot(cc, 'k-')
+#     pl.plot(s, 'k-')
 #     pl.xlim(0, 1024)
 #     pl.xlabel('column (pixels)')
 #     pl.ylabel('intensity summed over 5 rows (DN)')
 #     pl.show()
 
-    locpeaks = argrelextrema(cc, np.greater)     
-    locmaxes = np.where(cc[locpeaks[0]] > SKY_SIGMA * cc.mean())
-    maxes = np.array(locpeaks[0][locmaxes[0]])
+    # finds column indices of maxima
+    maxima_c = argrelextrema(s, np.greater)     
+    
+    # find indices in maxima_c of maxima with intensity 
+    # greater than SKY_SIGMA * mean extrema height
+    locmaxes = np.where(s[maxima_c[0]] > SKY_SIGMA * s.mean())
+    
+    # indices in s or peaks
+    maxes = np.array(maxima_c[0][locmaxes[0]])
+    
+    logger.info('n sky lines peaks with intensity > {:.0f} = {}'.format(
+            SKY_SIGMA * s.mean(), len(maxes)))
 
     deletelist = []
    
@@ -158,34 +171,27 @@ def find_spectral_trace(data, padding):
             deletelist.append(i)
     maxes = np.delete(maxes, deletelist, None)
 
-    peaks = cc[maxes]        
+    peaks = s[maxes]        
 
     sortorder = np.argsort(peaks)
             
     maxes = maxes[sortorder]
     maxes = maxes[::-1]
 
-    skydict = {}
-    centroid_sky_sum = np.array([])
+    centroid_sky_sum = np.zeros(data_t.shape[1])
     fitnumber = 0
 
     for maxskyloc in maxes:
         if 10 < maxskyloc < 1010:
             
-            centroid_sky = trace_sky_line(npsts, maxskyloc)
+            centroid_sky = trace_sky_line(data_t, maxskyloc)
            
             if centroid_sky is None:
-                continue  # skip this skyline
+                continue
 
-            # average up the good ones
-            # if badfit < 10:
-            if True:
-                skydict[fitnumber] = centroid_sky
-                fitnumber += 1
-                if centroid_sky_sum.any():
-                    centroid_sky_sum = centroid_sky_sum + centroid_sky - centroid_sky[0]
-                else:
-                    centroid_sky_sum = centroid_sky - centroid_sky[0]
+            fitnumber += 1
+            centroid_sky_sum = centroid_sky_sum + centroid_sky - centroid_sky[0]
+
             if fitnumber > 2:
                 break
 

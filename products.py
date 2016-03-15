@@ -5,14 +5,9 @@ import warnings
 import numpy as np
 import pylab as pl
 from astropy.io import fits
-from astropy.table import Table, Column
-from astropy.io import ascii
 from skimage import exposure
-#import Image
 import image_lib
-#import PIL
 import config
-import warnings
 
 warnings.filterwarnings('ignore')
 

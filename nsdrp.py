@@ -6,12 +6,11 @@ import logging
 import config
 import dgn
 import create_raw_data_sets
-#import ReducedDataSet
 import reduce_frame
 import products
 import DrpException
 
-VERSION = '0.9.2'
+VERSION = '0.9.3'
 
 config_params = {}
 

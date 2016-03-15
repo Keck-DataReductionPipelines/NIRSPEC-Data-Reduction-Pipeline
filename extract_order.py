@@ -171,11 +171,10 @@ def determine_edge_locations(tops, bots, order, min_intensity, max_delta):
     
     if order.topMeas is None or abs(order.topMeas - order.topCalc) > max_delta:
         logger.debug('reducing edge detection threshold')
-#         order.topMeas = find_peak(tops, order.topCalc, sigma / 2)
-        order.topMeas = find_peak(tops, order.topCalc, 0)
+        order.topMeas = find_peak(tops, order.topCalc, min_intensity / 2)
 
     if order.topMeas is not None:
-        if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (2 * max_delta)):
+        if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (max_delta)):
             s = 'top edge too far off: meas={:.0f}, diff={:.0f}, max_delta={:.0f}'.format(
                     order.topMeas, abs(order.topMeas - order.topCalc), max_delta)
             logger.warning(s)
@@ -188,10 +187,9 @@ def determine_edge_locations(tops, bots, order, min_intensity, max_delta):
     if order.botMeas is None or abs(order.botMeas - order.botCalc) > max_delta:
         logger.info('reducing edge detection threshold')
         order.botMeas = find_peak(bots, order.botCalc, min_intensity / 2) 
-        order.botMeas = find_peak(bots, order.botCalc, 0) 
 
     if order.botMeas is not None:
-        if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (2 * max_delta)):
+        if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (max_delta)):
             s = 'bottom edge too far off: meas={:.0f}, diff={:.0f}, max_delta={:.0f}'.format(
                     order.botMeas, abs(order.botMeas - order.botCalc), max_delta)
             logger.warning(s)
@@ -257,28 +255,6 @@ def find_peak(edges, row_approximate , min_intensity):
     else:
         return None
 
-# def find_peak(edges, start, sigma):
-#     
-#     from scipy.signal import argrelextrema
-# 
-#     # take a vertical cut of edges
-#     magcrosscut = np.median(edges[:, 40:50], axis=1)
-# 
-#     # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
-#     extrema = argrelextrema(magcrosscut, np.greater, order=35)[0]
-# 
-#     # find crosscut values at those extrema
-#     magcrosscutatextrema = magcrosscut[extrema]
-# 
-#     # narrow down extrema list to only ones over sigma
-#     peaks = np.where(magcrosscutatextrema > sigma)
-# 
-#     actualpeaks = extrema[peaks[0]]
-#      
-#     if actualpeaks.any():
-#         return min((abs(start - i), i) for i in actualpeaks)[1]
-#     else:
-#         return None
        
 def make_top_and_bots(data):
     rolled = np.roll(data, 5, axis=0)

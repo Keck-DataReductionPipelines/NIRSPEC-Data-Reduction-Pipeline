@@ -110,9 +110,9 @@ def reduce_order(order):
     try:
         order.spectral_trace = nirspec_lib.smooth_spectral_trace(
                 nirspec_lib.find_spectral_trace(
-                        order.flattenedObjImg, order.padding), order.flattenedObjImg.shape[0])
+                        order.flattenedObjImg), order.flattenedObjImg.shape[0])
     except Exception as e:
-        logger.warning('not rectifying order in spectral dimension')
+        logger.warning('not rectifying order {} in spectral dimension'.format(order.orderNum))
  
     else:
         # rectify flat, normalized flat, obj and flattened obj in spectral dimension 
