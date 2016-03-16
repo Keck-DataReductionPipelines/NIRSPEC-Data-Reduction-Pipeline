@@ -1,5 +1,6 @@
 params = {}
 
+params['cmnd_line_mode']        = False
 params['debug']                 = False     # comment
 params['cosmic']                = True      # comment
 params['products']              = True      # comment
@@ -19,4 +20,6 @@ params['ut']                    = None
 params['gunzip']                = False
 params['max_n_flats']           = 8
 params['max_n_darks']           = 8
+params['out_dir']               = '.'       # used only in command line mode
+params['max_spatial_trace_res'] = 3.0
 

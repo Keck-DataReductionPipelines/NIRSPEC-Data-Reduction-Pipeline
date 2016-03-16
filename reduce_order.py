@@ -9,7 +9,7 @@ import image_lib
 import nirspec_lib
 import wavelength_utils
 import Line
-#import Order
+import DrpException
 
 logger = logging.getLogger('obj')
 
@@ -35,8 +35,14 @@ def reduce_order(order):
     order.smoothedTrace, order.traceMask = nirspec_lib.smooth_spatial_trace(order.avgTrace)
     logger.info('spatial trace smoothed, ' + str(order.objImg.shape[1] - np.count_nonzero(order.traceMask)) + 
             ' points ignored')
-
     
+    # rms should be put in Order object
+    rms = np.sqrt(np.mean(np.square(order.avgTrace - order.smoothedTrace)));
+    logger.info('spatial trace smoothing rms fit residual = {:.2f}'.format(rms))
+    
+    if rms > config.params['max_spatial_trace_res']:
+        raise DrpException.DrpException('spatial trace fit residual too large') 
+ 
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
     order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)
     order.normalizedFlatImg = image_lib.rectify_spatial(order.normalizedFlatImg, order.smoothedTrace)

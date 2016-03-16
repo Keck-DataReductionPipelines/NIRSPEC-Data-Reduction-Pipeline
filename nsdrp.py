@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 import logging
+from astropy.io import fits
 
 import config
 import dgn
@@ -10,11 +11,10 @@ import reduce_frame
 import products
 import DrpException
 
-VERSION = '0.9.3'
+VERSION = '0.9.4'
 
-config_params = {}
 
-def nsdrp(in_dir, base_out_dir):
+def nsdrp_koa(in_dir, base_out_dir):
     """
     NSDRP. Assembles raw data sets from FITS files in the input directory,
     then generates reduced data sets from raw data sets.  Level 1 data products
@@ -65,6 +65,51 @@ def nsdrp(in_dir, base_out_dir):
     logger.info('end nsdrp')
     return    
         
+def nsdrp_cmnd(flat_fn, obj_fn):
+    
+    rawDataSets = create_raw_data_sets.create(in_dir)
+    n_reduced = len(rawDataSets)
+    
+    logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
+        
+    # process each raw data set
+    
+    for rawDataSet in rawDataSets:
+
+        if config.params['subdirs'] is True:
+            fn = rawDataSet.objFileName.rstrip('.gz').rstrip('.fits')
+            if config.params['shortsubdir']:
+                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
+            else:
+                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
+        else:
+            out_dir = base_out_dir        
+        if not os.path.exists(out_dir):
+                try: 
+                    os.mkdir(out_dir)
+                except: 
+                    msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
+                    # logger.critical(msg) can't create log if no output directory
+                    raise IOError(msg)
+                
+        try:
+            reduce_data_set(rawDataSet, out_dir)    
+        except DrpException.DrpException as e:
+            n_reduced -= 1
+            logger.error('failed to reduce {}: {}'.format(
+                    rawDataSet.objFileName, e.message))
+        except IOError as e:
+            logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
+            sys.exit(1)
+            
+    if len(rawDataSets) > 0:
+        logger.info('n object frames reduced = {}'.format(
+                n_reduced, len(rawDataSets)))   
+        
+    logger.info('end nsdrp')
+    return        
+    
+    
 def reduce_data_set(rawDataSet, out_dir):    
     
     logger = logging.getLogger('main')
@@ -82,9 +127,9 @@ def reduce_data_set(rawDataSet, out_dir):
     if config.params['dgn'] is True:
         logger.info('diagnostic mode enabled, generating diagnostic data products')
         dgn.gen(reducedDataSet, out_dir)
-                 
+                         
         
-def init(in_dir, out_dir):
+def init(out_dir, in_dir = None):
     """
     Sets up main logger, checks for existence of input directory, and checks that
     output directory either exists or can be created.
@@ -109,6 +154,23 @@ def init(in_dir, out_dir):
         
     # set up main logger
     logger = logging.getLogger('main')
+    if (config.params['cmnd_line_mode'] is False):
+        setup_main_logger(logger, in_dir, out_dir)
+    
+        logger.info('start nsdrp version {}'.format(VERSION))
+        logger.info('cwd: {}'.format(os.getcwd()))
+        logger.info('input dir: {}'.format(in_dir.rstrip('/')))
+        logger.info('output dir: {}'.format(out_dir.rstrip('/')))
+        
+        # confirm that input directory exists
+        if not os.path.exists(in_dir):
+            msg = 'input directory {} does not exist'.format(in_dir)
+            logger.critical(msg)
+            raise IOError(msg)
+
+    return
+
+def setup_main_logger(logger, in_dir, out_dir):
     if config.params['debug']:
         logger.setLevel(logging.DEBUG)
     else:
@@ -117,41 +179,31 @@ def init(in_dir, out_dir):
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
     else:
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
-    
+     
     log_fn = get_log_fn(in_dir, out_dir)
-            
+             
     if os.path.exists(log_fn):
         os.rename(log_fn, log_fn + '.prev')
-        
+         
     fh = logging.FileHandler(filename=log_fn)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-    
+     
     if config.params['debug']:
         sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s -  %(message)s')
     else:   
         sformatter = logging.Formatter('%(asctime)s %(levelname)s -  %(message)s')
-
+ 
     if config.params['verbose'] is True:
         sh = logging.StreamHandler()
         sh.setLevel(logging.DEBUG)
         sh.setFormatter(sformatter)
         logger.addHandler(sh)
-    
-    logger.info('start nsdrp version {}'.format(VERSION))
-    logger.info('cwd: {}'.format(os.getcwd()))
-    logger.info('input dir: {}'.format(in_dir.rstrip('/')))
-    logger.info('output dir: {}'.format(out_dir.rstrip('/')))
-    
-    # confirm that input directory exists
-    if not os.path.exists(in_dir):
-        msg = 'input directory {} does not exist'.format(in_dir)
-        logger.critical(msg)
-        raise IOError(msg)
-
+        
     return
 
+    
 def get_log_fn(in_dir, out_dir):
     log_fn = None
     
@@ -187,8 +239,8 @@ def main():
      
     # parse command line arguments
     parser = argparse.ArgumentParser(description="NSDRP")
-    parser.add_argument('in_dir', help='input directory')
-    parser.add_argument('out_dir', help='output directory')
+    parser.add_argument('arg1', help='input directory | flat file name')
+    parser.add_argument('arg2', help='output directory | object file name')
     parser.add_argument('-debug', 
             help='enables additional logging for debugging', 
             action='store_true')
@@ -231,6 +283,8 @@ def main():
     parser.add_argument('-gunzip',
             help='gunzip .gz files (not necessary for processing)', 
             action='store_true')
+    parser.add_argument('-out_dir', 
+            help='output directory in command line mode [.], ignored in KOA mode')
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
@@ -254,22 +308,35 @@ def main():
     if args.ut is not None:
         config.params['ut'] = args.ut
     config.params['gunzip'] = args.gunzip
+    if args.out_dir is not None:
+        config.params['out_dir'] = args.out_dir
+
+    
+    # determine if we are in command line mode or KOA mode
+    try:
+        fits.getheader(args.arg1)
+        fits.getheader(args.arg2)
+    except IOError:
+        # these aren't FITS files so must be in KOA mode
+        print('KOA mode')
+    else:
+        # command line mode
+        config.params['cmnd_line_mode'] = True
+
+    
 
     # initialize environment, setup main logger, check directories
     try:
-        init(args.in_dir, args.out_dir)
+        if config.params['cmnd_line_mode'] is True:
+            init(config.params['out_dir'])
+            nsdrp_cmnd(args.arg1, args.arg2, config.params['out_dir'])
+        else:
+            init(args.arg2, args.arg1)
+            nsdrp_koa(args.arg1, args.arg2)
     except Exception as e:
         print(e)
         sys.exit(2)    
-    
-    # process data
-#     try: 
-#         nsdrp(args.in_dir, args.out_dir)
-#     except Exception as e:
-#         print(e)
-#         sys.exit(1)
         
-    nsdrp(args.in_dir, args.out_dir)
 
     sys.exit(0)
     

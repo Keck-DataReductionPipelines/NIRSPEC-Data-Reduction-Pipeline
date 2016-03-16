@@ -149,17 +149,17 @@ def reduce_orders(reduced):
             order.wavelengthScaleCalc = wavelength_scale_calc
             order.wavelengthScaleMeas = wavelength_scale_calc
             
-#             try:
+            try:
                 
-            # reduce order, i.e. rectify, extract spectra, identify sky lines
-            reduce_order.reduce_order(order)
+                # reduce order, i.e. rectify, extract spectra, identify sky lines
+                reduce_order.reduce_order(order)
         
-            # add reduced order to list of reduced orders in Reduced object
-            reduced.orders.append(order)                      
+                # add reduced order to list of reduced orders in Reduced object
+                reduced.orders.append(order)                      
 
-#             except Exception as e:
-#                 logger.warning('failed to reduce order {}: {}'.format(
-#                         str(order_num), e.message))
+            except DrpException.DrpException as e:
+                logger.warning('failed to reduce order {}: {}'.format(
+                         str(order_num), e.message))
  
                         
         # end if order is on the detector

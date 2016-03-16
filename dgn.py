@@ -29,6 +29,7 @@ subdirs = dict([
 
 def gen(reduced, out_dir):
     
+
     logger.info('generating diagnostic data products...')
     
     # make sub directories
@@ -41,7 +42,14 @@ def gen(reduced, out_dir):
                 logger.critical('failed to create output directory ' + v)
                 raise IOError('failed to create output directory ' + v)
             
-            
+#     import pickle
+#     try:
+#         output = open(out_dir + '/diagnostics/traces/' + reduced.baseName + '.pkl', 'wb')
+#         pickle.dump(reduced, output)
+#     except:
+#         print('PICKLE FAILED')
+        
+    
     # construct arrays for per-order wavelength table
     order_num = []
     col = []
@@ -70,10 +78,15 @@ def gen(reduced, out_dir):
     perOrderWavelengthCalAsciiTable(
             out_dir, reduced.baseName, order_num, col, centroid, source, wave_exp, wave_fit, res, peak, slope)
     
+    # per-frame order edge profiles
     edges_plot(out_dir, reduced.baseName, reduced.topEdgesProfile, reduced.botEdgesProfile,
             reduced.topEdgePeaks, reduced.botEdgePeaks)
     
+    # per-frame order edge ridge images
     tops_bots_plot(out_dir, reduced.baseName, reduced.topEdgesImg, reduced.botEdgesImg)
+    
+    # per-frame order edge traces and order ID
+    order_location_plot(out_dir, reduced.baseName, reduced.flat, reduced.obj, reduced.orders)
     
     for order in reduced.orders:
         
@@ -142,7 +155,8 @@ def edges_plot(outpath, base_name, top_profile, bot_profile, top_peaks, bot_peak
     bots_plot.set_xlim([0, 1023])
 
     pl.savefig(constructFileName(outpath, base_name, None, 'edges.png'))
-    pl.close()
+    pl.close()    
+    
     
 def tops_bots_plot(outpath, base_name, tops, bots):
     
@@ -197,6 +211,42 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
  
     pl.tight_layout()
     pl.savefig(constructFileName(outpath, base_name, order_num, 'traces.png'))
+    pl.close()
+    
+def order_location_plot(outpath, base_name, flat, obj, orders):
+    
+    pl.figure('orders', facecolor='white', figsize=(8, 5))
+    pl.cla()
+    pl.suptitle('order location and identification, {}'.format(base_name), fontsize=14)
+    pl.set_cmap('Blues_r')
+    pl.rcParams['ytick.labelsize'] = 8
+
+    obj_plot = pl.subplot(1, 2, 1)
+    obj_plot.imshow(exposure.equalize_hist(obj))
+    obj_plot.set_title('object')
+    obj_plot.set_ylim([1023, 0])
+    obj_plot.set_xlim([0, 1023])
+
+    
+    flat_plot = pl.subplot(1, 2, 2)
+    flat_plot.imshow(exposure.equalize_hist(flat))
+    flat_plot.set_title('flat')
+    flat_plot.set_ylim([1023, 0])
+    flat_plot.set_xlim([0, 1023])
+    
+    for order in orders:
+        obj_plot.plot(np.arange(1024), order.topTrace, 'k-', linewidth=1.0)
+        obj_plot.plot(np.arange(1024), order.botTrace, 'k-', linewidth=1.0)
+        obj_plot.plot(np.arange(1024), order.smoothedTrace, 'y-', linewidth=1.0)
+        obj_plot.text(10, order.topTrace[0] - 10, order.orderNum, fontsize=10)
+        
+        flat_plot.plot(np.arange(1024), order.topTrace, 'k-', linewidth=1.0)
+        flat_plot.plot(np.arange(1024), order.botTrace, 'k-', linewidth=1.0)  
+        flat_plot.plot(np.arange(1024), order.smoothedTrace, 'y-', linewidth=1.0)  
+        flat_plot.text(10, order.topTrace[0] - 10, order.orderNum, fontsize=10)
+
+    pl.tight_layout()
+    pl.savefig(constructFileName(outpath, base_name, None, 'traces.png'))
     pl.close()
     
 def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace, trace):
