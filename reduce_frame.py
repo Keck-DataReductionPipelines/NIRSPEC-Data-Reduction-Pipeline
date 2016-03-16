@@ -11,6 +11,7 @@ import extract_order
 import reduce_order
 import nirspec_constants as constants
 import wavelength_utils
+import nsdrp
 from logging import INFO
 
 logger = logging.getLogger('obj')
@@ -343,8 +344,12 @@ def init(objFileName, out_dir):
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
-    fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
-    if config.params['subdirs'] is False:
+    if config.params['cmnd_line_mode'] is True:
+        fn = out_dir + '/nsdrp.log'
+    else:
+        fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
+
+    if config.params['subdirs'] is False and config.params['cmnd_line_mode'] is False:
         parts = fn.split('/')
         parts.insert(len(parts)-1, 'log')
         fn = '/'.join(parts)
@@ -376,7 +381,7 @@ def init(objFileName, out_dir):
         return    
 
 def log_start_summary(reduced):
-    
+    logger.info('nsdrp version {}'.format(nsdrp.VERSION))
     for l in [main_logger, logger]:
         l.info('starting reduction of ' + 
                reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))

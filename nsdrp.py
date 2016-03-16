@@ -10,8 +10,10 @@ import create_raw_data_sets
 import reduce_frame
 import products
 import DrpException
+import nirspec_constants as constants
+import RawDataSet
 
-VERSION = '0.9.4'
+VERSION = '0.9.x'
 
 
 def nsdrp_koa(in_dir, base_out_dir):
@@ -65,48 +67,34 @@ def nsdrp_koa(in_dir, base_out_dir):
     logger.info('end nsdrp')
     return    
         
-def nsdrp_cmnd(flat_fn, obj_fn):
+def nsdrp_cmnd(flat_fn, obj_fn, out_dir):
     
-    rawDataSets = create_raw_data_sets.create(in_dir)
-    n_reduced = len(rawDataSets)
+    obj_header = fits.getheader(obj_fn)
+    if obj_header['DISPERS'].lower() != 'high':
+        raise DrpException.DrpException('DISPERS != high')
+    if obj_header['NAXIS1'] != constants.N_COLS:
+        raise DrpException.DrpException('NAXIS1 != {}'.format(constants.N_COLS))
+    if obj_header['NAXIS2'] != constants.N_ROWS:
+        raise DrpException.DrpException('NAXIS2 != {}'.format(constants.N_COLS))
+    if obj_header['FILNAME'].lower().find('nirspec') < 0:
+        raise DrpException.DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
     
-    logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
-        
-    # process each raw data set
+    flat_header = fits.getheader(flat_fn)
+    if create_raw_data_sets.flat_criteria_met(obj_header, flat_header) is False:
+        raise DrpException.DrpException('flat is not compatible with object frame')
     
-    for rawDataSet in rawDataSets:
-
-        if config.params['subdirs'] is True:
-            fn = rawDataSet.objFileName.rstrip('.gz').rstrip('.fits')
-            if config.params['shortsubdir']:
-                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
-            else:
-                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
-        else:
-            out_dir = base_out_dir        
-        if not os.path.exists(out_dir):
-                try: 
-                    os.mkdir(out_dir)
-                except: 
-                    msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
-                    # logger.critical(msg) can't create log if no output directory
-                    raise IOError(msg)
+    rawDataSet = RawDataSet.RawDataSet(obj_fn, obj_header)
+    rawDataSet.flatFileNames.append(flat_fn)
+     
+    if not os.path.exists(out_dir):
+        try: 
+            os.mkdir(out_dir)
+        except: 
+            msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
+            raise IOError(msg)
                 
-        try:
-            reduce_data_set(rawDataSet, out_dir)    
-        except DrpException.DrpException as e:
-            n_reduced -= 1
-            logger.error('failed to reduce {}: {}'.format(
-                    rawDataSet.objFileName, e.message))
-        except IOError as e:
-            logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
-            sys.exit(1)
-            
-    if len(rawDataSets) > 0:
-        logger.info('n object frames reduced = {}'.format(
-                n_reduced, len(rawDataSets)))   
+    reduce_data_set(rawDataSet, out_dir)
         
-    logger.info('end nsdrp')
     return        
     
     
@@ -144,7 +132,7 @@ def init(out_dir, in_dir = None):
             msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
             # logger.critical(msg) can't create log if no output directory
             raise IOError(msg)
-    if config.params['subdirs'] is False:
+    if config.params['subdirs'] is False and config.params['cmnd_line_mode'] is False:
         log_dir = out_dir + '/log'
         if not os.path.exists(log_dir):
             try:
@@ -245,10 +233,11 @@ def main():
             help='enables additional logging for debugging', 
             action='store_true')
     parser.add_argument('-verbose', 
-            help='enables output of all log messages to stdout',
+            help='enables output of all log messages to stdout, always true in command line mode',
             action='store_true')
     parser.add_argument('-subdirs',
-            help='enables creation of per object frame subdirectories for data products',
+            help='enables creation of per object frame subdirectories for data products,' +
+            'ignored in command line mode',
             action='store_true')
     parser.add_argument('-dgn', 
             help='enables storage of diagnostic data products',
@@ -276,7 +265,8 @@ def main():
             help='enables pipe character seperators in ASCII table headers',
             action='store_true')
     parser.add_argument('-shortsubdir',
-            help='use file ID only, rather than full KOA ID, for subdirectory names',
+            help='use file ID only, rather than full KOA ID, for subdirectory names, ' +
+            'ignored in command line mode',
             action='store_true')
     parser.add_argument('-ut',
             help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
@@ -322,6 +312,7 @@ def main():
     else:
         # command line mode
         config.params['cmnd_line_mode'] = True
+        config.params['verbose'] = True
 
     
 

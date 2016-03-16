@@ -6,7 +6,13 @@ class ReducedDataSet:
     def __init__(self, fileName, header):
         
         self.fileName = fileName
-        self.baseName = fileName[fileName.find('NS'):].rstrip('.gz').rstrip('.fits')
+        if fileName.find('NS.') == 0:
+            self.baseName = fileName[fileName.find('NS'):].rstrip('.gz').rstrip('.fits')
+        else:
+            if fileName.find('/') >= 0:
+                self.baseName = fileName[fileName.rfind('/')+1:fileName.lower().find('.fits')]
+            else:
+                self.baseName = fileName[:fileName.lower().find('.fits')]
         self.header = header
        
         self.hasDark = False
