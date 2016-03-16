@@ -13,7 +13,7 @@ import DrpException
 import nirspec_constants as constants
 import RawDataSet
 
-VERSION = '0.9.x'
+VERSION = '0.9.5'
 
 
 def nsdrp_koa(in_dir, base_out_dir):
