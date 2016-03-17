@@ -238,12 +238,12 @@ def order_location_plot(outpath, base_name, flat, obj, orders):
         obj_plot.plot(np.arange(1024), order.topTrace, 'k-', linewidth=1.0)
         obj_plot.plot(np.arange(1024), order.botTrace, 'k-', linewidth=1.0)
         obj_plot.plot(np.arange(1024), order.smoothedTrace, 'y-', linewidth=1.0)
-        obj_plot.text(10, order.topTrace[0] - 10, order.orderNum, fontsize=10)
+        obj_plot.text(10, order.topTrace[0] - 10, str(order.orderNum), fontsize=10)
         
         flat_plot.plot(np.arange(1024), order.topTrace, 'k-', linewidth=1.0)
         flat_plot.plot(np.arange(1024), order.botTrace, 'k-', linewidth=1.0)  
         flat_plot.plot(np.arange(1024), order.smoothedTrace, 'y-', linewidth=1.0)  
-        flat_plot.text(10, order.topTrace[0] - 10, order.orderNum, fontsize=10)
+        flat_plot.text(10, order.topTrace[0] - 10, str(order.orderNum), fontsize=10)
 
     pl.tight_layout()
     pl.savefig(constructFileName(outpath, base_name, None, 'traces.png'))

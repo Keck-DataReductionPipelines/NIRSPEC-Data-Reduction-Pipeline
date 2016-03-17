@@ -228,6 +228,9 @@ def gen(reduced, out_dir):
 
     main_logger.info('n data products generated for {} = {}'.format(
             reduced.baseName, str(file_count[0])))
+    
+    obj_logger.info('n data products generated for {} = {}'.format(
+            reduced.baseName, str(file_count[0])))
     return 
     
     

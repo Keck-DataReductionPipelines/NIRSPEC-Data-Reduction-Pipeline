@@ -11,10 +11,11 @@ import extract_order
 import reduce_order
 import nirspec_constants as constants
 import wavelength_utils
+import nsdrp
 from logging import INFO
 
 logger = logging.getLogger('obj')
-main_logger = logging.getLogger('main')
+# main_logger = logging.getLogger('main')
 # main_logger = logging.getLogger('main')
 
 def reduce_frame(raw, out_dir):
@@ -165,14 +166,17 @@ def reduce_orders(reduced):
         # end if order is on the detector
     # end for each order
 
-    for l in ['main', 'obj']:
+    loggers = ['obj']
+    if config.params['cmnd_line_mode'] is True:
+        loggers.append('main')
+    for l in loggers:
         logging.getLogger(l).log(INFO, 'n orders on the detector = {}'.format(n_orders_on_detector))
         logging.getLogger(l).log(INFO, 'n orders reduced = {}'.format(len(reduced.orders)))
         
     if len(reduced.orders) == 0:
         return
     
-    for l in ['main', 'obj']:
+    for l in loggers:
         logging.getLogger(l).log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
                         sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
                         len(reduced.orders)))
@@ -181,7 +185,7 @@ def reduce_orders(reduced):
     for i in range(len(reduced.orders)):
         snr.append(reduced.orders[i].snr)
     
-    for l in ['main', 'obj']:
+    for l in loggers:
         logging.getLogger(l).log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
                 np.amin(snr)))
     
@@ -237,6 +241,10 @@ def find_order_edge_peaks(reduced):
     
 def find_global_wavelength_soln(reduced):
     
+    loggers = ['obj']
+    if config.params['cmnd_line_mode'] is False:
+        loggers.append('main')
+        
     # create arrays of col, 1/order, accepted wavelength
     # in future will modify twodfit() to take list of lines rather than these constructed arrays
     col = []
@@ -251,8 +259,8 @@ def find_global_wavelength_soln(reduced):
             order_inv.append(1.0 / order.orderNum)
             accepted.append(line.acceptedWavelength)
             
-    for l in [logger, main_logger]:
-        l.info('n sky lines identified = ' + str(len(col)))
+    for l in loggers:
+        logging.getLogger(l).log(INFO, 'n sky lines identified = ' + str(len(col)))
     
     if config.params['int_c'] is True:
         logger.warning('using integer column numbers in wavelength fit')
@@ -343,8 +351,12 @@ def init(objFileName, out_dir):
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
     
-    fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
-    if config.params['subdirs'] is False:
+    if config.params['cmnd_line_mode'] is True:
+        fn = out_dir + '/nsdrp.log'
+    else:
+        fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
+
+    if config.params['subdirs'] is False and config.params['cmnd_line_mode'] is False:
         parts = fn.split('/')
         parts.insert(len(parts)-1, 'log')
         fn = '/'.join(parts)
@@ -376,16 +388,21 @@ def init(objFileName, out_dir):
         return    
 
 def log_start_summary(reduced):
+    logger.info('nsdrp version {}'.format(nsdrp.VERSION))
     
-    for l in [main_logger, logger]:
-        l.info('starting reduction of ' + 
-               reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
-        l.info('   date of observation = ' + reduced.getDate() + ' UT')
-        l.info('           target name = ' + reduced.getTargetName())
-        l.info('           filter name = ' + reduced.getFullFilterName())
-        l.info('             slit name = ' + reduced.getSlit())
-        l.info('      integration time = ' + str(reduced.getITime()) + ' sec')
-        l.info('              n coadds = ' + str(reduced.getNCoadds()))
+    loggers = ['obj']
+    if config.params['cmnd_line_mode'] is False:
+        loggers.append('main')
+
+    for l in loggers:
+        logging.getLogger(l).log(INFO, 'starting reduction of ' + reduced.baseName)
+#           #reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
+        logging.getLogger(l).log(INFO, '   date of observation = ' + reduced.getDate() + ' UT')
+        logging.getLogger(l).log(INFO, '           target name = ' + reduced.getTargetName())
+        logging.getLogger(l).log(INFO, '           filter name = ' + reduced.getFullFilterName())
+        logging.getLogger(l).log(INFO, '             slit name = ' + reduced.getSlit())
+        logging.getLogger(l).log(INFO, '      integration time = ' + str(reduced.getITime()) + ' sec')
+        logging.getLogger(l).log(INFO, '              n coadds = ' + str(reduced.getNCoadds()))
     logger.info('        echelle angle = ' + str(reduced.getEchPos()) + ' deg')
     logger.info('cross disperser angle = ' + str(reduced.getDispPos()) + ' deg')
     return
