@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import traceback
 import logging
 from astropy.io import fits
 
@@ -9,9 +10,11 @@ import dgn
 import create_raw_data_sets
 import reduce_frame
 import products
-import DrpException
+import nirspec_constants as constants
+import RawDataSet
+from DrpException import DrpException
 
-VERSION = '0.9.4'
+VERSION = '0.9.7'
 
 
 def nsdrp_koa(in_dir, base_out_dir):
@@ -50,7 +53,7 @@ def nsdrp_koa(in_dir, base_out_dir):
                 
         try:
             reduce_data_set(rawDataSet, out_dir)    
-        except DrpException.DrpException as e:
+        except DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
                     rawDataSet.objFileName, e.message))
@@ -65,50 +68,55 @@ def nsdrp_koa(in_dir, base_out_dir):
     logger.info('end nsdrp')
     return    
         
-def nsdrp_cmnd(flat_fn, obj_fn):
+def nsdrp_cmnd(fn1, fn2, out_dir):
     
-    rawDataSets = create_raw_data_sets.create(in_dir)
-    n_reduced = len(rawDataSets)
+    flat_fn = None
+    obj_fn = None
     
-    logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
-        
-    # process each raw data set
+    fn1_header = fits.getheader(fn1)
+    fn2_header = fits.getheader(fn2)
     
-    for rawDataSet in rawDataSets:
-
-        if config.params['subdirs'] is True:
-            fn = rawDataSet.objFileName.rstrip('.gz').rstrip('.fits')
-            if config.params['shortsubdir']:
-                out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
-            else:
-                out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
+    if fn1_header['flat'] == 1 and fn1_header['calmpos'] == 1:
+        flat_fn = fn1
+        obj_fn = fn2
+        obj_header = fn2_header
+    if fn2_header['flat'] == 1 and fn2_header['calmpos'] == 1:
+        if flat_fn is not None:
+            raise DrpException('two flats, no object frame')
         else:
-            out_dir = base_out_dir        
-        if not os.path.exists(out_dir):
-                try: 
-                    os.mkdir(out_dir)
-                except: 
-                    msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
-                    # logger.critical(msg) can't create log if no output directory
-                    raise IOError(msg)
-                
-        try:
-            reduce_data_set(rawDataSet, out_dir)    
-        except DrpException.DrpException as e:
-            n_reduced -= 1
-            logger.error('failed to reduce {}: {}'.format(
-                    rawDataSet.objFileName, e.message))
-        except IOError as e:
-            logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
-            sys.exit(1)
-            
-    if len(rawDataSets) > 0:
-        logger.info('n object frames reduced = {}'.format(
-                n_reduced, len(rawDataSets)))   
-        
-    logger.info('end nsdrp')
-    return        
+            flat_fn = fn2
+            obj_fn = fn1
+            obj_header = fn1_header
+    if flat_fn is None:
+        raise DrpException('no flat')
     
+        
+    if obj_header['DISPERS'].lower() != 'high':
+        raise DrpException('DISPERS != high')
+    if obj_header['NAXIS1'] != constants.N_COLS:
+        raise DrpException('NAXIS1 != {}'.format(constants.N_COLS))
+    if obj_header['NAXIS2'] != constants.N_ROWS:
+        raise DrpException('NAXIS2 != {}'.format(constants.N_COLS))
+    if obj_header['FILNAME'].lower().find('nirspec') < 0:
+        raise DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
+    
+    flat_header = fits.getheader(flat_fn)
+    if create_raw_data_sets.flat_criteria_met(obj_header, flat_header) is False:
+        raise DrpException('flat is not compatible with object frame')
+    
+    rawDataSet = RawDataSet.RawDataSet(obj_fn, obj_header)
+    rawDataSet.flatFileNames.append(flat_fn)
+     
+    if not os.path.exists(out_dir):
+        try: 
+            os.mkdir(out_dir)
+        except: 
+            msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
+            raise IOError(msg)
+                
+    reduce_data_set(rawDataSet, out_dir)
+        
+    return        
     
 def reduce_data_set(rawDataSet, out_dir):    
     
@@ -119,10 +127,10 @@ def reduce_data_set(rawDataSet, out_dir):
     
     # produce data products from reduced data set
     if config.params['no_products'] is True:
-        products.gen(reducedDataSet, out_dir)
-    else:
         logger.info('data product generation inhibited by command line switch')
-    
+    else:
+        products.gen(reducedDataSet, out_dir)
+
     # if diagnostics mode is enabled, then produce diagnostic data products
     if config.params['dgn'] is True:
         logger.info('diagnostic mode enabled, generating diagnostic data products')
@@ -144,7 +152,7 @@ def init(out_dir, in_dir = None):
             msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
             # logger.critical(msg) can't create log if no output directory
             raise IOError(msg)
-    if config.params['subdirs'] is False:
+    if config.params['subdirs'] is False and config.params['cmnd_line_mode'] is False:
         log_dir = out_dir + '/log'
         if not os.path.exists(log_dir):
             try:
@@ -239,16 +247,17 @@ def main():
      
     # parse command line arguments
     parser = argparse.ArgumentParser(description="NSDRP")
-    parser.add_argument('arg1', help='input directory | flat file name')
-    parser.add_argument('arg2', help='output directory | object file name')
+    parser.add_argument('arg1', help='input directory (KOA mode) | flat file name (cmnd line mode)')
+    parser.add_argument('arg2', help='output directory (KOA mode) | object file name (cmnd line mode)')
     parser.add_argument('-debug', 
             help='enables additional logging for debugging', 
             action='store_true')
     parser.add_argument('-verbose', 
-            help='enables output of all log messages to stdout',
+            help='enables output of all log messages to stdout, always true in command line mode',
             action='store_true')
     parser.add_argument('-subdirs',
-            help='enables creation of per object frame subdirectories for data products',
+            help='enables creation of per object frame subdirectories for data products,' +
+            'ignored in command line mode',
             action='store_true')
     parser.add_argument('-dgn', 
             help='enables storage of diagnostic data products',
@@ -257,9 +266,9 @@ def main():
             help='enables generation of numpy text files for certain diagnostic data products',
             action='store_true')
     parser.add_argument('-no_cosmic', help='inhibits cosmic ray artifact rejection', 
-            action='store_false')
+            action='store_true')
     parser.add_argument('-no_products', help='inhibits data product generation', 
-            action='store_false')
+            action='store_true')
 #     , default=config.DEFAULT_COSMIC)
     parser.add_argument('-obj_window', help='object extraction window width in pixels')
     #default=config.DEFAULT_OBJ_WINDOW)
@@ -276,7 +285,8 @@ def main():
             help='enables pipe character seperators in ASCII table headers',
             action='store_true')
     parser.add_argument('-shortsubdir',
-            help='use file ID only, rather than full KOA ID, for subdirectory names',
+            help='use file ID only, rather than full KOA ID, for subdirectory names, ' +
+            'ignored in command line mode',
             action='store_true')
     parser.add_argument('-ut',
             help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
@@ -301,6 +311,7 @@ def main():
         config.params['sky_separation'] = int(args.sky_separation)
     if args.oh_filename is not None:
         config.params['oh_filename'] = args.oh_filename
+        config.params['oh_envar_override'] = True
     config.params['int_c'] = args.int_c
     config.params['lla'] = args.lla
     config.params['pipes'] = args.pipes
@@ -322,6 +333,7 @@ def main():
     else:
         # command line mode
         config.params['cmnd_line_mode'] = True
+        config.params['verbose'] = True
 
     
 
@@ -334,9 +346,12 @@ def main():
             init(args.arg2, args.arg1)
             nsdrp_koa(args.arg1, args.arg2)
     except Exception as e:
-        print(e)
+        print('ERROR: ' + e.message)
+        if config.params['debug'] is True:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
         sys.exit(2)    
-        
 
     sys.exit(0)
     

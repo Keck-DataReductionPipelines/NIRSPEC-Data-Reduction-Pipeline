@@ -71,45 +71,10 @@ def reduce_order(order):
     order.spatialRectified = True
     
     # find spatial profile and peak
-    order.spatialProfile = order.flattenedObjImg.mean(axis=1)
-    
-#     import pylab as pl
-#     
-#     pl.figure()
-#     pl.cla()
-#     pl.imshow(order.flattenedObjImg)
-#     pl.show()
-#     
-#     pl.figure(str(order.orderNum))
-#     pl.cla()
-#     pl.plot(order.spatialProfile)
-#     pl.show()
-    
-    order.peakLocation = np.argmax(order.spatialProfile[5:-5]) + 5
-    logger.info('spatial profile peak intensity row {:d}'.format(order.peakLocation))
-    p0 = order.peakLocation - (config.params['obj_window'] / 2)
-    p1 = order.peakLocation + (config.params['obj_window'] / 2)
-    order.centroid = (scipy.ndimage.measurements.center_of_mass(
-            order.spatialProfile[p0:p1]))[0] + p0 
-    logger.info('spatial profile peak centroid row {:.1f}'.format(float(order.centroid)))
+    find_spatial_profile_and_peak(order)
     
     # characterize spatial profile by fitting to Gaussian
-    try:
-        for w in range(10, 30, 10):
-            logger.debug('gaussian window width = {}'.format(2 * w))
-            x0 = max(0, order.peakLocation - w)
-            x1 = min(len(order.spatialProfile) - 1, order.peakLocation + w)
-            x = range(x1 - x0)
-            order.gaussianParams, pcov = scipy.optimize.curve_fit(
-                    image_lib.gaussian, x, order.spatialProfile[x0:x1] - np.amin(order.spatialProfile[x0:x1]))
-            order.gaussianParams[1] += x0
-            if order.gaussianParams[2] > 1.0:
-                break
-    except Exception as e:
-        logger.warning('cannot fit spatial profile to Gaussian')
-        order.gaussianParams = None
-    else:
-        logger.info('spatial peak width = {:.1f} pixels'.format(abs(order.gaussianParams[2])))
+    characterize_spatial_profile(order)
 
 
     # find and smooth spectral trace
@@ -133,24 +98,7 @@ def reduce_order(order):
             order.objImg, order.normalizedFlatImg, order.integrationTime)
     
     # extract spectra
-    order.objWindow, order.topSkyWindow, order.botSkyWindow = \
-        image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation,
-        config.params['obj_window'], config.params['sky_window'], config.params['sky_separation'])
-        
-    logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
-    logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
-    if len(order.topSkyWindow) > 0:
-        logger.info('top background window separation = {}'.format(
-                str(order.topSkyWindow[0] - order.objWindow[-1])))
-    logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
-    if len(order.botSkyWindow) > 0:
-        logger.info('bottom background window separation = {}'.format(
-                str(order.objWindow[0] - order.botSkyWindow[-1])))
-    
-    order.objSpec, order.flatSpec, order.skySpec, order.noiseSpec, order.topBgMean, \
-            order.botBgMean = image_lib.extract_spectra(
-                order.flattenedObjImg, order.normalizedFlatImg, order.noiseImg, 
-                order.objWindow, order.topSkyWindow, order.botSkyWindow)
+    extract_spectra(order)
             
     # calculate SNR
     bg = 0.0
@@ -166,7 +114,7 @@ def reduce_order(order):
     # find and identify sky lines   
     line_pairs = None # line_pairs are (column number, accepted wavelength
     try:
-        oh_wavelengths, oh_intensities = wavelength_utils.get_oh_lines(config.params['oh_filename'])
+        oh_wavelengths, oh_intensities = wavelength_utils.get_oh_lines()
     except IOError as e:
         logger.critical('cannot read OH line file: ' + str(e))
         raise
@@ -229,4 +177,66 @@ def reduce_order(order):
                         
     return
          
+def extract_spectra(order):
     
+    order.objWindow, order.topSkyWindow, order.botSkyWindow = \
+        image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation,
+        config.params['obj_window'], config.params['sky_window'], config.params['sky_separation'])
+        
+    logger.info('extraction window width = {}'.format(str(len(order.objWindow))))
+    logger.info('top background window width = {}'.format(str(len(order.topSkyWindow))))
+    if len(order.topSkyWindow) > 0:
+        logger.info('top background window separation = {}'.format(
+                str(order.topSkyWindow[0] - order.objWindow[-1])))
+    logger.info('bottom background window width = {}'.format(str(len(order.botSkyWindow))))
+    if len(order.botSkyWindow) > 0:
+        logger.info('bottom background window separation = {}'.format(
+                str(order.objWindow[0] - order.botSkyWindow[-1])))
+    
+    order.objSpec, order.flatSpec, order.skySpec, order.noiseSpec, order.topBgMean, \
+            order.botBgMean = image_lib.extract_spectra(
+                order.flattenedObjImg, order.normalizedFlatImg, order.noiseImg, 
+                order.objWindow, order.topSkyWindow, order.botSkyWindow)
+            
+    return
+
+def characterize_spatial_profile(order):
+    
+    try:
+        for w in range(10, 30, 10):
+            logger.debug('gaussian window width = {}'.format(2 * w))
+            x0 = max(0, order.peakLocation - w)
+            x1 = min(len(order.spatialProfile) - 1, order.peakLocation + w)
+            x = range(x1 - x0)
+            order.gaussianParams, pcov = scipy.optimize.curve_fit(
+                    image_lib.gaussian, x, order.spatialProfile[x0:x1] - np.amin(order.spatialProfile[x0:x1]))
+            order.gaussianParams[1] += x0
+            if order.gaussianParams[2] > 1.0:
+                break
+    except Exception as e:
+        logger.warning('cannot fit spatial profile to Gaussian')
+        order.gaussianParams = None
+    else:
+        logger.info('spatial peak width = {:.1f} pixels'.format(abs(order.gaussianParams[2])))
+        
+    return
+
+def find_spatial_profile_and_peak(order):
+    
+    MARGIN = 5
+    
+    order.spatialProfile = order.flattenedObjImg.mean(axis=1)
+    
+    if len(order.spatialProfile) < (2 * MARGIN) + 2:
+        raise DrpException.DrpException(
+                'cannot find spatial profile for order {}'.format(order.orderNum))
+        
+    order.peakLocation = np.argmax(order.spatialProfile[MARGIN:-MARGIN]) + MARGIN
+    logger.info('spatial profile peak intensity row {:d}'.format(order.peakLocation))
+    p0 = order.peakLocation - (config.params['obj_window'] / 2)
+    p1 = order.peakLocation + (config.params['obj_window'] / 2)
+    order.centroid = (scipy.ndimage.measurements.center_of_mass(
+            order.spatialProfile[p0:p1]))[0] + p0 
+    logger.info('spatial profile peak centroid row {:.1f}'.format(float(order.centroid)))
+    
+    return

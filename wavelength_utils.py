@@ -5,14 +5,15 @@ Created on Wed Jul 03 14:35:13 2013
 @author: jholt
 with minimal modifications and declassification by rcohen
 """
+import os
 import numpy as np
 from numpy import fft
 import scipy
 from scipy import optimize
 import pylab as pl
-import itertools
-from scipy.signal import argrelextrema
-import statsmodels.api as smapi
+#import itertools
+#from scipy.signal import argrelextrema
+#import statsmodels.api as smapi
 from statsmodels.formula.api import ols
 import config
 
@@ -127,7 +128,7 @@ def line_id(order, oh_wavelengths, oh_intensities):
 # 
 #     return oh_wavelengths, oh_intensities
 
-def get_oh_lines(oh_filename):
+def get_oh_lines():
     """
     Reads OH line wavelengths and intensities from data file.
     Once the data is read, it is saved in static-like variables 
@@ -144,6 +145,13 @@ def get_oh_lines(oh_filename):
     
     except AttributeError:
         
+        if config.params['oh_envar_override']:
+            oh_filename = config.params['oh_filename']
+        else:
+            oh_filename = os.environ.get(config.params['oh_envar_name'])
+            if oh_filename is None:
+                oh_filename = config.params['oh_filename']
+             
         logger.info('reading OH line data from ' + oh_filename)
         
         try:

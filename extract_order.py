@@ -172,6 +172,8 @@ def determine_edge_locations(tops, bots, order, min_intensity, max_delta):
     if order.topMeas is None or abs(order.topMeas - order.topCalc) > max_delta:
         logger.debug('reducing edge detection threshold')
         order.topMeas = find_peak(tops, order.topCalc, min_intensity / 2)
+        if order.topMeas is None:
+            logger.info('cannot find top edge of order')
 
     if order.topMeas is not None:
         if (order.topMeas < 1) or (abs(order.topMeas - order.topCalc) > (max_delta)):
@@ -187,6 +189,8 @@ def determine_edge_locations(tops, bots, order, min_intensity, max_delta):
     if order.botMeas is None or abs(order.botMeas - order.botCalc) > max_delta:
         logger.info('reducing edge detection threshold')
         order.botMeas = find_peak(bots, order.botCalc, min_intensity / 2) 
+        if order.botMeas is None:
+            logger.info('cannot find bottom edge of order')
 
     if order.botMeas is not None:
         if (order.botMeas < 1) or (abs(order.botMeas - order.botCalc) > (max_delta)):
@@ -240,7 +244,7 @@ def find_peak(edges, row_approximate , min_intensity):
     # find peak intensities at extrema
     peak_intensities = profile[peak_rows]
     
-    # find the indices in peak_intensities of peaks with 
+    # find the indices and peak_intensities of peaks with 
     # intensities greater than threshold
 #     tall_peaks_i = np.where(peak_intensities > min_intensity)
 #     tall_peaks_i = np.where(peak_intensities > (np.amax(peak_intensities) / 2.0))
@@ -271,7 +275,8 @@ def get_extraction_params(filterName, slitName):
     if 'NIRSPEC-1' in filterName.upper():
         params = {'padding': 0 * pad_mod, 
                   'sigma': 300.0, 
-                  'thresh': 50.0, 
+#                   'thresh': 50.0, 
+                  'thresh': 30.0, 
                   'spw': 5.0, 
                   'trace_width': 1.5}
     
@@ -318,8 +323,11 @@ def get_extraction_params(filterName, slitName):
                   'trace_width': 1.1}
         
     if '24' in slitName:
-        params['thresh'] = 30.0
-        
+        if 'NIRSPEC-7' in filterName.upper():
+            params['thresh'] = 35.0
+        else:
+            params['thresh'] = 30.0
+
     return params
     
     
