@@ -49,7 +49,7 @@ def reduce_frame(raw, out_dir):
     log_start_summary(reduced)
     
     # read raw object data into reduced data set object
-    reduced.obj = fits.getdata(raw.objFileName)
+    reduced.obj = fits.getdata(raw.objFileName, ignore_missing_end=True)
     
     # combine flats and darks, if darks exist then subtract from obj and flat,
     # store results in processed data set

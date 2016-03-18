@@ -74,7 +74,11 @@ class ReducedDataSet:
         return self.header['DATE-OBS']
     
     def getIntegrationTime(self):
-        return self.header['ELAPTIME']
+        try:
+            return self.header['ELAPTIME']
+        except KeyError:
+            return(self.header['itime'])
+            
     
     def getObjectName(self):
         return self.header['OBJECT']

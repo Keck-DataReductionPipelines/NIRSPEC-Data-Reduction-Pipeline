@@ -45,9 +45,7 @@ def create(in_dir):
     for filename, header in headers.items():
             if obj_criteria_met(header, failed2reduce):
                 rawDataSets.append(RawDataSet.RawDataSet(filename, header))
-#             else:
-#                 logger.info('{} is in low dispersion mode, not reduced'.format(
-#                         filename[filename.rfind('/') + 1:]))
+
                 
     if obj_criteria_met(header, failed2reduce) is False:
 #        if failed2reduce.get('itype') > 0:
@@ -147,7 +145,7 @@ def obj_criteria_met(header, failed2reduce):
         return False
     return True
     
-def flat_criteria_met(obj_header, flat_header):
+def flat_criteria_met(obj_header, flat_header, ignore_dispers=False):
     """
     Takes an object frame header and a flat frame header and determines if 
     the flat satisfies the criteria for association with the object frame
@@ -160,7 +158,9 @@ def flat_criteria_met(obj_header, flat_header):
         True if the flat corresponds to the object frame, False otherwise.
         
     """
-    eq_kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers']
+    eq_kwds = ['disppos', 'echlpos', 'filname', 'slitname']
+    if ignore_dispers is not True:
+        eq_kwds.append('dispers')
     for kwd in eq_kwds:
         if obj_header[kwd] != flat_header[kwd]:
             return False

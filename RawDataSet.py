@@ -41,10 +41,10 @@ class RawDataSet:
         if len(self.flatFileNames) == 0:
             return None
         if len(self.flatFileNames) == 1:
-            return(fits.getdata(self.flatFileNames[0]))
+            return(fits.getdata(self.flatFileNames[0], ignore_missing_end=True))
         flat_data_list = []
         for filename in self.flatFileNames:
-            flat_data_list.append(fits.getdata(filename))   
+            flat_data_list.append(fits.getdata(filename, ignore_missing_end=True))   
         return np.median(flat_data_list, axis=0)
          
     def combineDarks(self):       
@@ -53,9 +53,9 @@ class RawDataSet:
         if len(self.darkFileNames) == 0:
             return None
         if len(self.darkFileNames) == 1:
-            return(fits.getdata(self.darkFileNames[0]))
+            return(fits.getdata(self.darkFileNames[0], ignore_missing_end=True))
         if len(self.darkFileNames) > 0:
             dark_data_list = []
             for filename in self.darkFileNames:
-                dark_data_list.append(fits.getdata(filename))   
+                dark_data_list.append(fits.getdata(filename, ignore_missing_end=True))   
             return np.median(dark_data_list, axis=0)
