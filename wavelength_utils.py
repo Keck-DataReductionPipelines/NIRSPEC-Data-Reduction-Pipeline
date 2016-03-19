@@ -5,6 +5,8 @@ Created on Wed Jul 03 14:35:13 2013
 @author: jholt
 with minimal modifications and declassification by rcohen
 """
+import matplotlib
+matplotlib.use('Agg')
 import os
 import numpy as np
 from numpy import fft
@@ -604,29 +606,6 @@ def twodfit(dataX, dataY, dataZ):
 
 
     k = 0
-
-    if testing:
-        pl.figure(14, figsize=(15, 8))
-        pl.clf()
-        ax1 = pl.subplot(211)
-        pl.title("2d fitting")
-        ax2 = pl.subplot(212)
-
-        points = ['r.', 'g.', 'c.', 'k.', 'm.', 'b.', 'y.',
-                  'rx', 'gx', 'cx', 'kx', 'mx', 'bx', 'yx',
-                  'r*', 'g*', 'c*', 'k*', 'm*', 'b*', 'y*', 'r.', 'g.', 'c.', 'k.', 'm.', 'b.', 'y.',
-                  'rx', 'gx', 'cx', 'kx', 'mx', 'bx', 'yx',
-                  'r*', 'g*', 'c*', 'k*', 'm*', 'b*', 'y*']
-
-        lines = ['r-.', 'g.-', 'c-.', 'k-.', 'm-.', 'b-.', 'y-.',
-                 'r--', 'g--', 'c--', 'k--', 'm--', 'b--', 'y--',
-                 'r-', 'g-', 'c-', 'k-', 'm-', 'b-', 'y-', 'r-.', 'g.-', 'c-.', 'k-.', 'm-.', 'b-.', 'y-.',
-                 'r--', 'g--', 'c--', 'k--', 'm--', 'b--', 'y--',
-                 'r-', 'g-', 'c-', 'k-', 'm-', 'b-', 'y-']
-
-        ax2.plot(__residual(p1, dataZ, dataX, dataY),
-                         points[k], __residual(p1, dataZ, dataX, dataY), lines[k],
-                         label=str(k) + ' fit')
 
     dataZ_new=np.copy(dataZ)
     dataY_new=np.copy(dataY)
