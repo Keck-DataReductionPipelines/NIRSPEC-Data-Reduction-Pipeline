@@ -15,7 +15,7 @@ import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
 
-VERSION = '0.9.9'
+VERSION = '0.9.10'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -94,12 +94,10 @@ def nsdrp_cmnd(fn1, fn2, out_dir):
             flat_header = fn2_header
     if flat_fn is None:
         raise DrpException('no flat')
-    
-    try:
-        if obj_header['DISPERS'].lower() != 'high':
-            raise DrpException('DISPERS != high')
-    except KeyError:
-        print('WARNING: DISPERS header card missing, continuing')
+
+    if obj_header['ECHLPOS'] > 100:
+        print('ERROR: cannot reduce low-resolution image (ECHLPOS > 100')
+        exit(1)
         
     if obj_header['NAXIS1'] != constants.N_COLS:
         raise DrpException('NAXIS1 != {}'.format(constants.N_COLS))
