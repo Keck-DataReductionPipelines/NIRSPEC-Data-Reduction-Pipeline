@@ -41,7 +41,8 @@ def reduce_order(order):
     logger.info('spatial trace smoothing rms fit residual = {:.2f}'.format(rms))
     
     if rms > config.params['max_spatial_trace_res']:
-        raise DrpException.DrpException('spatial trace fit residual too large') 
+        raise DrpException.DrpException('spatial trace fit residual too large, limit = {}'.format(
+                config.params['max_spatial_trace_res'])) 
  
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
     order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)

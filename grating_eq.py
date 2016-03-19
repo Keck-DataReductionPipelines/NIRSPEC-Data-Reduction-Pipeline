@@ -77,11 +77,18 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
     filter_1_y_corr = 50
 
     if '24' in slit:
-        logger.debug('applying +/-' + str(long_slit_y_corr) + 
-                    ' pixel long slit y correction for slit ' + slit)
-        left_top_row += long_slit_y_corr
-        left_bot_row -= long_slit_y_corr
         
+        if '1' not in filtername:
+            logger.debug('applying +/-' + str(long_slit_y_corr) + 
+                        ' pixel long slit y correction for slit ' + slit)
+            left_top_row += long_slit_y_corr
+            left_bot_row -= long_slit_y_corr
+        
+        if '3' in filtername or '6' in filtername:
+            logger.info('applying N-3, 6 long slit correction')
+            left_top_row -= 25
+            left_bot_row -= 25 
+            
         if '6' in filtername:
             logger.info('applying N-6 long slit correction')
             left_top_row -= 25

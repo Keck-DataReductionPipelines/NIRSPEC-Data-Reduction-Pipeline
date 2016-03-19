@@ -26,5 +26,5 @@ params['gunzip']                = False
 params['max_n_flats']           = 8
 params['max_n_darks']           = 8
 params['out_dir']               = './nsdrp_out'       # used only in command line mode
-params['max_spatial_trace_res'] = 3.0
+params['max_spatial_trace_res'] = 1.0
 

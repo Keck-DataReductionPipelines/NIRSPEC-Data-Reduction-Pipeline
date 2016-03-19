@@ -15,7 +15,7 @@ import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
 
-VERSION = '0.9.8'
+VERSION = '0.9.9'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
