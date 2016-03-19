@@ -5,6 +5,8 @@ Created on Wed Jul 03 14:35:13 2013
 @author: jholt
 with minimal modifications and declassification by rcohen
 """
+import matplotlib
+matplotlib.use('Agg')
 import os
 import numpy as np
 from numpy import fft
