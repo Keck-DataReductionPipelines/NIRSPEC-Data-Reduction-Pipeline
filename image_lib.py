@@ -221,3 +221,10 @@ def extract_spectra(obj, flat, noise, obj_range, sky_range_top, sky_range_bot):
 def gaussian(x, a, b, c):
     return(a * np.exp(-(x - b)**2 / c**2))
 
+def cut_out(data, top, bot, padding):
+        
+    if bot > padding:
+        return data[bot - padding:top + padding, :]
+    else:
+        return data[0:top + padding, :]
+

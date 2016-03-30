@@ -15,7 +15,7 @@ import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
 
-VERSION = '0.9.10'
+VERSION = '0.9.11'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -52,7 +52,8 @@ def nsdrp_koa(in_dir, base_out_dir):
                     msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
                     # logger.critical(msg) can't create log if no output directory
                     raise IOError(msg)
-                
+        
+
         try:
             reduce_data_set(rawDataSet, out_dir)    
         except DrpException as e:

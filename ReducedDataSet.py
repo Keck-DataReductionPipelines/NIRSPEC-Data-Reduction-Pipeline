@@ -1,6 +1,8 @@
 import numpy as np
 import image_lib
 
+import Flat
+
 class ReducedDataSet:
     
     def __init__(self, fileName, header):
@@ -36,6 +38,8 @@ class ReducedDataSet:
         
         self.rmsFitRes = None
         self.coeffs = None
+        
+        self.Flat = None
         
     def getFileName(self):
         return self.fileName
@@ -89,7 +93,9 @@ class ReducedDataSet:
             self.flat = np.subtract(self.flat, self.dark)
             self.darkSubtracted = True
             
-    def cleanCosmicRayHits(self):
-        self.obj = image_lib.cosmic_clean(self.obj)
-#         self.flat = image_lib.cosmic_clean(self.flat)
-        self.cosmicCleaned = True 
+#     def cleanCosmicRayHits(self):
+#         self.obj = image_lib.cosmic_clean(self.obj)
+#         if len(self.flatKOAIds) < 3:
+#             
+#             self.flat = image_lib.cosmic_clean(self.flat)
+#         self.cosmicCleaned = True 

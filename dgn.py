@@ -1,5 +1,3 @@
-import matplotlib
-matplotlib.use('Agg')
 import pylab as pl
 import logging
 import os
@@ -81,11 +79,11 @@ def gen(reduced, out_dir):
             out_dir, reduced.baseName, order_num, col, centroid, source, wave_exp, wave_fit, res, peak, slope)
     
     # per-frame order edge profiles
-    edges_plot(out_dir, reduced.baseName, reduced.topEdgesProfile, reduced.botEdgesProfile,
-            reduced.topEdgePeaks, reduced.botEdgePeaks)
+    edges_plot(out_dir, reduced.baseName, reduced.Flat.topEdgeProfile, reduced.Flat.botEdgeProfile,
+            reduced.Flat.topEdgePeaks, reduced.Flat.botEdgePeaks)
     
     # per-frame order edge ridge images
-    tops_bots_plot(out_dir, reduced.baseName, reduced.topEdgesImg, reduced.botEdgesImg)
+    tops_bots_plot(out_dir, reduced.baseName, reduced.Flat.topEdgeImg, reduced.Flat.botEdgeImg)
     
     # per-frame order edge traces and order ID
     order_location_plot(out_dir, reduced.baseName, reduced.flat, reduced.obj, reduced.orders)
@@ -95,18 +93,18 @@ def gen(reduced, out_dir):
         traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.flat, 
                 order.topTrace, order.botTrace)
         
-        # save smooted trace cutout to numpy text file
+        # save smoothed trace cutout to numpy text file
         if config.params['npy'] is True:
             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'trace.npy')
             np.savetxt(fn, order.smoothedTrace)
         
         # save obj and flat cutouts to numpy text files
-        if config.params['npy'] is True:
-            fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
-            np.savetxt(fn, order.objCutout)
-            fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
-            np.savetxt(fn, order.flatCutout)
-        
+#         if config.params['npy'] is True:
+#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
+#             np.savetxt(fn, order.objCutout)
+#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
+#             np.savetxt(fn, order.flatCutout)
+#         
         if order.lowestPoint > order.padding:
             cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
                     order.topTrace - order.lowestPoint + order.padding, 
@@ -144,16 +142,14 @@ def edges_plot(outpath, base_name, top_profile, bot_profile, top_peaks, bot_peak
     tops_plot.set_title('tops')
     tops_plot.plot(top_profile, 'k-', linewidth=1.0)
     for peak in top_peaks:
-#         pl.plot([peak[0], peak[0]], [(tops_plot.get_ylim())[0], (tops_plot.get_ylim())[1]], "g-", linewidth=1.0, label='peak')
-        pl.annotate(str(peak[0]), (peak[0], peak[1]), size=8)
+        pl.annotate(str(peak), (peak, top_profile[peak]), size=8)
     tops_plot.set_xlim([0, 1023])
 
     bots_plot = pl.subplot(2, 1, 2)
     bots_plot.set_title('bottoms')
     bots_plot.plot(bot_profile, 'k-', linewidth=1.0)
     for peak in bot_peaks:
-#         pl.plot([peak[0], peak[0]], [(bots_plot.get_ylim())[0], (bots_plot.get_ylim())[1]], "g-", linewidth=1.0, label='peak')    
-        pl.annotate(str(peak[0]), (peak[0], peak[1]), size=8)
+        pl.annotate(str(peak), (peak, bot_profile[peak]), size=8)
     bots_plot.set_xlim([0, 1023])
 
     pl.savefig(constructFileName(outpath, base_name, None, 'edges.png'))
