@@ -39,9 +39,9 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
     coeffs['NIRSPEC-1'] = { 'c1': 0.49777509, 'c2': -38653.878, 'y0': 17488.344,
                             'r1': 0.4713783,  'r2': -38876.842, 'z0': 17880.5877};      
                          
-    c1 = coeffs[filtername.upper()]['c1']
-    c2 = coeffs[filtername.upper()]['c2']
-    y0 = coeffs[filtername.upper()]['y0']
+    c1 = coeffs[filtername.upper()[:9]]['c1']
+    c2 = coeffs[filtername.upper()[:9]]['c2']
+    y0 = coeffs[filtername.upper()[:9]]['y0']
    
     pixel = np.arange(const.N_COLS, dtype=float)
 

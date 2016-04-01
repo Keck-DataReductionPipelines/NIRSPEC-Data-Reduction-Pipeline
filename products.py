@@ -175,7 +175,7 @@ def gen(reduced, out_dir):
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
                 
         tracePlot(out_dir, reduced.baseName, order.orderNum, order.avgTrace, 
-                order.smoothedTrace, order.traceMask, order.botMeas + order.padding)
+                order.smoothedTrace, order.traceMask)
      
         traceFits(out_dir, reduced.baseName, order.orderNum, order.avgTrace)
         
@@ -234,7 +234,7 @@ def gen(reduced, out_dir):
     return 
     
     
-def tracePlot(outpath, base_name, order_num, raw, fit, mask, shift_offset):
+def tracePlot(outpath, base_name, order_num, raw, fit, mask):
 
     pl.figure("Trace Plot", figsize=(6, 5), facecolor='white')
     pl.title('trace, ' + base_name + ", order " + str(order_num), fontsize=14)

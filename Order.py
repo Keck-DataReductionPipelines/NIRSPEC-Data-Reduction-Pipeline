@@ -48,7 +48,6 @@ class Order:
         self.smoothedTrace = []
         self.traceMask = []
         self.spectralTrace = []
-        self.shiftOffset = 0
         
         self.flatNormalized = False
         self.flattened = False

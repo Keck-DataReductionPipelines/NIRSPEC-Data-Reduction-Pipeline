@@ -37,10 +37,7 @@ class FlatOrder:
         self.lowestPoint = None
         self.topTrim = None
         self.botTrim = None
-        
- 
-        self.shiftOffset = 0
-        
+                
         self.onOrderMask = None
         self.offOrderMask = None
         

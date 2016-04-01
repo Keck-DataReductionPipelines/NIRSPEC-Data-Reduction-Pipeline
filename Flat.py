@@ -286,9 +286,7 @@ class Flat:
         flatOrder.cutout = np.array(image_lib.cut_out(
                 self.flatImg, flatOrder.highestPoint, flatOrder.lowestPoint, 
                 flatOrder.cutoutPadding))
-        
-        flatOrder.shiftOffset = flatOrder.cutoutPadding + flatOrder.botMeas
-        
+                
         if float(flatOrder.lowestPoint) > float(flatOrder.cutoutPadding):
             flatOrder.onOrderMask, flatOrder.offOrderMask = get_masks(
                     flatOrder.cutout.shape, 
