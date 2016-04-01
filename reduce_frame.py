@@ -128,9 +128,6 @@ def reduce_orders(reduced):
         order.objCutout = np.array(image_lib.cut_out(reduced.obj, 
                 flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))
         
-
-            # put integration time and wavelength scale based on 
-            # grating equation into order object
         order.integrationTime = reduced.getIntegrationTime() # used in noise calc
         order.wavelengthScaleCalc = flatOrder.waveScaleCalc
         order.wavelengthScaleMeas = flatOrder.waveScaleCalc

@@ -165,14 +165,21 @@ def tops_bots_plot(outpath, base_name, tops, bots):
     pl.rcParams['ytick.labelsize'] = 8
 
     obj_plot = pl.subplot(1, 2, 1)
-    obj_plot.imshow(exposure.equalize_hist(tops))
+    try:
+        obj_plot.imshow(exposure.equalize_hist(tops))
+    except:
+        obj_plot.imshow(tops)
+
     obj_plot.set_title('top edges')
     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
 
     
     flat_plot = pl.subplot(1, 2, 2)
-    flat_plot.imshow(exposure.equalize_hist(bots))
+    try:
+        flat_plot.imshow(exposure.equalize_hist(bots))
+    except:
+        flat_plot.imshow(bots)
     flat_plot.set_title('bottom edges')
     flat_plot.set_ylim([1023, 0])
     flat_plot.set_xlim([0, 1023])
@@ -190,7 +197,10 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
     pl.rcParams['ytick.labelsize'] = 8
 
     obj_plot = pl.subplot(1, 2, 1)
-    obj_plot.imshow(exposure.equalize_hist(obj))
+    try:
+        obj_plot.imshow(exposure.equalize_hist(obj))
+    except:
+        obj_plot.imshow(obj)
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
 
@@ -200,7 +210,10 @@ def traces_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace):
 
     
     flat_plot = pl.subplot(1, 2, 2)
-    flat_plot.imshow(exposure.equalize_hist(flat))
+    try:
+        flat_plot.imshow(exposure.equalize_hist(flat))
+    except:
+        flat_plot.imshow(flat)
     flat_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     flat_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)    
     flat_plot.set_title('flat')
@@ -220,14 +233,20 @@ def order_location_plot(outpath, base_name, flat, obj, orders):
     pl.rcParams['ytick.labelsize'] = 8
 
     obj_plot = pl.subplot(1, 2, 1)
-    obj_plot.imshow(exposure.equalize_hist(obj))
+    try:
+        obj_plot.imshow(exposure.equalize_hist(obj))
+    except:
+        obj_plot.imshow(obj)
     obj_plot.set_title('object')
     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
 
     
     flat_plot = pl.subplot(1, 2, 2)
-    flat_plot.imshow(exposure.equalize_hist(flat))
+    try:
+        flat_plot.imshow(exposure.equalize_hist(flat))
+    except:
+        flat_plot.imshow(flat)
     flat_plot.set_title('flat')
     flat_plot.set_ylim([1023, 0])
     flat_plot.set_xlim([0, 1023])
@@ -255,7 +274,10 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace,
     pl.set_cmap('Blues_r')
 
     obj_plot = pl.subplot(2, 1, 1)
-    obj_plot.imshow(exposure.equalize_hist(obj))
+    try:
+        obj_plot.imshow(exposure.equalize_hist(obj))
+    except:
+        obj_plot.imshow(obj)
     obj_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)
     obj_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)
@@ -264,7 +286,10 @@ def cutouts_plot(outpath, base_name, order_num, obj, flat, top_trace, bot_trace,
     obj_plot.set_xlim([0, 1023])
     
     flat_plot = pl.subplot(2, 1, 2)
-    flat_plot.imshow(exposure.equalize_hist(flat))
+    try:
+        flat_plot.imshow(exposure.equalize_hist(flat))
+    except:
+        flat_plot.imshow(flat)
     flat_plot.plot(np.arange(1024), top_trace, 'y-', linewidth=1.5)
     flat_plot.plot(np.arange(1024), bot_trace, 'y-', linewidth=1.5)    
     flat_plot.plot(np.arange(1024), trace, 'y-', linewidth=1.5)    
@@ -284,13 +309,19 @@ def sparect_plot(outpath, base_name, order_num, obj, flat):
     pl.set_cmap('Blues_r')
 
     obj_plot = pl.subplot(2, 1, 1)
-    obj_plot.imshow(exposure.equalize_hist(obj))
+    try:
+        obj_plot.imshow(exposure.equalize_hist(obj))
+    except:
+        obj_plot.imshow(obj)
     obj_plot.set_title('object')
 #     obj_plot.set_ylim([1023, 0])
     obj_plot.set_xlim([0, 1023])
     
     flat_plot = pl.subplot(2, 1, 2)
-    flat_plot.imshow(exposure.equalize_hist(flat))
+    try:
+        flat_plot.imshow(exposure.equalize_hist(flat))
+    except:
+        flat_plot.imshow(flat)
     flat_plot.set_title('flat')
 #     flat_plot.set_ylim([1023, 0])
     flat_plot.set_xlim([0, 1023])

@@ -89,6 +89,11 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
             left_top_row -= 25
             left_bot_row -= 25 
             
+        if '5' in filtername:
+            logger.info('applying N-5 long slit correction')
+            left_top_row += 10
+            left_bot_row += 10
+            
         if '6' in filtername:
             logger.info('applying N-6 long slit correction')
             left_top_row -= 25

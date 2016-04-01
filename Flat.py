@@ -103,11 +103,18 @@ class Flat:
                     continue
                 
                 # find spatial trace from edge traces
-                self.findSpatialTrace(flatOrder)
+                try:
+                    self.findSpatialTrace(flatOrder)
+                except DrpException as e:
+                    logger.info('failed to find spatial trace: {}'.format(e.message))
+                    flatOrder.valid = False
+                    continue
    
                 if flatOrder.spatialTraceFitResidual > config.params['max_spatial_trace_res']:
-                    raise DrpException('spatial trace fit residual too large, limit = {}'.format(
-                            config.params['max_spatial_trace_res']))    
+                    logger.info('spatial trace fit residual too large, limit = {}'.format(
+                            config.params['max_spatial_trace_res']))
+                    flatOrder.valid = False
+                    continue    
                                  
                 try:
                     self.cutOutOrder(flatOrder)
@@ -115,24 +122,19 @@ class Flat:
                     logger.warning('failed to extract flat order {}: {}'.format(
                             str(orderNum), e.message))
                     flatOrder.valid = False
-                else:
-#                     import pylab as pl
-#                     pl.figure()
-#                     pl.cla()
-#                     pl.title(str(flatOrder.orderNum))
-#                     pl.imshow(flatOrder.flatImg)
-#                     pl.show()
-        
-                    try:
-                        flatOrder.reduce()
-                    except DrpException as e:
-                        logger.warning('failed to reduce flat order{}: {}'.format(
-                            str(orderNum), e.message))
-                        flatOrder.valid = False
-                    else:
-                        flatOrder.valid = True
-                        logger.debug('flat order {} validated'.format(orderNum))
-                        self.flatOrders.append(flatOrder)
+                    continue
+                
+                try:
+                    flatOrder.reduce()
+                except DrpException as e:
+                    logger.warning('failed to reduce flat order{}: {}'.format(
+                        str(orderNum), e.message))
+                    flatOrder.valid = False
+                    continue
+                
+                flatOrder.valid = True
+                logger.debug('flat order {} validated'.format(orderNum))
+                self.flatOrders.append(flatOrder)
                         
         logger.info('flat reduction compete')
         logger.info('n orders expected = {}'.format(nOrdersExpected))
@@ -209,7 +211,7 @@ class Flat:
             flatOrder.botEdgeTrace = nirspec_lib.trace_order_edge(self.botEdgeImg, flatOrder.botMeas)
             
         if flatOrder.topEdgeTrace is None and flatOrder.botEdgeTrace is None:
-            return
+            raise DrpException('could not trace top or bottom edge')
     
         if flatOrder.topEdgeTrace is not None and flatOrder.botEdgeTrace is not None:
             logger.info('using top and bottom trace')
@@ -222,7 +224,7 @@ class Flat:
             
         else:
             logger.info('using bottom trace only')
-            flatOrder.avgEdgeTrace = flatOrder.botTrace + \
+            flatOrder.avgEdgeTrace = flatOrder.botEdgeTrace + \
                     ((flatOrder.topCalc - flatOrder.botMeas) / 2.0) + 1.0
                     
         # apply long slit edge margin correction to raw traces
@@ -270,7 +272,7 @@ class Flat:
         
         # determine highest point of top trace (ignore edge)
         if flatOrder.topEdgeTrace is None:
-            flatOrder.topEdgeTrace = flatOrder.botTrace + \
+            flatOrder.topEdgeTrace = flatOrder.botEdgeTrace + \
                 (flatOrder.topCalc - flatOrder.botCalc) - 5
             
         flatOrder.highestPoint = np.amax(flatOrder.topEdgeTrace[0:-config.params['overscan_width']])
