@@ -15,7 +15,7 @@ import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
 
-VERSION = '0.9.11'
+VERSION = '0.9.x'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -331,8 +331,6 @@ def main():
     
     # determine if we are in command line mode or KOA mode
     try:
-#         fits.getheader(args.arg1)
-#         fits.getheader(args.arg2)
         fits.PrimaryHDU.readfrom(args.arg1, ignore_missing_end=True)
         fits.PrimaryHDU.readfrom(args.arg2, ignore_missing_end=True)
     except IOError:
@@ -346,20 +344,20 @@ def main():
     
 
     # initialize environment, setup main logger, check directories
-    try:
-        if config.params['cmnd_line_mode'] is True:
-            init(config.params['out_dir'])
-            nsdrp_cmnd(args.arg1, args.arg2, config.params['out_dir'])
-        else:
-            init(args.arg2, args.arg1)
-            nsdrp_koa(args.arg1, args.arg2)
-    except Exception as e:
-        print('ERROR: ' + e.message)
-        if config.params['debug'] is True:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-        sys.exit(2)    
+#     try:
+    if config.params['cmnd_line_mode'] is True:
+        init(config.params['out_dir'])
+        nsdrp_cmnd(args.arg1, args.arg2, config.params['out_dir'])
+    else:
+        init(args.arg2, args.arg1)
+        nsdrp_koa(args.arg1, args.arg2)
+#     except Exception as e:
+#         print('ERROR: ' + e.message)
+#         if config.params['debug'] is True:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+#             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+#         sys.exit(2)    
 
     sys.exit(0)
     
