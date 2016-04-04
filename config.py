@@ -13,6 +13,8 @@ params['oh_filename']           = './ir_ohlines.dat'
 params['oh_envar_name']         = 'NSDRP_OH_FILENAME'
 params['oh_envar_override']     = False     # if True then use params['oh_filename'] 
                                             # even if envar is set
+                                            
+params['spatial_jump_override'] = False
 
 params['int_c']                 = False
 params['dgn']                   = False     # diagnostic data product generation enabled if True

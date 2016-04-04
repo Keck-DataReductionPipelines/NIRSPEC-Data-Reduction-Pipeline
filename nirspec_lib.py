@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal._peak_finding import argrelextrema
 
 import logging
+import config
 
 import tracer
 
@@ -71,8 +72,12 @@ def trace_order_edge(data, start):
                 return None
             
             if nJumps > ORDER_EDGE_JUMP_LIMIT:
-                    logger.warning('order edge trace jump limit exceeded: n jumps=' + 
-                            str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
+                logger.info('order edge trace jump limit exceeded: n jumps=' + 
+                        str(nJumps) + ' limit=' + str(ORDER_EDGE_JUMP_LIMIT))
+                if config.params['spatial_jump_override'] is True:
+                    logger.warning('spatial jump override enabled, edge not rejected')
+                else:
+                    logger.info('edge rejected')
                     return None
     return trace
     

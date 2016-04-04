@@ -15,7 +15,7 @@ import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
 
-VERSION = '0.9.x'
+VERSION = '0.9.11'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -299,6 +299,9 @@ def main():
     parser.add_argument('-gunzip',
             help='gunzip .gz files (not necessary for processing)', 
             action='store_true')
+    parser.add_argument('-spatial_jump_override',
+            help='inhibit rejection of order edge traces based on \'jump\' limit)', 
+            action='store_true')
     parser.add_argument('-out_dir', 
             help='output directory in command line mode [.], ignored in KOA mode')
     args = parser.parse_args()
@@ -325,6 +328,7 @@ def main():
     if args.ut is not None:
         config.params['ut'] = args.ut
     config.params['gunzip'] = args.gunzip
+    config.params['spatial_jump_override'] = args.spatial_jump_override
     if args.out_dir is not None:
         config.params['out_dir'] = args.out_dir
 
