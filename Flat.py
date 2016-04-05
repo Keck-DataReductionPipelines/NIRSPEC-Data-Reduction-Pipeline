@@ -32,7 +32,8 @@ class Flat:
         self.baseName = self.getBaseName()
         logger.info('constructing Flat object for {}'.format(self.baseName))
 
-        self.header = fits.getheader(filename)
+        self.header = fits.PrimaryHDU.readfrom(filename, ignore_missing_end=True).header
+#         self.header = fits.getheader(filename)
 #         self.flatImg = fits.getdata(filename)
         self.flatImg = data
 
