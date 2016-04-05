@@ -1,9 +1,11 @@
+import matplotlib
+matplotlib.use('Agg')
+import pylab as pl
 import logging
 import os
 import errno
 import warnings
 import numpy as np
-import pylab as pl
 from astropy.io import fits
 from skimage import exposure
 import image_lib

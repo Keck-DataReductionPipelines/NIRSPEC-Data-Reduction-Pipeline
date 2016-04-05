@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import pylab as pl
 import logging
 import os
