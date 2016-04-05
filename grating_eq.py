@@ -105,6 +105,10 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
         left_top_row += low_res_slit_y_corr
         left_bot_row -= low_res_slit_y_corr
         
+    elif '1.13' in slit or '2.26' in slit:
+        logger.debug ('applying AO slit correction')
+        left_bot_row = left_top_row - ((left_top_row - left_bot_row) * 2)
+        
     if dateobs is not None:
         obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')
         shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
