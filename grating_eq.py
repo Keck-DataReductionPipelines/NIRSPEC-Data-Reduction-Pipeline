@@ -6,7 +6,7 @@ import nirspec_constants as const
 
 logger = logging.getLogger('obj')
 
-def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
+def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
     """
     use grating equation with coefficients empirically found for each
     filter, grating angle, and echelle angle to determine starting
@@ -100,15 +100,15 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs):
         left_top_row += low_res_slit_y_corr
         left_bot_row -= low_res_slit_y_corr
         
+    if dateobs is not None:
+        obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')
+        shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
         
-    obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')
-    shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
-    
-    if obs_date < shift_date:
-        logger.debug('applying +' + str(date_y_corr) + 
-                    ' pixel pre-' + shift_date.strftime('%x') + ' y correction')
-        left_top_row += date_y_corr
-        left_bot_row += date_y_corr
+        if obs_date < shift_date:
+            logger.debug('applying +' + str(date_y_corr) + 
+                        ' pixel pre-' + shift_date.strftime('%x') + ' y correction')
+            left_top_row += date_y_corr
+            left_bot_row += date_y_corr
         
     if 'NIRSPEC-7' in filtername:
         logger.debug('applying + ' + str(filter_7_y_corr) + ' pixel y corr for filter ' + filtername)

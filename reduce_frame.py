@@ -6,13 +6,13 @@ from astropy.io import fits
 import config
 import DrpException
 import ReducedDataSet
-import grating_eq
-import extract_order
 import reduce_order
-import nirspec_constants as constants
 import wavelength_utils
 import nsdrp
+import Flat
 from logging import INFO
+import Order
+import image_lib
 
 logger = logging.getLogger('obj')
 # main_logger = logging.getLogger('main')
@@ -44,6 +44,11 @@ def reduce_frame(raw, out_dir):
         
     for flat_name in raw.flatFileNames:
         reduced.flatKOAIds.append(flat_name[flat_name.rfind('/') + 1:flat_name.rfind('.')])
+        
+    ####
+#     reduced.Flat = Flat.Flat(raw.flatFileNames[0])
+    
+    ####
     
     # put object summary info into per-object log
     log_start_summary(reduced)
@@ -55,18 +60,23 @@ def reduce_frame(raw, out_dir):
     # store results in processed data set
     process_darks_and_flats(raw, reduced)
         
+
     # clean cosmic ray hits
     if config.params['no_cosmic']:
         logger.info("not cleaning cosmic ray hits")
 
     else:
         logger.info('starting cosmic ray cleaning')
-        reduced.cleanCosmicRayHits()
+        reduced.obj = image_lib.cosmic_clean(reduced.obj)
+        if len(reduced.flatKOAIds) < 3:
+            logger.info('cosmic cleaning flat because < 3 flats were median combined')
+            reduced.flat = image_lib.cosmic_clean(reduced.flat)
+        reduced.cosmicCleaned = True 
         logger.info('cosmic ray cleaning complete')
         
-    # find order edge peak locations on flat, not fully moved here yet
-    find_order_edge_peaks(reduced)
-        
+    # reduce flat
+    reduced.Flat = Flat.Flat(raw.flatFileNames[0], reduced.flat)
+
     # reduce orders
     try:
         reduce_orders(reduced)
@@ -106,62 +116,46 @@ def reduce_orders(reduced):
     through each order in descending order number, working toward higher pixel row numbers
     on the detector, until the first off-detector order is found.
     """
-    starting_order = constants.get_starting_order(reduced.getFilter())
-    first_order_found = False
-    n_orders_on_detector = 0
     
-    for order_num in range(starting_order, 0, -1):
+    for flatOrder in reduced.Flat.flatOrders:
+        if flatOrder.valid is not True:
+            continue        
         
-        logger.info('***** order ' + str(order_num) + ' *****')
+        logger.info('***** order ' + str(flatOrder.orderNum) + ' *****')
+            
+        order = Order.Order(flatOrder.orderNum)
+            
+        order.objCutout = np.array(image_lib.cut_out(reduced.obj, 
+                flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))
         
-        # get expected location of order on detector
-        top_calc, bot_calc, wavelength_scale_calc = \
-                grating_eq.evaluate(order_num, reduced.getFilter(), reduced.getSlit(), 
-                reduced.getEchPos(), reduced.getDispPos(), reduced.getDate())
-        
-        logger.info('predicted y location: top = ' + 
-                    '{:.0f}'.format(top_calc) + ', bottom = ' + '{:.0f}'.format(bot_calc))
-        
-        if not grating_eq.is_on_detector(top_calc, bot_calc):
-            
-            # order is not on the detector
-            
-            logger.info('order ' + str(order_num) + ' is not on the detector')
-            if first_order_found:
-                break;
-
-        else:
-           
-            # order is on the detector
-            
-            first_order_found = True
-            
-            n_orders_on_detector += 1
-            
-            order = extract_order.extract_order(order_num, reduced.obj, reduced.flat, 
-                    top_calc, bot_calc, reduced.getFilter(), reduced.getSlit())
-            
-            if order is None:
-                logger.warning('failed to extract order {}'.format(str(order_num)))
-                continue
 
             # put integration time and wavelength scale based on 
             # grating equation into order object
-            order.integrationTime = reduced.getIntegrationTime() # used in noise calc
-            order.wavelengthScaleCalc = wavelength_scale_calc
-            order.wavelengthScaleMeas = wavelength_scale_calc
+        order.integrationTime = reduced.getIntegrationTime() # used in noise calc
+        order.wavelengthScaleCalc = flatOrder.waveScaleCalc
+        order.wavelengthScaleMeas = flatOrder.waveScaleCalc
+        order.topTrace = flatOrder.topEdgeTrace
+        order.botTrace = flatOrder.botEdgeTrace
+        order.avgTrace = flatOrder.avgEdgeTrace
+        order.smoothedTrace = flatOrder.smoothedSpatialTrace
+        order.traceMask = flatOrder.spatialTraceMask
+        order.flatCutout = flatOrder.cutout
+        order.highestPoint = flatOrder.highestPoint
+        order.lowestPoint = flatOrder.lowestPoint
+        order.padding = flatOrder.cutoutPadding
+        order.botMeas = flatOrder.botMeas
             
-            try:
-                
-                # reduce order, i.e. rectify, extract spectra, identify sky lines
-                reduce_order.reduce_order(order)
-        
-                # add reduced order to list of reduced orders in Reduced object
-                reduced.orders.append(order)                      
+        try:
+            
+            # reduce order, i.e. rectify, extract spectra, identify sky lines
+            reduce_order.reduce_order(order, flatOrder)
+    
+            # add reduced order to list of reduced orders in Reduced object
+            reduced.orders.append(order)                      
 
-            except DrpException.DrpException as e:
-                logger.warning('failed to reduce order {}: {}'.format(
-                         str(order_num), e.message))
+        except DrpException.DrpException as e:
+            logger.warning('failed to reduce order {}: {}'.format(
+                     str(flatOrder.orderNum), e.message))
  
                         
         # end if order is on the detector
@@ -170,9 +164,9 @@ def reduce_orders(reduced):
     loggers = ['obj']
     if config.params['cmnd_line_mode'] is False:
         loggers.append('main')
-    for l in loggers:
-        logging.getLogger(l).log(INFO, 'n orders on the detector = {}'.format(n_orders_on_detector))
-        logging.getLogger(l).log(INFO, 'n orders reduced = {}'.format(len(reduced.orders)))
+#     for l in loggers:
+#         logging.getLogger(l).log(INFO, 'n orders on the detector = {}'.format(n_orders_on_detector))
+#         logging.getLogger(l).log(INFO, 'n orders reduced = {}'.format(len(reduced.orders)))
         
     if len(reduced.orders) == 0:
         return
@@ -211,33 +205,6 @@ def reduce_orders(reduced):
 
     return
     
-            
-def find_order_edge_peaks(reduced):
-    
-    from scipy.signal import argrelextrema
-
-    # make top and bottom edge images
-    rolled = np.roll(reduced.flat, 5, axis=0)
-    reduced.topEdgesImg = rolled - reduced.flat
-    reduced.botEdgesImg = reduced.flat - rolled
-    
-    
-    # take a vertical cut of edges
-    reduced.topEdgesProfile = np.median(reduced.topEdgesImg[:, 40:50], axis=1)
-    reduced.botEdgesProfile = np.median(reduced.botEdgesImg[:, 40:50], axis=1)
-
-    # find the highest peaks in crosscut, search +/- 15 pixels to narrow down list
-    top_extrema = argrelextrema(reduced.topEdgesProfile, np.greater, order=35)[0]
-    bot_extrema = argrelextrema(reduced.botEdgesProfile, np.greater, order=35)[0]
-
-    # find crosscut values at those extrema
-    top_intensities = reduced.topEdgesProfile[top_extrema]
-    bot_intensities = reduced.botEdgesProfile[bot_extrema]
-
-    reduced.topEdgePeaks = zip(top_extrema, top_intensities)
-    reduced.botEdgePeaks = zip(bot_extrema, bot_intensities)
-    
-    return
 
     
 def find_global_wavelength_soln(reduced):

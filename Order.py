@@ -22,7 +22,7 @@ class Order:
         self.wavelengthShift = None
         self.wavelengthScaleMeas = None
         
-        # Indicates the source of the 
+        # per-order wavelength calibration  
         self.perOrderCal = False
         self.perOrderSlope = 0.0;
         self.perOrderIntercept = 0.0;

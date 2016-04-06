@@ -37,7 +37,7 @@ ORDER_EDGE_BG_WIDTH = 30
 ORDER_EDGE_JUMP_THRESH = 1.9
 ORDER_EDGE_JUMP_LIMIT = 200
 
-def trace_order_edge(data, start, slit_name):
+def trace_order_edge(data, start):
         
     trace, nJumps =  tracer.trace_edge(
             data, start, ORDER_EDGE_SEARCH_WIDTH, ORDER_EDGE_BG_WIDTH, ORDER_EDGE_JUMP_THRESH)

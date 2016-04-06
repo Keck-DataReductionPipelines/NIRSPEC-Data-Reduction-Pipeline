@@ -13,60 +13,26 @@ import DrpException
 
 logger = logging.getLogger('obj')
 
-def reduce_order(order):
-            
-    # normalize flat
-    order.normalizedFlatImg, order.flatMean =  image_lib.normalize(
-            order.flatCutout, order.onOrderMask, order.offOrderMask)
-    order.flatNormalized = True
-    logger.info('flat normalized, flat mean = ' + str(round(order.flatMean, 1)))
+def reduce_order(order, flat_order):
         
     # flatten obj but keep original for noise calc
-    order.flattenedObjImg = np.array(order.objCutout / order.normalizedFlatImg)
+    order.flattenedObjImg = np.array(order.objCutout / flat_order.normFlatImg)
     if np.amin(order.flattenedObjImg) < 0:
         order.flattenedObjImg -= np.amin(order.flattenedObjImg)
     order.flattened = True
     order.objImg = np.array(order.objCutout) # should probably use objImg instead of objCutout to begin with
-    order.flatImg = np.array(order.flatCutout)
     logger.info('order has been flat fielded')
-    
-    # smooth spatial trace
-    # this should probably be done where the trace is first found    
-    order.smoothedTrace, order.traceMask = nirspec_lib.smooth_spatial_trace(order.avgTrace)
-    logger.info('spatial trace smoothed, ' + str(order.objImg.shape[1] - np.count_nonzero(order.traceMask)) + 
-            ' points ignored')
-    
-    # rms should be put in Order object
-    rms = np.sqrt(np.mean(np.square(order.avgTrace - order.smoothedTrace)));
-    logger.info('spatial trace smoothing rms fit residual = {:.2f}'.format(rms))
-    
-    if rms > config.params['max_spatial_trace_res']:
-        raise DrpException.DrpException('spatial trace fit residual too large, limit = {}'.format(
-                config.params['max_spatial_trace_res'])) 
  
     # rectify flat, normalized flat, obj and flattened obj in spatial dimension
-    order.flatImg = image_lib.rectify_spatial(order.flatImg, order.smoothedTrace)
-    order.normalizedFlatImg = image_lib.rectify_spatial(order.normalizedFlatImg, order.smoothedTrace)
-    order.objImg = image_lib.rectify_spatial(order.objImg, order.smoothedTrace)
-    order.flattenedObjImg = image_lib.rectify_spatial(order.flattenedObjImg, order.smoothedTrace)
+    order.objImg = image_lib.rectify_spatial(order.objImg, flat_order.smoothedSpatialTrace)
+    order.flattenedObjImg = image_lib.rectify_spatial(
+            order.flattenedObjImg, flat_order.smoothedSpatialTrace)
  
-    if order.lowestPoint > order.padding:
-        top = order.highestPoint - order.lowestPoint + order.padding - 3
-    else:
-        top = order.highestPoint - 3
-    h = np.amin(order.topTrace - order.botTrace)
-    bot = top - h + 3
- 
-
-    bot = max(0, bot)
-    top = min(top, 1023)
+    # trim rectified order
+    order.objImg = order.objImg[flat_order.botTrim:flat_order.topTrim, :]
+    order.flattenedObjImg = order.flattenedObjImg[flat_order.botTrim:flat_order.topTrim, :]
     
-    order.flatImg = order.flatImg[bot:top, :]
-    order.normalizedFlatImg = order.normalizedFlatImg[bot:top, :]
-    order.objImg = order.objImg[bot:top, :]
-    order.flattenedObjImg = order.flattenedObjImg[bot:top, :]
-    
-    order.srNormFlatImg = order.normalizedFlatImg
+    order.srNormFlatImg = flat_order.rectFlatImg
     order.srFlatObjImg = order.flattenedObjImg
     
     order.spatialRectified = True
@@ -80,26 +46,24 @@ def reduce_order(order):
 
     # find and smooth spectral trace
     try:
-        order.spectral_trace = nirspec_lib.smooth_spectral_trace(
+        order.spectralTrace = nirspec_lib.smooth_spectral_trace(
                 nirspec_lib.find_spectral_trace(
                         order.flattenedObjImg), order.flattenedObjImg.shape[0])
     except Exception as e:
         logger.warning('not rectifying order {} in spectral dimension'.format(order.orderNum))
  
     else:
-        # rectify flat, normalized flat, obj and flattened obj in spectral dimension 
-        order.flatImg = image_lib.rectify_spectral(order.flatImg, order.spectral_trace)
-        order.normalizedFlatImg = image_lib.rectify_spectral(order.normalizedFlatImg, order.spectral_trace)
-        order.objImg = image_lib.rectify_spectral(order.objImg, order.spectral_trace)
-        order.objImgFlattened = image_lib.rectify_spectral(order.flattenedObjImg, order.spectral_trace)
+        flat_order.rectFlatImg = image_lib.rectify_spectral(flat_order.rectFlatImg, order.spectralTrace)
+        order.objImg = image_lib.rectify_spectral(order.objImg, order.spectralTrace)
+        order.objImgFlattened = image_lib.rectify_spectral(order.flattenedObjImg, order.spectralTrace)
         order.spectralRectified = True
      
     # compute noise image
     order.noiseImg = nirspec_lib.calc_noise_img(
-            order.objImg, order.normalizedFlatImg, order.integrationTime)
+            order.objImg, flat_order.rectFlatImg, order.integrationTime)
     
     # extract spectra
-    extract_spectra(order)
+    extract_spectra(order, flat_order)
             
     # calculate SNR
     bg = 0.0
@@ -178,7 +142,7 @@ def reduce_order(order):
                         
     return
          
-def extract_spectra(order):
+def extract_spectra(order, flat_order):
     
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \
         image_lib.get_extraction_ranges(order.objImg.shape[0], order.peakLocation,
@@ -196,7 +160,7 @@ def extract_spectra(order):
     
     order.objSpec, order.flatSpec, order.skySpec, order.noiseSpec, order.topBgMean, \
             order.botBgMean = image_lib.extract_spectra(
-                order.flattenedObjImg, order.normalizedFlatImg, order.noiseImg, 
+                order.flattenedObjImg, flat_order.rectFlatImg, order.noiseImg, 
                 order.objWindow, order.topSkyWindow, order.botSkyWindow)
             
     return
