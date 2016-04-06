@@ -13,6 +13,8 @@ params['oh_filename']           = './ir_ohlines.dat'
 params['oh_envar_name']         = 'NSDRP_OH_FILENAME'
 params['oh_envar_override']     = False     # if True then use params['oh_filename'] 
                                             # even if envar is set
+                                            
+params['spatial_jump_override'] = False
 
 params['int_c']                 = False
 params['dgn']                   = False     # diagnostic data product generation enabled if True
@@ -49,7 +51,7 @@ starting_order = {
 }
 
 def get_starting_order(filtername):
-    return starting_order[filtername.upper()]
+    return starting_order[filtername.upper()[:9]]
 
 # order edge location error threshold
 max_edge_location_error = {
@@ -69,7 +71,7 @@ def get_max_edge_location_error(filtername, slit):
         else:
             return 30
     else:
-        return max_edge_location_error[filtername.upper()]
+        return max_edge_location_error[filtername.upper()[:9]]
     
 # order cutout padding
 long_slit_cutout_padding = {
@@ -93,7 +95,7 @@ short_slit_cutout_padding = {
 
 def get_cutout_padding(filtername, slit):
     if '24' in slit:
-        return(long_slit_cutout_padding[filtername.upper()])
+        return(long_slit_cutout_padding[filtername.upper()[:9]])
     else:
-        return(short_slit_cutout_padding[filtername.upper()])
+        return(short_slit_cutout_padding[filtername.upper()[:9]])
     

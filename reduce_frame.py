@@ -128,9 +128,6 @@ def reduce_orders(reduced):
         order.objCutout = np.array(image_lib.cut_out(reduced.obj, 
                 flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))
         
-
-            # put integration time and wavelength scale based on 
-            # grating equation into order object
         order.integrationTime = reduced.getIntegrationTime() # used in noise calc
         order.wavelengthScaleCalc = flatOrder.waveScaleCalc
         order.wavelengthScaleMeas = flatOrder.waveScaleCalc
@@ -365,10 +362,10 @@ def log_start_summary(reduced):
     for l in loggers:
         logging.getLogger(l).log(INFO, 'starting reduction of ' + reduced.baseName)
 #           #reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
-        logging.getLogger(l).log(INFO, '   date of observation = ' + reduced.getDate() + ' UT')
-        logging.getLogger(l).log(INFO, '           target name = ' + reduced.getTargetName())
-        logging.getLogger(l).log(INFO, '           filter name = ' + reduced.getFullFilterName())
-        logging.getLogger(l).log(INFO, '             slit name = ' + reduced.getSlit())
+        logging.getLogger(l).log(INFO, '   date of observation = ' + str(reduced.getDate() + ' UT'))
+        logging.getLogger(l).log(INFO, '           target name = ' + str(reduced.getTargetName()))
+        logging.getLogger(l).log(INFO, '           filter name = ' + str(reduced.getFullFilterName()))
+        logging.getLogger(l).log(INFO, '             slit name = ' + str(reduced.getSlit()))
         logging.getLogger(l).log(INFO, '      integration time = ' + str(reduced.getITime()) + ' sec')
         logging.getLogger(l).log(INFO, '              n coadds = ' + str(reduced.getNCoadds()))
     logger.info('        echelle angle = ' + str(reduced.getEchPos()) + ' deg')

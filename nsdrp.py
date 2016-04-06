@@ -299,6 +299,9 @@ def main():
     parser.add_argument('-gunzip',
             help='gunzip .gz files (not necessary for processing)', 
             action='store_true')
+    parser.add_argument('-spatial_jump_override',
+            help='inhibit rejection of order edge traces based on \'jump\' limit)', 
+            action='store_true')
     parser.add_argument('-out_dir', 
             help='output directory in command line mode [.], ignored in KOA mode')
     args = parser.parse_args()
@@ -325,14 +328,13 @@ def main():
     if args.ut is not None:
         config.params['ut'] = args.ut
     config.params['gunzip'] = args.gunzip
+    config.params['spatial_jump_override'] = args.spatial_jump_override
     if args.out_dir is not None:
         config.params['out_dir'] = args.out_dir
 
     
     # determine if we are in command line mode or KOA mode
     try:
-#         fits.getheader(args.arg1)
-#         fits.getheader(args.arg2)
         fits.PrimaryHDU.readfrom(args.arg1, ignore_missing_end=True)
         fits.PrimaryHDU.readfrom(args.arg2, ignore_missing_end=True)
     except IOError:
@@ -346,7 +348,6 @@ def main():
     
 
     # initialize environment, setup main logger, check directories
-    print('don\'t forget to restore exception processing nsdrp.py:350')
 #     try:
     if config.params['cmnd_line_mode'] is True:
         init(config.params['out_dir'])

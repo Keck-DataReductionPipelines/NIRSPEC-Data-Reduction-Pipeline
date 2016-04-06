@@ -39,9 +39,9 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
     coeffs['NIRSPEC-1'] = { 'c1': 0.49777509, 'c2': -38653.878, 'y0': 17488.344,
                             'r1': 0.4713783,  'r2': -38876.842, 'z0': 17880.5877};      
                          
-    c1 = coeffs[filtername.upper()]['c1']
-    c2 = coeffs[filtername.upper()]['c2']
-    y0 = coeffs[filtername.upper()]['y0']
+    c1 = coeffs[filtername.upper()[:9]]['c1']
+    c2 = coeffs[filtername.upper()[:9]]['c2']
+    y0 = coeffs[filtername.upper()[:9]]['y0']
    
     pixel = np.arange(const.N_COLS, dtype=float)
 
@@ -89,6 +89,11 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
             left_top_row -= 25
             left_bot_row -= 25 
             
+        if '5' in filtername:
+            logger.info('applying N-5 long slit correction')
+            left_top_row += 10
+            left_bot_row += 10
+            
         if '6' in filtername:
             logger.info('applying N-6 long slit correction')
             left_top_row -= 25
@@ -99,6 +104,13 @@ def evaluate(order, filtername, slit, echlpos, disppos, dateobs=None):
                     ' pixel low res slit y correction for slit ' + slit)
         left_top_row += low_res_slit_y_corr
         left_bot_row -= low_res_slit_y_corr
+        
+    elif '2.26' in slit:
+        logger.debug ('applying x2.26 AO slit correction')
+        left_bot_row = left_top_row - ((left_top_row - left_bot_row) * 2)
+        
+    elif '1.13' in slit:
+        logger.debug ('applying no correction for x1.13 AO slit correction')
         
     if dateobs is not None:
         obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')

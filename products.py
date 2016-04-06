@@ -1,11 +1,11 @@
 import matplotlib
 matplotlib.use('Agg')
+import pylab as pl
 import logging
 import os
 import errno
 import warnings
 import numpy as np
-import pylab as pl
 from astropy.io import fits
 from skimage import exposure
 import image_lib
@@ -177,7 +177,7 @@ def gen(reduced, out_dir):
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
                 
         tracePlot(out_dir, reduced.baseName, order.orderNum, order.avgTrace, 
-                order.smoothedTrace, order.traceMask, order.botMeas + order.padding)
+                order.smoothedTrace, order.traceMask)
      
         traceFits(out_dir, reduced.baseName, order.orderNum, order.avgTrace)
         
@@ -236,11 +236,8 @@ def gen(reduced, out_dir):
     return 
     
     
-def tracePlot(outpath, base_name, order_num, raw, fit, mask, shift_offset):
-        
-    offraw = raw + shift_offset
-    offfit = fit + shift_offset
-    
+def tracePlot(outpath, base_name, order_num, raw, fit, mask):
+
     pl.figure("Trace Plot", figsize=(6, 5), facecolor='white')
     pl.title('trace, ' + base_name + ", order " + str(order_num), fontsize=14)
     pl.xlabel('column (pixels)')
@@ -248,16 +245,16 @@ def tracePlot(outpath, base_name, order_num, raw, fit, mask, shift_offset):
     
 #     yrange = offraw.max() - offraw.min()
  
-    x = np.arange(offraw.shape[0])
+    x = np.arange(raw.shape[0])
     
-    pl.plot(x[mask], offraw[mask], "ko", mfc="none", ms=1.0, linewidth=1, label="derived")
-    pl.plot(x, offfit, "k-", mfc="none", ms=1.0, linewidth=1, label="fit")
+    pl.plot(x[mask], raw[mask], "ko", mfc="none", ms=1.0, linewidth=1, label="derived")
+    pl.plot(x, fit, "k-", mfc="none", ms=1.0, linewidth=1, label="fit")
         
-    pl.plot(x[np.logical_not(mask)], offraw[np.logical_not(mask)], 
+    pl.plot(x[np.logical_not(mask)], raw[np.logical_not(mask)], 
         "ro", mfc="red", mec="red", ms=2.0, linewidth=2, label="ignored")
 
     
-    rms = np.sqrt(np.mean(np.square(offraw - offfit)))
+    rms = np.sqrt(np.mean(np.square(raw - fit)))
     pl.annotate('RMS residual = ' + "{:.3f}".format(rms), (0.3, 0.8), xycoords="figure fraction")
     
     pl.minorticks_on()
