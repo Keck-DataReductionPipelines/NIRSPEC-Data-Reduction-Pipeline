@@ -18,7 +18,7 @@ logger = logging.getLogger('obj')
 # main_logger = logging.getLogger('main')
 # main_logger = logging.getLogger('main')
 
-def reduce_frame(raw, out_dir):
+def reduce_frame(raw, out_dir, flatCacher=None):
     """
     raw - RawDataSet object
     out_dir - data product root directory
@@ -45,10 +45,6 @@ def reduce_frame(raw, out_dir):
     for flat_name in raw.flatFileNames:
         reduced.flatKOAIds.append(flat_name[flat_name.rfind('/') + 1:flat_name.rfind('.')])
         
-    ####
-#     reduced.Flat = Flat.Flat(raw.flatFileNames[0])
-    
-    ####
     
     # put object summary info into per-object log
     log_start_summary(reduced)
@@ -58,25 +54,41 @@ def reduce_frame(raw, out_dir):
     
     # combine flats and darks, if darks exist then subtract from obj and flat,
     # store results in processed data set
-    process_darks_and_flats(raw, reduced)
+    #process_darks_and_flats(raw, reduced)
+    
+    # reduce flat
+    if flatCacher is None:
+        # in command line mode with only one flat
+        if config.params['no_cosmic']:
+            logger.info('cosmic ray rejection on flat inhibited by command line flat')
+            flat_data = fits.PrimaryHDU.readfrom(raw.flatFileNames[0], ignore_missing_end=True).data
+        else:
+            logger.info('starting cosmic ray cleaning on flat')
+            flat_data = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
+                    raw.flatFileNames[0], ignore_missing_end=True).data)
+            logger.info('cosmic ray cleaning on flat complete')
         
-
-    # clean cosmic ray hits
+        reduced.Flat = Flat.Flat(
+                raw.flatFileNames[0],
+                fits.PrimaryHDU.readfrom(raw.flatFileNames[0], ignore_missing_end=True).header, 
+                flat_data)
+    else:
+        reduced.Flat = flatCacher.getFlat(raw.flatFileNames)
+    
+    # clean cosmic ray hits on object frame
     if config.params['no_cosmic']:
-        logger.info("not cleaning cosmic ray hits")
+        logger.info("cosmic ray rejection on object frame inhibited by command line flat")
 
     else:
-        logger.info('starting cosmic ray cleaning')
+        logger.info('starting cosmic ray cleaning on object frame')
         reduced.obj = image_lib.cosmic_clean(reduced.obj)
-        if len(reduced.flatKOAIds) < 3:
-            logger.info('cosmic cleaning flat because < 3 flats were median combined')
-            reduced.flat = image_lib.cosmic_clean(reduced.flat)
         reduced.cosmicCleaned = True 
-        logger.info('cosmic ray cleaning complete')
+        logger.info('cosmic ray cleaning on object frame complete')
         
-    # reduce flat
-    reduced.Flat = Flat.Flat(raw.flatFileNames[0], reduced.flat)
-
+    # if darks are available, combine them if there are more than one
+    # and subtract from object and flat
+    process_darks(raw, reduced)
+    
     # reduce orders
     try:
         reduce_orders(reduced)
@@ -90,6 +102,9 @@ def reduce_frame(raw, out_dir):
         apply_wavelength_soln(reduced)
     else:
         logger.info('not applying wavelength solution')
+        for order in reduced.orders:
+            order.wavelengthScale = order.wavelengthScaleCalc
+            order.calMethodUsed = 'grating equation'
     
     return(reduced)
  
@@ -130,7 +145,7 @@ def reduce_orders(reduced):
         
         order.integrationTime = reduced.getIntegrationTime() # used in noise calc
         order.wavelengthScaleCalc = flatOrder.waveScaleCalc
-        order.wavelengthScaleMeas = flatOrder.waveScaleCalc
+        #order.wavelengthScaleMeas = flatOrder.waveScaleCalc
         order.topTrace = flatOrder.topEdgeTrace
         order.botTrace = flatOrder.botEdgeTrace
         order.avgTrace = flatOrder.avgEdgeTrace
@@ -297,6 +312,18 @@ def apply_wavelength_soln(reduced):
                 reduced.coeffs[4] * x * y +
                 reduced.coeffs[5] * (x **2) * y)
         
+ 
+        dx = np.diff(order.wavelengthScaleMeas)
+        if np.all(dx <= 0) or np.all(dx >= 0):
+            # wavelength scale is monotonic
+            order.wavelengthScale = order.wavelengthScaleMeas
+            order.calMethodUsed = 'sky lines'
+        else:
+            logger.warning('wavelength scale not monotonic for order {}'.format(order.orderNum))
+            logger.warning('using theoretical wavelength scale ')
+            order.wavelengthScale = order.wavelengthScaleCalc
+            order.calMethodUsed = 'grating equation'
+                   
     return
     
 def init(objFileName, out_dir):
@@ -376,10 +403,40 @@ def process_darks_and_flats(raw, reduced):
     
     # combine flats and darks
     logger.info(str(len(raw.flatFileNames)) + ' flats: ' + 
-            ', '.join(str(x) for x in  ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
+            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
     reduced.flat = raw.combineFlats()
     if len(raw.flatFileNames) > 1:
         logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
+
+    if len(raw.darkFileNames) > 0:
+        reduced.hasDark = True
+        logger.info(str(len(raw.darkFileNames)) + ' darks: ' + 
+            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.darkFileNames])))
+        reduced.dark = raw.combineDarks()
+        if len(raw.darkFileNames) > 1:
+            logger.info(str(len(raw.darkFileNames)) + ' darks have been median combined')
+    else:
+        logger.info('no darks')
+
+    # if dark(s) exist, subtract from obj and flat
+    if reduced.hasDark:
+        reduced.subtractDark()
+        logger.info('dark subtracted from obj and flat')
+        
+    return
+    
+def process_flats(raw, reduced):
+    
+    # combine flats and darks
+    logger.info(str(len(raw.flatFileNames)) + ' flats: ' + 
+            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
+    reduced.flat = raw.combineFlats()
+    if len(raw.flatFileNames) > 1:
+        logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
+        
+    return
+
+def process_darks(raw, reduced):
 
     if len(raw.darkFileNames) > 0:
         reduced.hasDark = True

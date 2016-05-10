@@ -21,6 +21,8 @@ class Order:
         self.wavelengthScaleCalc = []
         self.wavelengthShift = None
         self.wavelengthScaleMeas = None
+        self.wavelengthScale = [];
+        self.calMethodUsed = 'unknown'
         
         # per-order wavelength calibration  
         self.perOrderCal = False

@@ -39,6 +39,7 @@ params['large_tilt_threshold']  = 20
 params['large_tilt_extra_padding'] = 10
 params['overscan_width']        = 10
 
+
 # expected order number at bottom of detector
 starting_order = {
         'NIRSPEC-1': 80, 

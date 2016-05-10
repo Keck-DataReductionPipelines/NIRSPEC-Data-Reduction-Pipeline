@@ -1,15 +1,17 @@
 import matplotlib
+
 matplotlib.use('Agg')
+    
 import pylab as pl
 import logging
 import os
 import errno
 import numpy as np
 from skimage import exposure
-
-import Order
-import ReducedDataSet
 import config
+
+# import Order
+# import ReducedDataSet
 
 UNDERLINE = False
 
@@ -26,7 +28,8 @@ subdirs = dict([
                 ('top_bot_edges.png',   'edges'),
                 ('localcalids.txt',     'localcal'),
                 ('skylines.png',        'skylines'),
-                ('skylines.txt',        'skylines')
+                ('skylines.txt',        'skylines'),
+                ('wavelength_scale.png','wavelength')
                 ])
 
 def gen(reduced, out_dir):
@@ -100,13 +103,6 @@ def gen(reduced, out_dir):
             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'trace.npy')
             np.savetxt(fn, order.smoothedTrace)
         
-        # save obj and flat cutouts to numpy text files
-#         if config.params['npy'] is True:
-#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
-#             np.savetxt(fn, order.objCutout)
-#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
-#             np.savetxt(fn, order.flatCutout)
-#         
         if order.lowestPoint > order.padding:
             cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
                     order.topTrace - order.lowestPoint + order.padding, 
@@ -121,6 +117,8 @@ def gen(reduced, out_dir):
         
         skyLinesPlot(out_dir, reduced.baseName, order)
         skyLinesAsciiTable(out_dir, reduced.baseName, order)
+        
+        wavelengthScalePlot(out_dir, reduced.baseName, order)
         
     logger.info('done generating diagnostic data products')
     
@@ -473,4 +471,35 @@ def skyLinesAsciiTable(outpath, base_name, order):
     fptr.write('\n'.join(buff))
     fptr.close()
  
+    return
+
+
+
+def wavelengthScalePlot(out_dir, base_name, order):
+
+
+    pl.figure('wavelength scale', facecolor='white')
+    pl.cla()
+    pl.title('wavelength scale, ' + base_name + ', order ' + str(order.orderNum), fontsize=14)
+
+    pl.xlabel('column (pixels)')
+    pl.ylabel('wavelength ($\AA$)')
+    
+    pl.minorticks_on()
+    pl.grid(True)
+    
+    pl.xlim(0, 1023)
+    
+    pl.plot(order.wavelengthScaleCalc, "k-", mfc='none', ms=3.0, linewidth=1, 
+            label='grating equation')
+    if (len(order.wavelengthScaleMeas > 0)):
+        pl.plot(order.wavelengthScaleMeas, "b-", mfc='none', ms=3.0, linewidth=1, 
+            label='sky lines')
+        
+    pl.legend(loc='best', prop={'size': 8})
+    
+    fn = constructFileName(out_dir, base_name, order.orderNum, 'wavelength_scale.png')
+    pl.savefig(fn)
+    pl.close()
+
     return

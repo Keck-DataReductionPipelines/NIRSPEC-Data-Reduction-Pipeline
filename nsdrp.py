@@ -14,8 +14,9 @@ import products
 import nirspec_constants as constants
 import RawDataSet
 from DrpException import DrpException
+import FlatCacher
 
-VERSION = '0.9.11'
+VERSION = '0.9.12'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -33,6 +34,8 @@ def nsdrp_koa(in_dir, base_out_dir):
     
     logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
         
+    flatCacher = FlatCacher.FlatCacher(logger, base_out_dir + '/flats')
+    
     # process each raw data set
     
     for rawDataSet in rawDataSets:
@@ -55,7 +58,7 @@ def nsdrp_koa(in_dir, base_out_dir):
         
 
         try:
-            reduce_data_set(rawDataSet, out_dir)    
+            reduce_data_set(rawDataSet, out_dir, flatCacher)    
         except DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
@@ -124,12 +127,12 @@ def nsdrp_cmnd(fn1, fn2, out_dir):
         
     return        
     
-def reduce_data_set(rawDataSet, out_dir):    
+def reduce_data_set(rawDataSet, out_dir, flatCacher=None):    
     
     logger = logging.getLogger('main')
 
     # generate reduced data set by reducing raw data set
-    reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
+    reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir, flatCacher)
     
     # produce data products from reduced data set
     if config.params['no_products'] is True:
@@ -304,6 +307,7 @@ def main():
             action='store_true')
     parser.add_argument('-out_dir', 
             help='output directory in command line mode [.], ignored in KOA mode')
+
     args = parser.parse_args()
     config.params['debug'] = args.debug
     config.params['verbose'] = args.verbose
