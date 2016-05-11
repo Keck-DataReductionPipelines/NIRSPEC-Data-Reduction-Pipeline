@@ -473,10 +473,7 @@ def skyLinesAsciiTable(outpath, base_name, order):
  
     return
 
-
-
 def wavelengthScalePlot(out_dir, base_name, order):
-
 
     pl.figure('wavelength scale', facecolor='white')
     pl.cla()
@@ -492,7 +489,7 @@ def wavelengthScalePlot(out_dir, base_name, order):
     
     pl.plot(order.wavelengthScaleCalc, "k-", mfc='none', ms=3.0, linewidth=1, 
             label='grating equation')
-    if (len(order.wavelengthScaleMeas > 0)):
+    if order.wavelengthScaleMeas is not None:
         pl.plot(order.wavelengthScaleMeas, "b-", mfc='none', ms=3.0, linewidth=1, 
             label='sky lines')
         
