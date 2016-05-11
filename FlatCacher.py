@@ -52,11 +52,11 @@ class FlatCacher:
                     ', '.join(str(x) for x in ([f[f.find("NS"):f.rfind(".")] for f in fns])))
             flat = Flat.Flat(fn, hdu.header, hdu.data, self.flatDir)
             self.fnToFlat[fn] = flat
-            self.fnToRawFlatList[fn] = fns
+            self.fnToRawFlatList[fn] = baseFns
             for k in ['GAIN.SPE', 'FREQ.SPE']:
                 if hdu.header[k]:
                     hdu.header.pop(k)
-            hdu.writeto(self.flatDir + '/' + fn)
+            hdu.writeto(self.flatDir + '/' + fn, clobber=True)
             return(flat)
         else:
             self.logger.debug('reusing flat ' + fn)
