@@ -1,5 +1,7 @@
 import matplotlib
+
 matplotlib.use('Agg')
+    
 import pylab as pl
 import logging
 import os
@@ -122,15 +124,15 @@ def gen(reduced, out_dir):
     
     for order in reduced.orders:
         for line in order.lines:
-            if line.usedInGlobalFit:
+            if line.frameFitOutlier == False:
                 order_num.append(order.orderNum)
                 col.append(line.centroid)
                 source.append('sky')
-                wave_exp.append(line.acceptedWavelength)
-                wave_fit.append(line.globalFitWavelength)
-                res.append(abs(line.globalFitWavelength - line.acceptedWavelength))
+                wave_exp.append(line.waveAccepted)
+                wave_fit.append(line.frameWaveFit)
+                res.append(abs(line.frameWaveFit - line.waveAccepted))
                 peak.append(line.peak)
-                slope.append(line.globalFitSlope)
+                slope.append(line.frameFitSlope)
                 
     # global wavelength cal tables
     
@@ -145,11 +147,6 @@ def gen(reduced, out_dir):
     # per order data products
     
     for order in reduced.orders:
-        
-#         if reduced.coeffs is None:
-#             wavelength_scale = order.wavelengthScaleMeas
-#         else:
-#             wavelength_scale = order.wavelengthScaleCalc
             
         # extend header further with per-order data
         header['FLATSCAL'] = (round(order.flatMean, 5), 'flat field normalization scale factor')
@@ -166,12 +163,12 @@ def gen(reduced, out_dir):
         header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
         header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ratio for order')
 
-        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
+        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScale, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
              
-        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
+        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScale, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
@@ -192,25 +189,25 @@ def gen(reduced, out_dir):
         profileFits(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.wavelengthScaleMeas)
+            'counts', order.objSpec, order.wavelengthScale, order.calMethodUsed)
          
         fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.wavelengthScaleMeas, header)
+            'counts', order.objSpec, order.wavelengthScale, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.wavelengthScaleMeas)
+            'counts', order.skySpec, order.wavelengthScale, order.calMethodUsed)
         
 #         skyLinesPlot(out_dir, reduced.baseName, order)
 #         skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.wavelengthScaleMeas, header)
+            'counts', order.skySpec, order.wavelengthScale, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.wavelengthScaleMeas)
+            'counts', order.noiseSpec, order.wavelengthScale, order.calMethodUsed)
          
         fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.wavelengthScaleMeas, header)
+            'counts', order.noiseSpec, order.wavelengthScale, header)
 
 #         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
 #             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
@@ -218,15 +215,9 @@ def gen(reduced, out_dir):
 
         twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg, header)
 
-        if len(order.wavelengthScaleMeas) > 0:
-            twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
-                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                    order.wavelengthScaleMeas)
-
-        else:
-            twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image *', 
-                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                    order.wavelengthScaleMeas)
+        twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
+                reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
+                order.wavelengthScale)
 
     main_logger.info('n data products generated for {} = {}'.format(
             reduced.baseName, str(file_count[0])))
@@ -563,12 +554,13 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
     log_fn(fn)
     return
 
-def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
+def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave, 
+                 wave_note='unknown'):
     
     pl.figure(title, facecolor='white')
     pl.clf()
     pl.title(title + ', ' + base_name + ", order " + str(order_num), fontsize=12)
-    pl.xlabel('wavelength ($\AA$)')
+    pl.xlabel('wavelength ($\AA$) (from ' + wave_note + ')')
     pl.ylabel(title + '(' + y_units + ')')
     pl.grid(True)
     pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1)

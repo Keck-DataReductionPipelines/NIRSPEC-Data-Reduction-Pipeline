@@ -3,9 +3,13 @@ import image_lib
 
 import Flat
 
+RDS_VERSION = 1;
+
 class ReducedDataSet:
     
     def __init__(self, fileName, header):
+        
+        self.version = RDS_VERSION;
         
         self.fileName = fileName
         if fileName.find('NS.') == 0:
@@ -27,19 +31,14 @@ class ReducedDataSet:
         self.flat = np.zeros(self.getShape())
         self.dark = np.zeros(self.getShape())
         
-        self.topEdgesImg = None
-        self.botEdgesImg = None
-        self.topEdgesProfile = None
-        self.botEdgesProfile = None
-        self.topEdgePeaks = None
-        self.botEdgePeaks = None
-        
         self.orders = []
         
         self.rmsFitRes = None
         self.coeffs = None
         
         self.Flat = None
+        
+ 
         
     def getFileName(self):
         return self.fileName
@@ -93,9 +92,3 @@ class ReducedDataSet:
             self.flat = np.subtract(self.flat, self.dark)
             self.darkSubtracted = True
             
-#     def cleanCosmicRayHits(self):
-#         self.obj = image_lib.cosmic_clean(self.obj)
-#         if len(self.flatKOAIds) < 3:
-#             
-#             self.flat = image_lib.cosmic_clean(self.flat)
-#         self.cosmicCleaned = True 

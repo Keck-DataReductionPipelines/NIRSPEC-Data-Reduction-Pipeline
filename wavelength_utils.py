@@ -714,7 +714,7 @@ def twodfit(dataX, dataY, dataZ):
         if sigma > SIGMA_MAX and len(dataZ_new) > LOWER_LEN_POINTS:
 
             bad_points.append(residual.argmax())
-            logger.debug('2d fit rms residual={:.2f}'.format(sigma))
+            logger.debug('2d fit rms residual={:.3f}'.format(sigma))
 
             if testing:
                 dataZ_new_forplot[residual.argmax()-happened ] = dataZ_new_forplot[residual.argmin()]

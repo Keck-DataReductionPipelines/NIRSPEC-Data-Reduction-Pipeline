@@ -3,7 +3,7 @@ import numpy as np
 import image_lib
 
 
-logger = logging.getLogger('obj')
+#logger = logging.getLogger('obj')
 
 class FlatOrder:
     """
@@ -13,9 +13,10 @@ class FlatOrder:
     LHS refers to left hand side of order, low column numbers, shorter wavelengths.
     """
     
-    def __init__(self, orderNum):
+    def __init__(self, orderNum, logger):
         
         self.orderNum = orderNum
+        self.logger = logger
         
         self.valid = False
         
@@ -59,13 +60,13 @@ class FlatOrder:
         
     def reduce(self):
         
-        logger.debug('reducing flat order {}'.format(self.orderNum))
+        self.logger.info('reducing flat order {}'.format(self.orderNum))
         
         # normalize flat
         self.normFlatImg, self.mean =  image_lib.normalize(
                 self.cutout, self.onOrderMask, self.offOrderMask)
         self.normalized = True
-        logger.info('flat normalized, flat mean = ' + str(round(self.mean, 1)))
+        self.logger.info('flat normalized, flat mean = ' + str(round(self.mean, 1)))
         
         # spatially rectify flat
         self.rectFlatImg = image_lib.rectify_spatial(self.normFlatImg, self.smoothedSpatialTrace)
@@ -78,7 +79,7 @@ class FlatOrder:
         # trim rectified flat order images
         self.rectFlatImg = self.rectFlatImg[self.botTrim:self.topTrim, :]
         
-        logger.debug('reduction of flat order {} complete'.format(self.orderNum))
+        self.logger.debug('reduction of flat order {} complete'.format(self.orderNum))
         
         return
     

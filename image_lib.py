@@ -228,3 +228,13 @@ def cut_out(data, top, bot, padding):
     else:
         return data[0:top + padding, :]
 
+def centroid(spec, width, window, approx):
+    p0 = max(0, approx - (window / 2))
+    p1 = min(width - 1, approx + (window / 2)) + 1
+    c = p0 + ndimage.center_of_mass(spec[p0:p1])[0]
+    
+    if abs(c - approx) > 1:
+        #logger.debug('centroid error, approx = {}, centroid = {:.3f}'.format(approx, c))
+        return(approx)    
+    
+    return(c)            

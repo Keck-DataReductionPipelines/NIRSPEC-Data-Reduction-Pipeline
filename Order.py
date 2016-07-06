@@ -3,8 +3,9 @@ from __builtin__ import False
 
 class Order:
     
-    def __init__(self, orderNum):
+    def __init__(self, frame, orderNum):
                 
+        self.frame = frame
         self.orderNum = orderNum
         self.integrationTime = 0.0
         self.yOffset = -1
@@ -21,6 +22,8 @@ class Order:
         self.wavelengthScaleCalc = []
         self.wavelengthShift = None
         self.wavelengthScaleMeas = None
+        self.wavelengthScale = [];
+        self.calMethodUsed = 'unknown'
         
         # per-order wavelength calibration  
         self.perOrderCal = False

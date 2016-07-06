@@ -1,7 +1,7 @@
 
 class Line:
     
-    def __init__(self, frame, col, centroid, order, waveAccepted, peak):
+    def __init__(self, frame, order, wAccepted, col, centroid, peak):
         
         # line identification
         self.frame = frame              # frame name or KOAID from which line extracted
