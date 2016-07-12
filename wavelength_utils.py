@@ -66,16 +66,16 @@ def line_id(order, oh_wavelengths, oh_intensities):
     
     """
     # find wavelength shift
-    order.wavelengthShift = find_wavelength_shift(order.skySpec, order.synthesizedSkySpec,
-            order.wavelengthScaleCalc)
+    order.waveShift = find_wavelength_shift(order.skySpec, order.synthesizedSkySpec,
+            order.gratingEqWaveScale)
  
-    if abs(order.wavelengthShift) > MAX_SHIFT:
+    if abs(order.waveShift) > MAX_SHIFT:
         logger.warning('measured wavelength shift of {:.1f} exceeds threshold of {:.0f}'.format(
-                order.wavelengthShift, MAX_SHIFT))
+                order.waveShift, MAX_SHIFT))
         return None
         
-    logger.info('wavelength scale shift = ' + str(round(order.wavelengthShift, 3)) + ' pixels')   
-    wavelength_scale_shifted = order.wavelengthScaleCalc + order.wavelengthShift   
+    logger.info('wavelength scale shift = ' + str(round(order.waveShift, 3)) + ' pixels')   
+    wavelength_scale_shifted = order.gratingEqWaveScale + order.waveShift   
 
     # match sky lines
     id_tuple = identify(order.skySpec, wavelength_scale_shifted, oh_wavelengths, oh_intensities)
@@ -190,7 +190,7 @@ def gen_synthesized_sky(oh_wavelengths, oh_intensities, wavelength_scale_calc):
 
     return all_g
 
-def find_wavelength_shift(sky, gauss_sky, wavelength_scale_calc):
+def find_wavelength_shift(sky, gauss_sky, grating_eq_wave_scale):
     
     if len(sky) > 0:
         sky_n = sky - sky.mean()
@@ -198,7 +198,7 @@ def find_wavelength_shift(sky, gauss_sky, wavelength_scale_calc):
         logger.error('sky spectrum length is zero')
         return None
  
-    ohg = np.array([wavelength_scale_calc, gauss_sky])  # ohg is a synthetic spectrum of gaussians
+    ohg = np.array([grating_eq_wave_scale, gauss_sky])  # ohg is a synthetic spectrum of gaussians
  
     if not ohg.any():
         logger.error('no synthetic sky lines in wavelength range')
@@ -643,7 +643,7 @@ def twodfit(dataX, dataY, dataZ):
     xhap=0
 
     for j in range(len(x)):
-        logger.debug('deleting outlier from 2d fit, col={:d}, order={:d}, accepted wavelength={:.1f}'.format(
+        logger.debug('deleting outlier from 2d fit, col={:d}, order={:d}, wave accepted = {:.1f}'.format(
                 int(dataX_new[x[j][0]-xhap]),
                 int(1/dataY_new[x[j][0]-xhap]),
                 dataZ_new[x[j][0]-xhap]))

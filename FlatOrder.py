@@ -22,7 +22,7 @@ class FlatOrder:
         
         self.topCalc = None              # LHS top row of order, according to grating eq
         self.botCalc = None              # LHS bottom row of order, according to grating eq
-        self.waveScaleCalc = None  # wavelength scale, according to grating eq
+        self.gratingEqWaveScale = None  # wavelength scale, according to grating eq
         
         self.topMeas = None              # measured LHS top row of order
         self.botMeas = None              # measured LHS bottom row of order

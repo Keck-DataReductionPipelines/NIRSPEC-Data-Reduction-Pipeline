@@ -1,5 +1,5 @@
 #import numpy as np
-from __builtin__ import False
+
 
 class Order:
     
@@ -19,23 +19,48 @@ class Order:
         self.botCalc = 0.0
         self.botMeas = 0.0
         
-        self.wavelengthScaleCalc = []
-        self.wavelengthShift = None
-        self.wavelengthScaleMeas = None
-        self.wavelengthScale = [];
-        self.calMethodUsed = 'unknown'
+        #
+        # fields pertaining to wavelength calibration
+        #
+        self.lines = []     
         
-        # per-order wavelength calibration  
-        self.perOrderCal = False
-        self.perOrderSlope = 0.0;
-        self.perOrderIntercept = 0.0;
-        self.perOrderCorrCoeff = 0.0;
+        self.gratingEqWaveScale = []
+        self.waveShift = None
+        self.waveScale = []
+        self.calMethod = 'unknown'
+        
+        self.orderCal = False        # true if per-order fit computed
+        self.orderCalWaveScale = []  # wavelength scale based on per-order fit
+        self.orderCalSlope = 0.0     # slope of linear per-order fit
+        self.orderCalIncpt = 0.0     # y-intercept of linear per-order fit
+        self.orderCalCorrCoeff = 0.0 # per-order linear fit r^2
+        self.orderCalNLines = 0      # number of lines used in per-order fit
+        self.orderCalRMSRes = 0.0    # RMS fit residual for per-order fit
+        
+        self.frameCalWaveScale = []  # wavelength scale based on per-frame fit
+
+        self.mfCalScale = []
+        
+#         self.wavelengthScaleCalc = []
+#         self.wavelengthShift = None
+#         self.wavelengthScaleMeas = None
+#         self.wavelengthScale = [];
+#         self.calMethodUsed = 'unknown'
+#         
+#         # per-order wavelength calibration  
+#         self.perOrderCal = False
+#         self.perOrderSlope = 0.0;
+#         self.perOrderIntercept = 0.0;
+#         self.perOrderCorrCoeff = 0.0;
         
         self.topEdgeProfiles = None
         self.botEdgeProfiles = None
         
         # wavelength calibration lines, array of class Line
-        self.lines = []
+        
+        
+        
+        
         
         self.padding = 0
         self.objCutout = []

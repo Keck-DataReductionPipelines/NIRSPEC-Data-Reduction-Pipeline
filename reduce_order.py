@@ -43,7 +43,6 @@ def reduce_order(order, flat_order):
     # characterize spatial profile by fitting to Gaussian
     characterize_spatial_profile(order)
 
-
     # find and smooth spectral trace
     try:
         order.spectralTrace = nirspec_lib.smooth_spectral_trace(
@@ -87,7 +86,7 @@ def reduce_order(order, flat_order):
     try:
         # synthesize sky spectrum and store in order object
         order.synthesizedSkySpec = wavelength_utils.synthesize_sky(
-                oh_wavelengths, oh_intensities, order.wavelengthScaleCalc)
+                oh_wavelengths, oh_intensities, order.gratingEqWaveScale)
          
         # identify lines and return list of (column number, accepted wavelength) tuples
         line_pairs = wavelength_utils.line_id(order, oh_wavelengths, oh_intensities)
@@ -112,29 +111,27 @@ def reduce_order(order, flat_order):
             measured = []
             accepted = []
             for line in order.lines:
-                measured.append(order.wavelengthScaleCalc[line.col])
+                measured.append(order.gratingEqWaveScale[line.col])
                 accepted.append(line.waveAccepted)
-            (order.perOrderSlope, order.perOrderIntercept, order.perOrderCorrCoeff, p, e) = \
+            (order.orderCalSlope, order.orderCalIncpt, order.orderCalCorrCoeff, p, e) = \
                     scipy.stats.linregress(np.array(measured), np.array(accepted))  
-                    
+            order.orderCalNLines = len(order.lines)       
             logger.info('per order wavelength fit: n = {}, a = {:.6f}, b = {:.6f}, r = {:.6f}'.format(
-                    len(order.lines), order.perOrderIntercept, order.perOrderSlope, 
-                    order.perOrderCorrCoeff))
+                    len(order.lines), order.orderCalIncpt, order.orderCalSlope, 
+                    order.orderCalCorrCoeff))
 
             for line in order.lines:
-                line.orderWaveFit = order.perOrderIntercept + \
-                    (order.perOrderSlope * order.wavelengthScaleCalc[line.col])    
+                line.orderWaveFit = order.orderCalIncpt + \
+                    (order.orderCalSlope * order.gratingEqWaveScale[line.col])    
                 line.orderFitRes = abs(line.orderWaveFit - line.waveAccepted)  
-                line.orderFitSlope = (order.perOrderSlope * (order.wavelengthScaleCalc[1023] - order.wavelengthScaleCalc[0]))/1024.0
+                line.orderFitSlope = (order.orderCalSlope * 
+                    (order.gratingEqWaveScale[1023] - order.gratingEqWaveScale[0]))/1024.0
     else:
         logger.warning('no matched sky lines in order ' + str(order.orderNum))
+        order.orderCal = False 
                         
     return
-         
-
-        
-    
-    
+            
 def extract_spectra(order, flat_order):
     
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \

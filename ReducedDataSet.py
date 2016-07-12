@@ -3,14 +3,10 @@ import image_lib
 
 import Flat
 
-RDS_VERSION = 1;
-
 class ReducedDataSet:
     
     def __init__(self, fileName, header):
-        
-        self.version = RDS_VERSION;
-        
+                
         self.fileName = fileName
         if fileName.find('NS.') == 0:
             self.baseName = fileName[fileName.find('NS'):].rstrip('.gz').rstrip('.fits')
@@ -31,14 +27,26 @@ class ReducedDataSet:
         self.flat = np.zeros(self.getShape())
         self.dark = np.zeros(self.getShape())
         
+        self.nOrders = 0
+        self.nOrdersReduced = 0
+        
+        self.snrMean = None
+        self.snrMin = None
+        self.wMean = None
+        self.wMax = None
+        
         self.orders = []
         
-        self.rmsFitRes = None
-        self.coeffs = None
+        self.nLinesFound = 0
+        self.nLinesUsed = 0
+        
+        self.frameCalAvailable = False
+        self.frameCalRmsRes = None  # rms per-frame fit residual
+        self.frameCalCoeffs = None  # per-frame wavelength equation coefficients
+        self.calFrame = None        # frame (name or KOAID) used for wavelength cal if not this one
         
         self.Flat = None
         
- 
         
     def getFileName(self):
         return self.fileName

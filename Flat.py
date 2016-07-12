@@ -61,6 +61,9 @@ class Flat:
         self.topEdgePeaks = None        # filtered top edge profile peaks
         self.botEdgePeaks = None        # filtered bottom edge profile peaks
         
+        self.nOrdersExpected = 0
+        self.nOrdersFound = 0
+        
         
         self.flatOrders = []
         
@@ -81,7 +84,7 @@ class Flat:
         
         self.findEdgeProfilePeaks()
         
-        nOrdersExpected = 0      
+        self.nOrdersExpected = 0      
         firstOrderFound = False
         
         for orderNum in range(config.get_starting_order(self.filterName), 0, -1):
@@ -91,7 +94,7 @@ class Flat:
             flatOrder = FlatOrder.FlatOrder(orderNum, self.logger)
             
             # get expected location of order on detector
-            flatOrder.topCalc, flatOrder.botCalc, flatOrder.waveScaleCalc = self.gratingEq.evaluate(
+            flatOrder.topCalc, flatOrder.botCalc, flatOrder.gratingEqWaveScale = self.gratingEq.evaluate(
                     orderNum, self.filterName, self.slit, self.echelleAngle, self.disperserAngle)
             
             self.logger.info('predicted y location: top = ' + '{:.0f}'.format(flatOrder.topCalc) + 
@@ -107,7 +110,7 @@ class Flat:
                 
             else:
                 firstOrderFound = True
-                nOrdersExpected += 1
+                self.nOrdersExpected += 1
                 
                 # determine top and bottom LHS of order by edge detection
                 self.findOrder(flatOrder)
@@ -150,9 +153,9 @@ class Flat:
                 self.flatOrders.append(flatOrder)
                         
         self.logger.info('flat reduction compete')
-        self.logger.info('n orders expected = {}'.format(nOrdersExpected))
-        self.logger.info('n orders found = {}'.format(
-                len([p for p in self.flatOrders if p.valid == True])))
+        self.logger.info('n orders expected = {}'.format(self.nOrdersExpected))
+        self.nOrdersFound = len([p for p in self.flatOrders if p.valid == True])
+        self.logger.info('n orders found = {}'.format(self.nOrdersFound))
         return
         
     def getBaseName(self):

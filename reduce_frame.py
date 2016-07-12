@@ -103,7 +103,7 @@ def reduce(raw, out_dir, flatCacher=None):
     else:
         logger.info('not applying wavelength solution')
         for order in reduced.orders:
-            order.wavelengthScale = order.wavelengthScaleCalc
+            order.waveScale = order.gratingEqWaveScale
             order.calMethodUsed = 'grating equation'
     
     return(reduced)
@@ -144,7 +144,7 @@ def reduce_orders(reduced):
                 flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))
         
         order.integrationTime = reduced.getIntegrationTime() # used in noise calc
-        order.wavelengthScaleCalc = flatOrder.waveScaleCalc
+        order.gratingEqWaveScale = flatOrder.gratingEqWaveScale
         #order.wavelengthScaleMeas = flatOrder.waveScaleCalc
         order.topTrace = flatOrder.topEdgeTrace
         order.botTrace = flatOrder.botEdgeTrace
@@ -184,22 +184,25 @@ def reduce_orders(reduced):
         return
     
     for l in loggers:
+        reduced.snrMean = sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / \
+                len(reduced.orders)
         logging.getLogger(l).log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
-                        sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / 
-                        len(reduced.orders)))
+                reduced.snrMean))
     
     snr = []
     for i in range(len(reduced.orders)):
         snr.append(reduced.orders[i].snr)
     
     for l in loggers:
+        reduced.snrMin = np.amin(snr)
         logging.getLogger(l).log(INFO, 'minimum signal-to-noise ratio = {:.1f}'.format(
-                np.amin(snr)))
+                reduced.snrMin))
     
         try:
+            reduced.wMean = sum(abs(reduced.orders[i].gaussianParams[2]) \
+                    for i in range(len(reduced.orders))) /  len(reduced.orders)
             logging.getLogger(l).log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
-                        sum(abs(reduced.orders[i].gaussianParams[2]) for i in range(len(reduced.orders))) / 
-                        len(reduced.orders)))
+                    reduced.wMean))
         except:
             logging.getLogger(l).log(logging.WARNING, 'mean spatial peak width = unknown') 
     
@@ -208,8 +211,9 @@ def reduce_orders(reduced):
             if reduced.orders[i].gaussianParams is not None:
                 w.append(reduced.orders[i].gaussianParams[2])
         try:
+            reduced.wMax = np.amax(w)
             logging.getLogger(l).log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
-                    np.amax(w)))
+                    reduced.wMax))
         except:
             logging.getLogger(l).error('maximum spatial peak width cannot be determined')
             logging.getLogger(l).log(INFO, 'maximum spatial peak width = unknown')
@@ -239,8 +243,9 @@ def find_global_wavelength_soln(reduced):
             order_inv.append(1.0 / order.orderNum)
             accepted.append(line.waveAccepted)
             
+    reduced.nLinesFound = len(col)
     for l in loggers:
-        logging.getLogger(l).log(INFO, 'n sky lines identified = ' + str(len(col)))
+        logging.getLogger(l).log(INFO, 'n sky lines identified = {:d}'.format(reduced.nLinesFound))
     
     if config.params['int_c'] is True:
         logger.warning('using integer column numbers in wavelength fit')
@@ -248,18 +253,24 @@ def find_global_wavelength_soln(reduced):
     else:
         c = np.asarray(centroid, dtype='float32')
             
-    reduced.coeffs, wave_fit, wave_exp, reduced.rmsFitRes = wavelength_utils.twodfit(
+    reduced.frameCalCoeffs, wave_fit, wave_exp, reduced.frameCalRmsRes = wavelength_utils.twodfit(
             c, 
             np.asarray(order_inv, dtype='float32'), 
             np.asarray(accepted, dtype='float32'))    
     
     if wave_fit is None:
 #         raise DrpException.DrpException('cannot find wavelength solution')
+        reduced.frameCalAvailable = False
         return False
     
+    reduced.frameCalAvailable = True
+    reduced.calFrame = 'self'
+    reduced.nLinesUsed = len(wave_fit)
     for l in ['main', 'obj']:
-        logging.getLogger(l).log(INFO, 'n lines used in wavelength fit = {}'.format(len(wave_fit)))
-        logging.getLogger(l).log(INFO, 'rms wavelength fit residual = {:.3f}'.format(reduced.rmsFitRes))
+        logging.getLogger(l).log(INFO, 'n lines used in wavelength fit = {:d}'.format(
+                reduced.nLinesUsed))
+        logging.getLogger(l).log(INFO, 'rms wavelength fit residual = {:.3f}'.format(
+                reduced.frameCalRmsRes))
     
     # There must be a more pythonic way of doing this
     for i, exp in enumerate(wave_exp):
@@ -284,10 +295,10 @@ def find_global_wavelength_soln(reduced):
         for line in order.lines:   
             if (line.frameFitOutlier == False):
                 line.frameFitSlope = \
-                        reduced.coeffs[1] + \
-                        (2.0 * reduced.coeffs[2] * line.col) + \
-                        (reduced.coeffs[4] / order.orderNum) + \
-                        (2.0 * reduced.coeffs[5] * line.col / order.orderNum)  
+                        reduced.frameCalCoeffs[1] + \
+                        (2.0 * reduced.frameCalCoeffs[2] * line.col) + \
+                        (reduced.frameCalCoeffs[4] / order.orderNum) + \
+                        (2.0 * reduced.frameCalCoeffs[5] * line.col / order.orderNum)  
     
 #     print('coeffs: ' + str(reduced.coeffs))
 #     print('wave_fit: ' + str(wave_fit))
@@ -298,31 +309,30 @@ def find_global_wavelength_soln(reduced):
 
 def apply_wavelength_soln(reduced):
     
-    if reduced.coeffs is None:
+    if reduced.frameCalCoeffs is None:
         return
     
     for order in reduced.orders:
         x = np.arange(1024)
         y = 1.0 / order.orderNum
-        order.wavelengthScaleMeas = np.ravel(
-                reduced.coeffs[0] +
-                reduced.coeffs[1] * x +
-                reduced.coeffs[2] * x ** 2 +
-                reduced.coeffs[3] * y +
-                reduced.coeffs[4] * x * y +
-                reduced.coeffs[5] * (x **2) * y)
+        order.frameCalWaveScale = np.ravel(
+                reduced.frameCalCoeffs[0] +
+                reduced.frameCalCoeffs[1] * x +
+                reduced.frameCalCoeffs[2] * x ** 2 +
+                reduced.frameCalCoeffs[3] * y +
+                reduced.frameCalCoeffs[4] * x * y +
+                reduced.frameCalCoeffs[5] * (x **2) * y)
         
- 
-        dx = np.diff(order.wavelengthScaleMeas)
+        dx = np.diff(order.frameCalWaveScale)
         if np.all(dx <= 0) or np.all(dx >= 0):
             # wavelength scale is monotonic
-            order.wavelengthScale = order.wavelengthScaleMeas
-            order.calMethodUsed = 'sky lines'
+            order.waveScale = order.frameCalWaveScale
+            order.calMethod = 'frame sky line cal'
         else:
             logger.warning('wavelength scale not monotonic for order {}'.format(order.orderNum))
             logger.warning('using theoretical wavelength scale ')
-            order.wavelengthScale = order.wavelengthScaleCalc
-            order.calMethodUsed = 'grating equation'
+            order.waveScale = order.gratingEqWaveScale
+            order.calMethod = 'grating equation'
                    
     return
     

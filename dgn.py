@@ -35,7 +35,7 @@ subdirs = dict([
 def gen(reduced, out_dir):
     
 
-    logger.info('generating diagnostic data products...')
+    logger.info('generating diagnostic data products for {}...'.format(reduced.baseName))
     
     # make sub directories
     for k, v in subdirs.iteritems():
@@ -67,7 +67,7 @@ def gen(reduced, out_dir):
     slope = []
     
     for order in reduced.orders:
-        if order.perOrderSlope > 0.95 and order.perOrderSlope < 1.05:
+        if order.orderCalSlope > 0.95 and order.orderCalSlope < 1.05:
             for line in order.lines:
                 order_num.append(order.orderNum)
                 col.append(line.col)
@@ -401,7 +401,7 @@ def skyLinesPlot(outpath, base_name, order):
     ymax = np.amax(order.synthesizedSkySpec) + ((np.amax(order.synthesizedSkySpec) - np.amin(order.synthesizedSkySpec)) * 0.1)
     syn_plot.set_ylim(ymin, ymax)
     syn_plot.plot(order.synthesizedSkySpec, 'g-', linewidth=1)
-    syn_plot.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
+    syn_plot.annotate('shift = ' + "{:.3f}".format(order.waveShift), 
                  (0.3, 0.8), xycoords="figure fraction")
     
     sky_plot = pl.subplot(2, 1, 2)
@@ -422,7 +422,7 @@ def skyLinesPlot(outpath, base_name, order):
             c = 'r--'
         sky_plot.plot([line.col, line.col], [ymin, ymax], c, linewidth=0.5)
         pl.annotate(str(line.waveAccepted), (line.col, y), size=8)
-        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), 
+        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.gratingEqWaveScale[line.col]), 
                     (line.col, y + (dy / 4)), size=8)
         y += dy
         if y > (ymax - dy):
@@ -460,7 +460,7 @@ def skyLinesAsciiTable(outpath, base_name, order):
         buff.append('--'.join(line))
     
     for l in order.lines:
-        data = [order.orderNum, l.col, order.wavelengthScaleCalc[l.col], l.waveAccepted]
+        data = [order.orderNum, l.col, order.gratingEqWaveScale[l.col], l.waveAccepted]
         line = []
         for i, val in enumerate(data):
             line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
@@ -487,10 +487,10 @@ def wavelengthScalePlot(out_dir, base_name, order):
     
     pl.xlim(0, 1023)
     
-    pl.plot(order.wavelengthScaleCalc, "k-", mfc='none', ms=3.0, linewidth=1, 
+    pl.plot(order.gratingEqWaveScale, "k-", mfc='none', ms=3.0, linewidth=1, 
             label='grating equation')
-    if order.wavelengthScaleMeas is not None:
-        pl.plot(order.wavelengthScaleMeas, "b-", mfc='none', ms=3.0, linewidth=1, 
+    if order.waveScale is not None:
+        pl.plot(order.waveScale, "b-", mfc='none', ms=3.0, linewidth=1, 
             label='sky lines')
         
     pl.legend(loc='best', prop={'size': 8})
