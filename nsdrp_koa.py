@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from astropy.io import fits
 
 import RawDataSet
@@ -25,9 +26,10 @@ def process_dir(in_dir, base_out_dir):
     
     # open summary spreadsheet file
     ssFptr = open(base_out_dir + '/nsdrp_summary.csv', 'w')
-    ssFptr.write(', '.join(['fn', 'date', 'target', 'filter', 'slit', 'itime', 'coadds',
-            'n orders', 'n reduced', 'snr mean', 'snr min', 'width mean', 'width max',
-            'n lines found', 'n lines used', 'r rms', 'cal frame']) + '\n')
+    ssFptr.write(', '.join(['fn', 'date', 'target', 'filter', 'slit', 'disppos', 'echlpos',
+            'itime', 'coadds', 'n orders', 'n reduced', 'snr mean', 'snr min', 'width mean', 
+            'width max', 'n lines found', 'n lines used', 'r rms', 'cal frame']) + '\n')
+    ssFptr.flush()
     
     # get list of raw data sets arranged in chronological order
     rawDataSets = create_raw_data_sets.create(in_dir)
@@ -60,7 +62,7 @@ def process_dir(in_dir, base_out_dir):
     
                     gen_data_products(reducedDataSets, nirspecConfig, out_dir, ssFptr)
     
-                    reducedDataSets.clear() 
+                    del reducedDataSets[:] 
                     logger.info('starting new multi-frame set for nirpsec config: {}', 
                             nirspecConfig.toString())
                     nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
@@ -188,17 +190,29 @@ def append_to_summary_ss(reduced, ssFptr):
     v.append(reduced.getTargetName())
     v.append(reduced.getFilter())
     v.append(reduced.getSlit())
+    v.append('{:.2f}'.format(reduced.getDispPos()))
+    v.append('{:.2f}'.format(reduced.getEchPos()))
     v.append('{:f}'.format(reduced.getITime()))
     v.append('{:d}'.format(reduced.getNCoadds()))
     v.append('{:d}'.format(reduced.Flat.nOrdersExpected))
     v.append('{:d}'.format(reduced.Flat.nOrdersFound))
     v.append('{:.1f}'.format(reduced.snrMean))
     v.append('{:.1f}'.format(reduced.snrMin))
-    v.append('{:.1f}'.format(reduced.wMean))
-    v.append('{:.1f}'.format(reduced.wMax))
+    if reduced.wMean is None:
+        v.append(' ')
+    else:
+        v.append('{:.1f}'.format(reduced.wMean))
+    if reduced.wMax is None:
+        v.append(' ')
+    else:
+        v.append('{:.1f}'.format(reduced.wMax))
     v.append('{:d}'.format(reduced.nLinesFound))
     v.append('{:d}'.format(reduced.nLinesUsed))
-    v.append('{:.3f}'.format(reduced.frameCalRmsRes))
+    if reduced.frameCalRmsRes is None:
+        v.append(' ')
+    else:
+        v.append('{:.3f}'.format(reduced.frameCalRmsRes))
     v.append('{}'.format(reduced.calFrame))
     ssFptr.write(', '.join(v) + '\n')
+    ssFptr.flush()
     return

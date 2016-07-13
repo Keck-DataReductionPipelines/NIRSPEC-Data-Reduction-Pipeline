@@ -77,7 +77,7 @@ def reduce(raw, out_dir, flatCacher=None):
     
     # clean cosmic ray hits on object frame
     if config.params['no_cosmic']:
-        logger.info("cosmic ray rejection on object frame inhibited by command line flat")
+        logger.info("cosmic ray rejection on object frame inhibited by command line flag")
 
     else:
         logger.info('starting cosmic ray cleaning on object frame')
