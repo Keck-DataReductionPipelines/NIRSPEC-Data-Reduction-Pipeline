@@ -60,7 +60,7 @@ def process_dir(in_dir, base_out_dir):
                     if len(reducedDataSets) > 1:
                         mcal(reducedDataSets)
     
-                    gen_data_products(reducedDataSets, nirspecConfig, out_dir, ssFptr)
+                    gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr)
     
                     del reducedDataSets[:] 
                     logger.info('starting new multi-frame set for nirpsec config: {}', 
