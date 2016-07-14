@@ -84,6 +84,10 @@ def create(in_dir):
                     rawDataSet.objFileName[rawDataSet.objFileName.rfind('/') + 1 :]))
             rawDataSets.remove(rawDataSet)
             
+    if len(rawDataSets) < 1:
+        logger.warning('no raw data sets could be assembled')
+        return None
+            
     # sort raw data set list by ascending UTC
     rawDataSets.sort(key=lambda x:x.objHeader['UTC'])
     logger.info('raw data sets to be reduced:')

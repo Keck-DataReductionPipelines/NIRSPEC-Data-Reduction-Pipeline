@@ -91,11 +91,11 @@ def gen(reduced, out_dir):
     tops_bots_plot(out_dir, reduced.baseName, reduced.Flat.topEdgeImg, reduced.Flat.botEdgeImg)
     
     # per-frame order edge traces and order ID
-    order_location_plot(out_dir, reduced.baseName, reduced.flat, reduced.obj, reduced.orders)
+    order_location_plot(out_dir, reduced.baseName, reduced.Flat.flatImg, reduced.obj, reduced.orders)
     
     for order in reduced.orders:
         
-        traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.flat, 
+        traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.Flat.flatImg, 
                 order.topTrace, order.botTrace)
         
         # save smoothed trace cutout to numpy text file

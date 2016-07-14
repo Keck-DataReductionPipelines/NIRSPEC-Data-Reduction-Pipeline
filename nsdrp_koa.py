@@ -34,6 +34,9 @@ def process_dir(in_dir, base_out_dir):
     # get list of raw data sets arranged in chronological order
     rawDataSets = create_raw_data_sets.create(in_dir)
     
+    if rawDataSets is None:
+        return
+    
     # keep track of how many data sets have been successfully reduced
     n_reduced = len(rawDataSets)
     logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
@@ -185,34 +188,74 @@ def get_out_dir(fn, base_out_dir):
 
 def append_to_summary_ss(reduced, ssFptr):
     v = []
-    v.append(reduced.baseName)
-    v.append(reduced.getDate())
-    v.append(reduced.getTargetName())
-    v.append(reduced.getFilter())
-    v.append(reduced.getSlit())
-    v.append('{:.2f}'.format(reduced.getDispPos()))
-    v.append('{:.2f}'.format(reduced.getEchPos()))
-    v.append('{:f}'.format(reduced.getITime()))
-    v.append('{:d}'.format(reduced.getNCoadds()))
-    v.append('{:d}'.format(reduced.Flat.nOrdersExpected))
-    v.append('{:d}'.format(reduced.Flat.nOrdersFound))
-    v.append('{:.1f}'.format(reduced.snrMean))
-    v.append('{:.1f}'.format(reduced.snrMin))
-    if reduced.wMean is None:
-        v.append(' ')
-    else:
-        v.append('{:.1f}'.format(reduced.wMean))
-    if reduced.wMax is None:
-        v.append(' ')
-    else:
-        v.append('{:.1f}'.format(reduced.wMax))
-    v.append('{:d}'.format(reduced.nLinesFound))
-    v.append('{:d}'.format(reduced.nLinesUsed))
-    if reduced.frameCalRmsRes is None:
-        v.append(' ')
-    else:
-        v.append('{:.3f}'.format(reduced.frameCalRmsRes))
-    v.append('{}'.format(reduced.calFrame))
-    ssFptr.write(', '.join(v) + '\n')
+    v.append(('{}', reduced.baseName))
+    v.append(('{}', reduced.getDate()))
+    v.append(('{}', reduced.getTargetName()))
+    v.append(('{}', reduced.getFilter()))
+    v.append(('{}', reduced.getSlit()))
+
+    v.append(('{:.2f}', reduced.getDispPos()))
+    v.append(('{:.2f}', reduced.getEchPos()))
+    v.append(('{:f}', reduced.getITime()))
+    v.append(('{:d}', reduced.getNCoadds()))
+    v.append(('{:d}', reduced.Flat.nOrdersExpected))
+    v.append(('{:d}', reduced.Flat.nOrdersFound))
+    
+ 
+    v.append(('{:.1f}', reduced.snrMean))
+    v.append(('{:.1f}', reduced.snrMin))
+    v.append(('{:.1f}', reduced.wMean))
+    v.append(('{:.1f}', reduced.wMax))
+    v.append(('{:d}', reduced.nLinesFound))
+    v.append(('{:d}', reduced.nLinesUsed))
+    v.append(('{:.3f}', reduced.frameCalRmsRes))
+    v.append(('{}', reduced.calFrame))
+    
+    u = []
+    for val in v:
+        if val[1] is None:
+            u.append(' ')
+        else:
+            u.append(val[0].format(val[1]))
+    ssFptr.write(', '.join(u) + '\n')
     ssFptr.flush()
-    return
+    return   
+    
+#     v = []
+#     v.append(reduced.baseName)
+#     v.append(reduced.getDate())
+#     v.append(reduced.getTargetName())
+#     v.append(reduced.getFilter())
+#     v.append(reduced.getSlit())
+#     v.append('{:.2f}'.format(reduced.getDispPos()))
+#     v.append('{:.2f}'.format(reduced.getEchPos()))
+#     v.append('{:f}'.format(reduced.getITime()))
+#     v.append('{:d}'.format(reduced.getNCoadds()))
+#     v.append('{:d}'.format(reduced.Flat.nOrdersExpected))
+#     v.append('{:d}'.format(reduced.Flat.nOrdersFound))
+#     if reduced.snrMean is None:
+#         v.append(' ')
+#     else:
+#         v.append('{:.1f}'.format(reduced.snrMean))
+#     if reduced.snrMin is None:
+#         v.append(' ')
+#     else:
+#         v.append('{:.1f}'.format(reduced.snrMin))
+#     if reduced.wMean is None:
+#         v.append(' ')
+#     else:
+#         v.append('{:.1f}'.format(reduced.wMean))
+#     if reduced.wMax is None:
+#         v.append(' ')
+#     else:
+#         v.append('{:.1f}'.format(reduced.wMax))
+#     v.append('{:d}'.format(reduced.nLinesFound))
+#     v.append('{:d}'.format(reduced.nLinesUsed))
+#     if reduced.frameCalRmsRes is None:
+#         v.append(' ')
+#     else:
+#         v.append('{:.3f}'.format(reduced.frameCalRmsRes))
+#     v.append('{}'.format(reduced.calFrame))
+#     ssFptr.write(', '.join(v) + '\n')
+#     ssFptr.flush()
+#     return
