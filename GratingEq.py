@@ -86,8 +86,8 @@ class GratingEq:
                 left_top_row += long_slit_y_corr
                 left_bot_row -= long_slit_y_corr
             
-            if '3' in filtername or '6' in filtername:
-                self.logger.info('applying N-3, 6 long slit correction')
+            if '3' in filtername:
+                self.logger.info('applying N-3 long slit correction')
                 left_top_row -= 25
                 left_bot_row -= 25 
                 
