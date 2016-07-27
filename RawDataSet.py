@@ -4,8 +4,17 @@ from astropy.io import fits
 class RawDataSet:
     
     def __init__(self, objFileName, objHeader):
-        self.data = []
+        #self.data = []
         self.objFileName = objFileName
+        
+        if objFileName.find('NS.') == 0:
+            self.baseName = objFileName[objFileName.find('NS'):].rstrip('.gz').rstrip('.fits')
+        else:
+            if objFileName.find('/') >= 0:
+                self.baseName = objFileName[objFileName.rfind('/')+1:objFileName.lower().find('.fits')]
+            else:
+                self.baseName = objFileName[:objFileName.lower().find('.fits')]
+                
         self.objHeader = objHeader
         self.flatFileNames = []
         self.darkFileNames = []
@@ -19,21 +28,10 @@ class RawDataSet:
     def getShape(self):
         return((self.objHeader['NAXIS1'], self.objHeader['NAXIS2']))
     
-#     def getFilter(self):
-#         return self.objHeader['filname']
-#         
-#     def getEchPos(self):
-#         return self.objHeader['echlpos']
-# 
-#     def getDispPos(self):
-#         return self.objHeader['disppos']
-#     
-#     def getSlit(self):
-#         return self.objHeader['slitname']
-#     
-#     def getDate(self):
-#         return self.objHeader['DATE-OBS']
-    
+    def toString(self):
+        return 'raw data set: fn={}, ut={}, disppos={}, echlpos={}, filname={}, slitname={}'.format(
+                self.baseName, self.objHeader['UTC'], self.objHeader['disppos'], 
+                self.objHeader['echlpos'], self.objHeader['filname'], self.objHeader['slitname'])
     
     def combineFlats(self):
         """

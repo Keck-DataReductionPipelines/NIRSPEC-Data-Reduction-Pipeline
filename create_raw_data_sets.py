@@ -1,5 +1,5 @@
 import os
-import subprocess
+#import subprocess
 import fnmatch
 import logging
 from astropy.io import fits
@@ -83,6 +83,17 @@ def create(in_dir):
             logger.info('no flats for {}'.format(
                     rawDataSet.objFileName[rawDataSet.objFileName.rfind('/') + 1 :]))
             rawDataSets.remove(rawDataSet)
+            
+    if len(rawDataSets) < 1:
+        logger.warning('no raw data sets could be assembled')
+        return None
+            
+    # sort raw data set list by ascending UTC
+    rawDataSets.sort(key=lambda x:x.objHeader['UTC'])
+    logger.info('raw data sets to be reduced:')
+    for rawDataSet in rawDataSets:
+        logger.info('{}'.format(rawDataSet.toString()))
+ 
           
     return(rawDataSets)
 

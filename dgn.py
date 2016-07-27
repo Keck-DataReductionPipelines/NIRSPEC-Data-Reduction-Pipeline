@@ -1,15 +1,17 @@
 import matplotlib
+
 matplotlib.use('Agg')
+    
 import pylab as pl
 import logging
 import os
 import errno
 import numpy as np
 from skimage import exposure
-
-import Order
-import ReducedDataSet
 import config
+
+# import Order
+# import ReducedDataSet
 
 UNDERLINE = False
 
@@ -26,13 +28,14 @@ subdirs = dict([
                 ('top_bot_edges.png',   'edges'),
                 ('localcalids.txt',     'localcal'),
                 ('skylines.png',        'skylines'),
-                ('skylines.txt',        'skylines')
+                ('skylines.txt',        'skylines'),
+                ('wavelength_scale.png','wavelength')
                 ])
 
 def gen(reduced, out_dir):
     
 
-    logger.info('generating diagnostic data products...')
+    logger.info('generating diagnostic data products for {}...'.format(reduced.baseName))
     
     # make sub directories
     for k, v in subdirs.iteritems():
@@ -64,17 +67,17 @@ def gen(reduced, out_dir):
     slope = []
     
     for order in reduced.orders:
-        if order.perOrderSlope > 0.95 and order.perOrderSlope < 1.05:
+        if order.orderCalSlope > 0.95 and order.orderCalSlope < 1.05:
             for line in order.lines:
                 order_num.append(order.orderNum)
                 col.append(line.col)
                 centroid.append(line.centroid)
                 source.append('sky')
-                wave_exp.append(line.acceptedWavelength)
-                wave_fit.append(line.localFitWavelength)
-                res.append(line.localFitResidual)
+                wave_exp.append(line.waveAccepted)
+                wave_fit.append(line.orderWaveFit)
+                res.append(line.orderFitRes)
                 peak.append(line.peak)
-                slope.append(line.localFitSlope)
+                slope.append(line.orderFitSlope)
                 
     # per-order wavelength table
     perOrderWavelengthCalAsciiTable(
@@ -88,11 +91,11 @@ def gen(reduced, out_dir):
     tops_bots_plot(out_dir, reduced.baseName, reduced.Flat.topEdgeImg, reduced.Flat.botEdgeImg)
     
     # per-frame order edge traces and order ID
-    order_location_plot(out_dir, reduced.baseName, reduced.flat, reduced.obj, reduced.orders)
+    order_location_plot(out_dir, reduced.baseName, reduced.Flat.flatImg, reduced.obj, reduced.orders)
     
     for order in reduced.orders:
         
-        traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.flat, 
+        traces_plot(out_dir, reduced.baseName, order.orderNum, reduced.obj, reduced.Flat.flatImg, 
                 order.topTrace, order.botTrace)
         
         # save smoothed trace cutout to numpy text file
@@ -100,13 +103,6 @@ def gen(reduced, out_dir):
             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'trace.npy')
             np.savetxt(fn, order.smoothedTrace)
         
-        # save obj and flat cutouts to numpy text files
-#         if config.params['npy'] is True:
-#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'obj_cutout.npy')
-#             np.savetxt(fn, order.objCutout)
-#             fn = constructFileName(out_dir, reduced.baseName, order.orderNum, 'flat_cutout.npy')
-#             np.savetxt(fn, order.flatCutout)
-#         
         if order.lowestPoint > order.padding:
             cutouts_plot(out_dir, reduced.baseName, order.orderNum, order.objCutout, order.flatCutout, 
                     order.topTrace - order.lowestPoint + order.padding, 
@@ -121,6 +117,8 @@ def gen(reduced, out_dir):
         
         skyLinesPlot(out_dir, reduced.baseName, order)
         skyLinesAsciiTable(out_dir, reduced.baseName, order)
+        
+        wavelengthScalePlot(out_dir, reduced.baseName, order)
         
     logger.info('done generating diagnostic data products')
     
@@ -403,7 +401,7 @@ def skyLinesPlot(outpath, base_name, order):
     ymax = np.amax(order.synthesizedSkySpec) + ((np.amax(order.synthesizedSkySpec) - np.amin(order.synthesizedSkySpec)) * 0.1)
     syn_plot.set_ylim(ymin, ymax)
     syn_plot.plot(order.synthesizedSkySpec, 'g-', linewidth=1)
-    syn_plot.annotate('shift = ' + "{:.3f}".format(order.wavelengthShift), 
+    syn_plot.annotate('shift = ' + "{:.3f}".format(order.waveShift), 
                  (0.3, 0.8), xycoords="figure fraction")
     
     sky_plot = pl.subplot(2, 1, 2)
@@ -418,13 +416,13 @@ def skyLinesPlot(outpath, base_name, order):
     dy = (ymax - ymin) / 4
     y = ymin + dy/8
     for line in order.lines:
-        if line.usedInGlobalFit:
+        if line.frameFitOutlier == False:
             c = 'k--'
         else:
             c = 'r--'
         sky_plot.plot([line.col, line.col], [ymin, ymax], c, linewidth=0.5)
-        pl.annotate(str(line.acceptedWavelength), (line.col, y), size=8)
-        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.wavelengthScaleCalc[line.col]), 
+        pl.annotate(str(line.waveAccepted), (line.col, y), size=8)
+        pl.annotate(str(line.col) + ', ' + '{:.3f}'.format(order.gratingEqWaveScale[line.col]), 
                     (line.col, y + (dy / 4)), size=8)
         y += dy
         if y > (ymax - dy):
@@ -462,7 +460,7 @@ def skyLinesAsciiTable(outpath, base_name, order):
         buff.append('--'.join(line))
     
     for l in order.lines:
-        data = [order.orderNum, l.col, order.wavelengthScaleCalc[l.col], l.acceptedWavelength]
+        data = [order.orderNum, l.col, order.gratingEqWaveScale[l.col], l.waveAccepted]
         line = []
         for i, val in enumerate(data):
             line.append('{:>{w}{f}}'.format(val, w=widths[i], f=formats[i]))
@@ -473,4 +471,32 @@ def skyLinesAsciiTable(outpath, base_name, order):
     fptr.write('\n'.join(buff))
     fptr.close()
  
+    return
+
+def wavelengthScalePlot(out_dir, base_name, order):
+
+    pl.figure('wavelength scale', facecolor='white')
+    pl.cla()
+    pl.title('wavelength scale, ' + base_name + ', order ' + str(order.orderNum), fontsize=14)
+
+    pl.xlabel('column (pixels)')
+    pl.ylabel('wavelength ($\AA$)')
+    
+    pl.minorticks_on()
+    pl.grid(True)
+    
+    pl.xlim(0, 1023)
+    
+    pl.plot(order.gratingEqWaveScale, "k-", mfc='none', ms=3.0, linewidth=1, 
+            label='grating equation')
+    if order.waveScale is not None:
+        pl.plot(order.waveScale, "b-", mfc='none', ms=3.0, linewidth=1, 
+            label='sky lines')
+        
+    pl.legend(loc='best', prop={'size': 8})
+    
+    fn = constructFileName(out_dir, base_name, order.orderNum, 'wavelength_scale.png')
+    pl.savefig(fn)
+    pl.close()
+
     return

@@ -27,6 +27,7 @@ params['shortsubdir']           = True
 params['ut']                    = None
 params['gunzip']                = False
 params['out_dir']               = './nsdrp_out'       # used only in command line mode
+#params['serialize_rds']         = False
 
 # configuration and tuning parameters
 params['max_n_flats']           = 8
@@ -38,6 +39,7 @@ params['long_slit_edge_margin'] = 6         # cut out margin in pixels
 params['large_tilt_threshold']  = 20
 params['large_tilt_extra_padding'] = 10
 params['overscan_width']        = 10
+
 
 # expected order number at bottom of detector
 starting_order = {

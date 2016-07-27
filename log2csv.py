@@ -41,9 +41,9 @@ def read_line(line, d):
         d['filter'] = line.split()[-1:][0]
     elif line.find('slit name =') >= 0:
         d['slit'] = line.split()[-1:][0]
-    elif line.find('n orders on the detector =') >= 0:
-        d['n_orders'] = line.split()[-1:][0]
-    elif line.find('n orders reduced =') >= 0:
+#     elif line.find('n orders on the detector =') >= 0:
+#         d['n_orders'] = line.split()[-1:][0]
+#     elif line.find('n orders reduced =') >= 0:
         d['n_reduced'] = line.split()[-1:][0]
     elif line.find('mean signal-to-noise ratio = ') >= 0:
         d['snr_mean'] = line.split()[-1:][0]
@@ -76,8 +76,8 @@ def get_empty_dict():
     d['target'] = None
     d['filter'] = None
     d['slit'] = None
-    d['n_orders'] = None
-    d['n_reduced'] = None
+#     d['n_orders'] = None
+#     d['n_reduced'] = None
     d['snr_mean'] = None
     d['snr_min'] = None
     d['w_mean'] = None
@@ -105,7 +105,8 @@ i = 0
 def print_record(d):
     global i
     if i == 0:
-        print('index, fn, date, target, filter, slit, itime, coadds, n orders, n reduced, '),
+#        print('index, fn, date, target, filter, slit, itime, coadds, n orders, n reduced, '),
+        print('index, fn, date, target, filter, slit, itime, coadds, '),
         print('snr mean, snr min, width mean, width max, n lines found, n lines used, '),
         print('r rms')
     i += 1
@@ -122,8 +123,8 @@ def print_record(d):
     print('{}, '.format(d['slit'])),
     print('{}, '.format(d['itime'])),
     print('{}, '.format(d['n_coadds'])),
-    print('{}, '.format(d['n_orders'])),
-    print('{}, '.format(d['n_reduced'])),
+#     print('{}, '.format(d['n_orders'])),
+#     print('{}, '.format(d['n_reduced'])),
     print('{:.2f}, '.format(float(d['snr_mean']))),
     print('{}, '.format(d['snr_min'])),
     print('{}, '.format(d['w_mean'])),

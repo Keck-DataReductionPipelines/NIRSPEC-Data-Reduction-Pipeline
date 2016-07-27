@@ -1,17 +1,18 @@
+import os
 import numpy as np
 from scipy.signal import argrelextrema
-from astropy.io import fits
+#from astropy.io import fits
 import logging
-import traceback
+#import traceback
 
 import config
-import grating_eq
+import GratingEq
 from DrpException import DrpException
 import FlatOrder
 import nirspec_lib
 import image_lib
 
-logger = logging.getLogger('obj')
+#logger = logging.getLogger('obj')
 
 class Flat:
     
@@ -25,14 +26,25 @@ class Flat:
 #         self.header = fits.getheader(filename)
 #         self.flatImg = fits.getdata(filename)
 
-    def __init__(self, filename, data):
+    def __init__(self, fn, header, data, logDir=None):
         
-        self.filename = filename
+        self.fn = fn
+        self.header = header
+        self.logDir = logDir
         
         self.baseName = self.getBaseName()
-        logger.info('constructing Flat object for {}'.format(self.baseName))
+        
+        if logDir is None:
+            self.logger = logging.getLogger('obj')
+        else:
+            self.logger = logging.getLogger('flat')
+            self.initLogger()
+            
+        self.gratingEq = GratingEq.GratingEq(self.logger)
+            
+        self.logger.info('constructing Flat object for {}'.format(self.fn))
 
-        self.header = fits.PrimaryHDU.readfrom(filename, ignore_missing_end=True).header
+        #self.header = fits.PrimaryHDU.readfrom(filename, ignore_missing_end=True).header
 #         self.header = fits.getheader(filename)
 #         self.flatImg = fits.getdata(filename)
         self.flatImg = data
@@ -44,10 +56,13 @@ class Flat:
         
         self.topEdgeImg = None          # top edge image (shift subtract)
         self.botEdgeImg = None          # bottom edge image (shift subtract)
-        self.topEdgeProfile = None     # top edge profiles
-        self.botEdgeProfile = None     # bottom edge profiles
+        self.topEdgeProfile = None      # top edge profiles
+        self.botEdgeProfile = None      # bottom edge profiles
         self.topEdgePeaks = None        # filtered top edge profile peaks
         self.botEdgePeaks = None        # filtered bottom edge profile peaks
+        
+        self.nOrdersExpected = 0
+        self.nOrdersFound = 0
         
         
         self.flatOrders = []
@@ -55,7 +70,7 @@ class Flat:
         try:
             self.reduce()
         except Exception as e:
-            logger.error('flat reduction failed: ' + e.message)
+            self.logger.error('flat reduction failed: ' + e.message)
 #             traceback.print_tb()
             raise
         
@@ -65,37 +80,37 @@ class Flat:
     def reduce(self):
         """
         """
-        logger.info('reducing flat {}'.format(self.baseName))
+        self.logger.info('reducing flat {}'.format(self.baseName))
         
         self.findEdgeProfilePeaks()
         
-        nOrdersExpected = 0      
+        self.nOrdersExpected = 0      
         firstOrderFound = False
         
         for orderNum in range(config.get_starting_order(self.filterName), 0, -1):
             
-            logger.info('***** flat order {} *****'.format(orderNum))
+            self.logger.info('***** flat order {} *****'.format(orderNum))
 
-            flatOrder = FlatOrder.FlatOrder(orderNum)
+            flatOrder = FlatOrder.FlatOrder(orderNum, self.logger)
             
             # get expected location of order on detector
-            flatOrder.topCalc, flatOrder.botCalc, flatOrder.waveScaleCalc = grating_eq.evaluate(
+            flatOrder.topCalc, flatOrder.botCalc, flatOrder.gratingEqWaveScale = self.gratingEq.evaluate(
                     orderNum, self.filterName, self.slit, self.echelleAngle, self.disperserAngle)
             
-            logger.info('predicted y location: top = ' + '{:.0f}'.format(flatOrder.topCalc) + 
+            self.logger.info('predicted y location: top = ' + '{:.0f}'.format(flatOrder.topCalc) + 
                     ', bottom = ' + '{:.0f}'.format(flatOrder.botCalc))
             
             # determine if order is expected to be on the detector
             # if this order is off but previous order(s) was/were on then no more orders
             # because orders are contiguous
-            if not grating_eq.is_on_detector(flatOrder.topCalc, flatOrder.botCalc):
-                logger.info('order {} is not on the detector'.format(orderNum))
+            if not self.gratingEq.is_on_detector(flatOrder.topCalc, flatOrder.botCalc):
+                self.logger.info('order {} is not on the detector'.format(orderNum))
                 if firstOrderFound:
                     break
                 
             else:
                 firstOrderFound = True
-                nOrdersExpected += 1
+                self.nOrdersExpected += 1
                 
                 # determine top and bottom LHS of order by edge detection
                 self.findOrder(flatOrder)
@@ -107,12 +122,12 @@ class Flat:
                 try:
                     self.findSpatialTrace(flatOrder)
                 except DrpException as e:
-                    logger.info('failed to find spatial trace: {}'.format(e.message))
+                    self.logger.info('failed to find spatial trace: {}'.format(e.message))
                     flatOrder.valid = False
                     continue
    
                 if flatOrder.spatialTraceFitResidual > config.params['max_spatial_trace_res']:
-                    logger.info('spatial trace fit residual too large, limit = {}'.format(
+                    self.logger.info('spatial trace fit residual too large, limit = {}'.format(
                             config.params['max_spatial_trace_res']))
                     flatOrder.valid = False
                     continue    
@@ -120,7 +135,7 @@ class Flat:
                 try:
                     self.cutOutOrder(flatOrder)
                 except DrpException as e:
-                    logger.warning('failed to extract flat order {}: {}'.format(
+                    self.logger.warning('failed to extract flat order {}: {}'.format(
                             str(orderNum), e.message))
                     flatOrder.valid = False
                     continue
@@ -128,22 +143,23 @@ class Flat:
                 try:
                     flatOrder.reduce()
                 except DrpException as e:
-                    logger.warning('failed to reduce flat order{}: {}'.format(
+                    self.logger.warning('failed to reduce flat order{}: {}'.format(
                         str(orderNum), e.message))
                     flatOrder.valid = False
                     continue
                 
                 flatOrder.valid = True
-                logger.debug('flat order {} validated'.format(orderNum))
+                self.logger.debug('flat order {} validated'.format(orderNum))
                 self.flatOrders.append(flatOrder)
                         
-        logger.info('flat reduction compete')
-        logger.info('n orders expected = {}'.format(nOrdersExpected))
-        logger.info('n orders found = {}'.format(len([p for p in self.flatOrders if p.valid == True])))
+        self.logger.info('flat reduction compete')
+        self.logger.info('n orders expected = {}'.format(self.nOrdersExpected))
+        self.nOrdersFound = len([p for p in self.flatOrders if p.valid == True])
+        self.logger.info('n orders found = {}'.format(self.nOrdersFound))
         return
         
     def getBaseName(self):
-        return self.filename[self.filename.rfind('/') + 1:self.filename.rfind('.')]
+        return self.fn[self.fn.rfind('/') + 1:self.fn.rfind('.')]
         
     def findEdgeProfilePeaks(self):
         
@@ -177,8 +193,8 @@ class Flat:
         max_delta = config.get_max_edge_location_error(self.filterName, self.slit)
 
         if flatOrder.topMeas is None or abs(flatOrder.topMeas - flatOrder.topCalc) > max_delta:
-            logger.info('measured top edge location too far from expected location')
-            logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
+            self.logger.info('measured top edge location too far from expected location')
+            self.logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
                     flatOrder.topCalc, flatOrder.topMeas, 
                     abs(flatOrder.topMeas - flatOrder.topCalc), max_delta))
             flatOrder.topMeas = None
@@ -187,8 +203,8 @@ class Flat:
             topStr = str(flatOrder.topMeas)
             
         if flatOrder.botMeas is None or abs(flatOrder.botMeas - flatOrder.botCalc) > max_delta:
-            logger.info('measured bottom edge location too far from expected location')
-            logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
+            self.logger.info('measured bottom edge location too far from expected location')
+            self.logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
                     flatOrder.botCalc, flatOrder.botMeas, 
                     abs(flatOrder.botMeas - flatOrder.botCalc), max_delta))
             flatOrder.botMeas = None
@@ -196,7 +212,7 @@ class Flat:
         else:
             botStr = str(flatOrder.botMeas)
 
-        logger.info('measured y location:  top = ' + topStr + ', bottom = ' + botStr)
+        self.logger.info('measured y location:  top = ' + topStr + ', bottom = ' + botStr)
         
         return
         
@@ -204,33 +220,33 @@ class Flat:
     def findSpatialTrace(self, flatOrder):   
          
         if flatOrder.topMeas is not None:
-            logger.debug('tracing top of order')
+            self.logger.debug('tracing top of order')
             flatOrder.topEdgeTrace = nirspec_lib.trace_order_edge(self.topEdgeImg, flatOrder.topMeas)
         
         if flatOrder.botMeas is not None:
-            logger.debug('tracing bottom of order')
+            self.logger.debug('tracing bottom of order')
             flatOrder.botEdgeTrace = nirspec_lib.trace_order_edge(self.botEdgeImg, flatOrder.botMeas)
             
         if flatOrder.topEdgeTrace is None and flatOrder.botEdgeTrace is None:
             raise DrpException('could not trace top or bottom edge')
     
         if flatOrder.topEdgeTrace is not None and flatOrder.botEdgeTrace is not None:
-            logger.info('using top and bottom trace')
+            self.logger.info('using top and bottom trace')
             flatOrder.avgEdgeTrace = (flatOrder.topEdgeTrace + flatOrder.botEdgeTrace) / 2.0
     
         elif flatOrder.botEdgeTrace is None:
-            logger.info('using top trace only')
+            self.logger.info('using top trace only')
             flatOrder.avgEdgeTrace = flatOrder.topEdgeTrace - \
                     ((flatOrder.topMeas - flatOrder.botCalc) / 2.0) + 1.0
             
         else:
-            logger.info('using bottom trace only')
+            self.logger.info('using bottom trace only')
             flatOrder.avgEdgeTrace = flatOrder.botEdgeTrace + \
                     ((flatOrder.topCalc - flatOrder.botMeas) / 2.0) + 1.0
                     
         # apply long slit edge margin correction to raw traces
         if '24' in self.slit:
-            logger.info('applying long slit edge margins of {} pixels'.format(
+            self.logger.info('applying long slit edge margins of {} pixels'.format(
                 config.params['long_slit_edge_margin']))
             if flatOrder.topEdgeTrace is not None:
                 flatOrder.topEdgeTrace -= config.params['long_slit_edge_margin']
@@ -245,13 +261,13 @@ class Flat:
         flatOrder.smoothedSpatialTrace, flatOrder.spatialTraceMask = \
                 nirspec_lib.smooth_spatial_trace(flatOrder.avgEdgeTrace)
                 
-        logger.info('spatial trace smoothed, ' + \
+        self.logger.info('spatial trace smoothed, ' + \
                 str(self.flatImg.shape[1] - np.count_nonzero(flatOrder.spatialTraceMask)) + 
                 ' points ignored')
     
         flatOrder.spatialTraceFitResidual = np.sqrt(
                 np.mean(np.square(flatOrder.avgEdgeTrace - flatOrder.smoothedSpatialTrace)))
-        logger.info('spatial trace smoothing rms fit residual = {:.2f}'.format(
+        self.logger.info('spatial trace smoothing rms fit residual = {:.2f}'.format(
                 flatOrder.spatialTraceFitResidual))
             
         return
@@ -265,11 +281,11 @@ class Flat:
         # add extra padding for orders with large tilt
         tilt = abs(flatOrder.avgEdgeTrace[0] - flatOrder.avgEdgeTrace[-1])
         if  tilt > config.params['large_tilt_threshold']:
-            logger.info('large order tilt detected, tilt = ' + str(round(tilt, 1)) + 
+            self.logger.info('large order tilt detected, tilt = ' + str(round(tilt, 1)) + 
                 ' threshold = ' + str(config.params['large_tilt_threshold']) + 
                 ' extra padding = ' + str(config.params['large_tilt_extra_padding']))
             flatOrder.cutoutPadding += config.params['large_tilt_extra_padding']
-        logger.debug('cutout padding = ' + str(round(flatOrder.cutoutPadding, 0)))
+        self.logger.debug('cutout padding = ' + str(round(flatOrder.cutoutPadding, 0)))
         
         # determine highest point of top trace (ignore edge)
         if flatOrder.topEdgeTrace is None:
@@ -300,6 +316,37 @@ class Flat:
         flatOrder.cutout = np.ma.masked_array(flatOrder.cutout, mask=flatOrder.offOrderMask)
     
         return
+    
+    def initLogger(self):
+
+        self.logger.handlers = []
+        if config.params['debug']:
+            self.logger.setLevel(logging.DEBUG)
+            formatter = logging.Formatter('%(asctime)s ' +
+                    '%(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+        else:
+            self.logger.setLevel(logging.INFO)
+            formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+        
+        fn = self.logDir + '/' + self.baseName + '.log'
+            
+        if os.path.exists(fn):
+            os.rename(fn, fn + '.prev')
+            
+        fh = logging.FileHandler(filename=fn)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
+        
+        if config.params['verbose'] is True:
+            if config.params['debug']:
+                sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
+            else:
+                sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
+            sh = logging.StreamHandler()
+            sh.setLevel(logging.DEBUG)
+            sh.setFormatter(sformatter)
+            self.logger.addHandler(sh) 
     
     
 def get_masks(shape, top_trace, bot_trace):

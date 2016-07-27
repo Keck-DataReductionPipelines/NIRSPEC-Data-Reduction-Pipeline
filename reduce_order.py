@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import scipy.stats
 import scipy.optimize
-import scipy.ndimage
+#import scipy.ndimage
 
 import config
 import image_lib
@@ -42,7 +42,6 @@ def reduce_order(order, flat_order):
     
     # characterize spatial profile by fitting to Gaussian
     characterize_spatial_profile(order)
-
 
     # find and smooth spectral trace
     try:
@@ -87,7 +86,7 @@ def reduce_order(order, flat_order):
     try:
         # synthesize sky spectrum and store in order object
         order.synthesizedSkySpec = wavelength_utils.synthesize_sky(
-                oh_wavelengths, oh_intensities, order.wavelengthScaleCalc)
+                oh_wavelengths, oh_intensities, order.gratingEqWaveScale)
          
         # identify lines and return list of (column number, accepted wavelength) tuples
         line_pairs = wavelength_utils.line_id(order, oh_wavelengths, oh_intensities)
@@ -101,21 +100,10 @@ def reduce_order(order, flat_order):
 
         # add line pairs to Order object as Line objects
         for line_pair in line_pairs:
-            line = Line.Line()
-            line.col, line.acceptedWavelength = line_pair
-            line.peak = order.skySpec[line.col]
-            
-            # find centroid of peak
-            w = 5
-            p0 = max(0, line.col - (w / 2))
-            p1 = min(1023, line.col + (w / 2)) + 1
-            line.centroid = p0 + scipy.ndimage.center_of_mass(order.skySpec[p0:p1])[0]
-            
-            if abs(line.centroid - line.col) > 1:
-                logger.warning('sky line centroid error, col = {}, centroid = {:.3f}'.format(
-                        line.col, line.centroid))
-                line.centroid = line.col                
-            
+            col, waveAccepted = line_pair
+            peak = order.skySpec[col]
+            cent = image_lib.centroid(order.skySpec, 1024, 5, col)
+            line = Line.Line(order.frame, order.orderNum, waveAccepted, col, cent, peak)
             order.lines.append(line)
             
         if len(order.lines) >= 3:
@@ -123,25 +111,27 @@ def reduce_order(order, flat_order):
             measured = []
             accepted = []
             for line in order.lines:
-                measured.append(order.wavelengthScaleCalc[line.col])
-                accepted.append(line.acceptedWavelength)
-            (order.perOrderSlope, order.perOrderIntercept, order.perOrderCorrCoeff, p, e) = \
+                measured.append(order.gratingEqWaveScale[line.col])
+                accepted.append(line.waveAccepted)
+            (order.orderCalSlope, order.orderCalIncpt, order.orderCalCorrCoeff, p, e) = \
                     scipy.stats.linregress(np.array(measured), np.array(accepted))  
-                    
+            order.orderCalNLines = len(order.lines)       
             logger.info('per order wavelength fit: n = {}, a = {:.6f}, b = {:.6f}, r = {:.6f}'.format(
-                    len(order.lines), order.perOrderIntercept, order.perOrderSlope, 
-                    order.perOrderCorrCoeff))
+                    len(order.lines), order.orderCalIncpt, order.orderCalSlope, 
+                    order.orderCalCorrCoeff))
 
             for line in order.lines:
-                line.localFitWavelength = order.perOrderIntercept + \
-                    (order.perOrderSlope * order.wavelengthScaleCalc[line.col])    
-                line.localFitResidual = abs(line.localFitWavelength - line.acceptedWavelength)  
-                line.localFitSlope = (order.perOrderSlope * (order.wavelengthScaleCalc[1023] - order.wavelengthScaleCalc[0]))/1024.0
+                line.orderWaveFit = order.orderCalIncpt + \
+                    (order.orderCalSlope * order.gratingEqWaveScale[line.col])    
+                line.orderFitRes = abs(line.orderWaveFit - line.waveAccepted)  
+                line.orderFitSlope = (order.orderCalSlope * 
+                    (order.gratingEqWaveScale[1023] - order.gratingEqWaveScale[0]))/1024.0
     else:
         logger.warning('no matched sky lines in order ' + str(order.orderNum))
+        order.orderCal = False 
                         
     return
-         
+            
 def extract_spectra(order, flat_order):
     
     order.objWindow, order.topSkyWindow, order.botSkyWindow = \

@@ -1,5 +1,7 @@
 import matplotlib
+
 matplotlib.use('Agg')
+    
 import pylab as pl
 import logging
 import os
@@ -46,8 +48,8 @@ subdirs = dict([
                 ('order.png',       'previews/order'    ),
                 ('sky.fits',        'fits/sky'          ),
                 ('sky.png',         'previews/sky'      ),
-                ('noise.fits',      'fits/noise'        ),
-                ('noise.png',       'previews/noise'    ),
+                ('snr.fits',        'fits/snr'          ),
+                ('snr.png',         'previews/snr'      ),
                 ('trace.fits',      'fits/trace'        ),
                 ('trace.png',       'previews/trace'    ),
 #                 ('spectra.png',     'previews/spectra'  ),
@@ -78,7 +80,7 @@ def gen(reduced, out_dir):
     Given a ReducedDataSet object and a root output directory, generate all
     data products and store results in output directory and subdirectories.
     """
-    obj_logger.info('generating data products...')
+    obj_logger.info('generating data products for {}...'.format(reduced.baseName))
     
     file_count[0] = 0
     
@@ -97,11 +99,13 @@ def gen(reduced, out_dir):
     # prepare extended fits header
     header = reduced.header
     header['COMMENT'] = ('NSDRP', 'NSDRP')
-    if reduced.rmsFitRes is not None: 
-        header['WFITRMS'] = (round(reduced.rmsFitRes, 4), 'RMS wavelength fit residual')
-    if reduced.coeffs is not None:
+    if reduced.frameCalRmsRes is not None: 
+        header['WFITRMS'] = (round(reduced.frameCalRmsRes, 4), 
+                'RMS per-frame wavelength fit residual')
+    if reduced.frameCalCoeffs is not None:
         for i in range(6):
-            header['WFIT{}'.format(i)] = (round(reduced.coeffs[i], 6), 'wavelength fit coefficient {}'.format(i))
+            header['WFIT{}'.format(i)] = (round(reduced.frameCalCoeffs[i], 6), 
+                'wavelength fit coefficient {}'.format(i))
     header['DARK'] = (reduced.darkKOAId, 'KOAID of dark frame or none')
     for i in range(len(reduced.flatKOAIds)):
         header['FLAT' + str(i)] = (reduced.flatKOAIds[i], 'KOAID of flat {}'.format(i))
@@ -122,15 +126,15 @@ def gen(reduced, out_dir):
     
     for order in reduced.orders:
         for line in order.lines:
-            if line.usedInGlobalFit:
+            if line.frameFitOutlier == False:
                 order_num.append(order.orderNum)
                 col.append(line.centroid)
                 source.append('sky')
-                wave_exp.append(line.acceptedWavelength)
-                wave_fit.append(line.globalFitWavelength)
-                res.append(abs(line.globalFitWavelength - line.acceptedWavelength))
+                wave_exp.append(line.waveAccepted)
+                wave_fit.append(line.frameWaveFit)
+                res.append(abs(line.frameWaveFit - line.waveAccepted))
                 peak.append(line.peak)
-                slope.append(line.globalFitSlope)
+                slope.append(line.frameFitSlope)
                 
     # global wavelength cal tables
     
@@ -145,11 +149,6 @@ def gen(reduced, out_dir):
     # per order data products
     
     for order in reduced.orders:
-        
-#         if reduced.coeffs is None:
-#             wavelength_scale = order.wavelengthScaleMeas
-#         else:
-#             wavelength_scale = order.wavelengthScaleCalc
             
         # extend header further with per-order data
         header['FLATSCAL'] = (round(order.flatMean, 5), 'flat field normalization scale factor')
@@ -166,12 +165,13 @@ def gen(reduced, out_dir):
         header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
         header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ratio for order')
 
-        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
-                order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
+        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.waveScale, 
+                order.objSpec, order.skySpec, order.synthesizedSkySpec, 
+                np.absolute(order.objSpec/order.noiseSpec),
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
              
-        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.wavelengthScaleMeas, 
+        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.waveScale, 
                 order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
@@ -192,25 +192,25 @@ def gen(reduced, out_dir):
         profileFits(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.wavelengthScaleMeas)
+            'counts', order.objSpec, order.waveScale, order.calMethod)
          
         fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.wavelengthScaleMeas, header)
+            'counts', order.objSpec, order.waveScale, header)
 
         spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.wavelengthScaleMeas)
+            'counts', order.skySpec, order.waveScale, order.calMethod)
         
 #         skyLinesPlot(out_dir, reduced.baseName, order)
 #         skyLinesAsciiTable(out_dir, reduced.baseName, order)
 
         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.wavelengthScaleMeas, header)
+            'counts', order.skySpec, order.waveScale, header)
 
-        spectrumPlot(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.wavelengthScaleMeas)
+        spectrumPlot(out_dir, reduced.baseName, 'snr', order.orderNum, 
+            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, order.calMethod)
          
-        fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.wavelengthScaleMeas, header)
+        fitsSpectrum(out_dir, reduced.baseName, 'snr', order.orderNum, 
+            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, header)
 
 #         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
 #             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
@@ -218,15 +218,9 @@ def gen(reduced, out_dir):
 
         twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg, header)
 
-        if len(order.wavelengthScaleMeas) > 0:
-            twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
-                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                    order.wavelengthScaleMeas)
-
-        else:
-            twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image *', 
-                    reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                    order.wavelengthScaleMeas)
+        twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
+                reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
+                order.waveScale)
 
     main_logger.info('n data products generated for {} = {}'.format(
             reduced.baseName, str(file_count[0])))
@@ -473,11 +467,11 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     log_fn(fn)
     return
 
-def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, error,
+def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, snr,
                      flat, trace_upper, trace_lower, trace_mean, trace_fit, fit_res):
      
     names = [   'col',         'wave',         'flux',         'sky', 
-                'synth_sky',   'error',        'flat',         'trace_upper', 
+                'synth_sky',   'snr',          'flat',        'trace_upper', 
                 'trace_lower', 'trace_mean',   'trace_fit',    'fit_res']
     units = [   'pixels',      'Angstroms',    'counts',       'counts', 
                 '',            '',             '',             'pixel', 
@@ -520,7 +514,7 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, er
     buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     for col in range(wave.shape[0]):
-        data = [col, wave[col], flux[col], sky[col], synth_sky[col], error[col], flat[col],
+        data = [col, wave[col], flux[col], sky[col], synth_sky[col], snr[col], flat[col],
                 trace_upper[col], trace_lower[col], trace_mean[col], trace_fit[col], fit_res[col]]
         line = []
         for i, val in enumerate(data):
@@ -548,10 +542,10 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
                 fits.Column(name='col', format='1I', array=np.arange(1024, dtype=int)),
                 fits.Column(name='wave (A)', format='1D', array=wave),
                 fits.Column(name='flux (cnts)', format='1D', array=flux),
-                fits.Column(name='error (cnts)', format='1D', array=error),
+                fits.Column(name='noise (cnts)', format='1D', array=error),
                 fits.Column(name='sky (cnts)', format='1D', array=sky),
                 fits.Column(name='synth_sky', format='1D', array=synth_sky),
-                fits.Column(name='sig_to_noise', format='1D', array=np.arange(1024, dtype=float)),
+                fits.Column(name='sig_to_noise', format='1D', array=np.absolute(flux/error)),
                 fits.Column(name='flat (cnts)', format='1D', array=flat),
                 fits.Column(name='trace_upper (pix)', format='1D', array=trace_upper),
                 fits.Column(name='trace_lower (pix)', format='1D', array=trace_lower),
@@ -563,13 +557,17 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
     log_fn(fn)
     return
 
-def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave):
+def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave, 
+                 wave_note='unknown'):
     
     pl.figure(title, facecolor='white')
     pl.clf()
     pl.title(title + ', ' + base_name + ", order " + str(order_num), fontsize=12)
-    pl.xlabel('wavelength ($\AA$)')
-    pl.ylabel(title + '(' + y_units + ')')
+    pl.xlabel('wavelength ($\AA$) (' + wave_note + ')')
+    if len(y_units) > 0:
+        pl.ylabel(title + '(' + y_units + ')')
+    else:
+        pl.ylabel(title)
     pl.grid(True)
     pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1)
     
