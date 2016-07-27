@@ -48,8 +48,8 @@ subdirs = dict([
                 ('order.png',       'previews/order'    ),
                 ('sky.fits',        'fits/sky'          ),
                 ('sky.png',         'previews/sky'      ),
-                ('noise.fits',      'fits/noise'        ),
-                ('noise.png',       'previews/noise'    ),
+                ('snr.fits',        'fits/snr'          ),
+                ('snr.png',         'previews/snr'      ),
                 ('trace.fits',      'fits/trace'        ),
                 ('trace.png',       'previews/trace'    ),
 #                 ('spectra.png',     'previews/spectra'  ),
@@ -166,7 +166,8 @@ def gen(reduced, out_dir):
         header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ratio for order')
 
         fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.waveScale, 
-                order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
+                order.objSpec, order.skySpec, order.synthesizedSkySpec, 
+                np.absolute(order.objSpec/order.noiseSpec),
                 order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
                 order.smoothedTrace, order.smoothedTrace - order.avgTrace)
              
@@ -205,11 +206,11 @@ def gen(reduced, out_dir):
         fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
             'counts', order.skySpec, order.waveScale, header)
 
-        spectrumPlot(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.waveScale, order.calMethod)
+        spectrumPlot(out_dir, reduced.baseName, 'snr', order.orderNum, 
+            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, order.calMethod)
          
-        fitsSpectrum(out_dir, reduced.baseName, 'noise', order.orderNum, 
-            'counts', order.noiseSpec, order.waveScale, header)
+        fitsSpectrum(out_dir, reduced.baseName, 'snr', order.orderNum, 
+            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, header)
 
 #         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
 #             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
@@ -466,11 +467,11 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     log_fn(fn)
     return
 
-def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, error,
+def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, snr,
                      flat, trace_upper, trace_lower, trace_mean, trace_fit, fit_res):
      
     names = [   'col',         'wave',         'flux',         'sky', 
-                'synth_sky',   'error',        'flat',         'trace_upper', 
+                'synth_sky',   'snr',          'flat',        'trace_upper', 
                 'trace_lower', 'trace_mean',   'trace_fit',    'fit_res']
     units = [   'pixels',      'Angstroms',    'counts',       'counts', 
                 '',            '',             '',             'pixel', 
@@ -513,7 +514,7 @@ def fluxAsciiTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, er
     buff.append('{} {} {}'.format(p_char, (p_char + ' ').join(line), p_char))
     
     for col in range(wave.shape[0]):
-        data = [col, wave[col], flux[col], sky[col], synth_sky[col], error[col], flat[col],
+        data = [col, wave[col], flux[col], sky[col], synth_sky[col], snr[col], flat[col],
                 trace_upper[col], trace_lower[col], trace_mean[col], trace_fit[col], fit_res[col]]
         line = []
         for i, val in enumerate(data):
@@ -541,10 +542,10 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
                 fits.Column(name='col', format='1I', array=np.arange(1024, dtype=int)),
                 fits.Column(name='wave (A)', format='1D', array=wave),
                 fits.Column(name='flux (cnts)', format='1D', array=flux),
-                fits.Column(name='error (cnts)', format='1D', array=error),
+                fits.Column(name='noise (cnts)', format='1D', array=error),
                 fits.Column(name='sky (cnts)', format='1D', array=sky),
                 fits.Column(name='synth_sky', format='1D', array=synth_sky),
-                fits.Column(name='sig_to_noise', format='1D', array=np.arange(1024, dtype=float)),
+                fits.Column(name='sig_to_noise', format='1D', array=np.absolute(flux/error)),
                 fits.Column(name='flat (cnts)', format='1D', array=flat),
                 fits.Column(name='trace_upper (pix)', format='1D', array=trace_upper),
                 fits.Column(name='trace_lower (pix)', format='1D', array=trace_lower),

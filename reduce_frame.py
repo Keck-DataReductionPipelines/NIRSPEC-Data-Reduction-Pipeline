@@ -63,7 +63,7 @@ def reduce(raw, out_dir, flatCacher=None):
             logger.info('cosmic ray rejection on flat inhibited by command line flat')
             flat_data = fits.PrimaryHDU.readfrom(raw.flatFileNames[0], ignore_missing_end=True).data
         else:
-            logger.info('starting cosmic ray cleaning on flat')
+            logger.info('starting cosmic ray cleaning flat')
             flat_data = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
                     raw.flatFileNames[0], ignore_missing_end=True).data)
             logger.info('cosmic ray cleaning on flat complete')
@@ -80,7 +80,7 @@ def reduce(raw, out_dir, flatCacher=None):
         logger.info("cosmic ray rejection on object frame inhibited by command line flag")
 
     else:
-        logger.info('starting cosmic ray cleaning on object frame')
+        logger.info('starting cosmic ray cleaning object frame')
         reduced.obj = image_lib.cosmic_clean(reduced.obj)
         reduced.cosmicCleaned = True 
         logger.info('cosmic ray cleaning on object frame complete')
@@ -399,7 +399,8 @@ def log_start_summary(reduced):
     for l in loggers:
         logging.getLogger(l).log(INFO, 'starting reduction of ' + reduced.baseName)
 #           #reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
-        logging.getLogger(l).log(INFO, '   date of observation = ' + str(reduced.getDate() + ' UT'))
+        logging.getLogger(l).log(INFO, '   time of observation = ' + 
+                str(reduced.getDate()) + ' ' + str(reduced.getTime() + ' UT'))
         logging.getLogger(l).log(INFO, '           target name = ' + str(reduced.getTargetName()))
         logging.getLogger(l).log(INFO, '           filter name = ' + str(reduced.getFullFilterName()))
         logging.getLogger(l).log(INFO, '             slit name = ' + str(reduced.getSlit()))

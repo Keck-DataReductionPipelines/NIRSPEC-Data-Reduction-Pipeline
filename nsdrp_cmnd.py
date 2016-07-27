@@ -1,4 +1,13 @@
+import os
 import logging
+from astropy.io import fits
+import nirspec_constants as constants
+import RawDataSet
+import create_raw_data_sets
+import reduce_frame
+import config
+import products
+import dgn
 
 def process_frame(fn1, fn2, out_dir):
     
@@ -53,6 +62,9 @@ def process_frame(fn1, fn2, out_dir):
 
     # generate reduced data set by reducing raw data set
     reducedDataSet = reduce_frame.reduce(rawDataSet, out_dir)
+    
+    # write reduction summary to log file
+    write_summary(reducedDataSet)
         
     # produce data products from reduced data set
     if config.params['no_products'] is True:
@@ -65,4 +77,36 @@ def process_frame(fn1, fn2, out_dir):
         logger.info('diagnostic mode enabled, generating diagnostic data products')
         dgn.gen(reducedDataSet, out_dir)
         
-    return        
+    return    
+
+
+def write_summary(rds):    
+    
+    logger = logging.getLogger('obj')
+    logger.info("summary:")
+    v = []
+    v.append(('base name' , '{}', rds.baseName))
+    v.append(('observation time (UT)',              '{}',       
+              rds.getDate() + ' ' + rds.getTime()))
+    v.append(('target name',                        '{}',       rds.getTargetName()))
+    v.append(('filter',                             '{}',       rds.getFilter()))
+    v.append(('slit',                               '{}',       rds.getSlit()))
+    v.append(('cross disperser angle (deg)',        '{:.2f}',   rds.getDispPos()))
+    v.append(('Echelle angle (deg)',                '{:.2f}',   rds.getEchPos()))
+    v.append(('integration time (sec)',             '{:.0f}',     rds.getITime()))
+#     v.append(('n coadds',                       '{:d}',     rds.getNCoadds()))
+    v.append(('n orders expected',                  '{:d}',     rds.Flat.nOrdersExpected))
+    v.append(('n orders reduced',                   '{:d}',     rds.Flat.nOrdersFound))
+    v.append(('SNR mean',                           '{:.1f}',   rds.snrMean))
+    v.append(('SNR min',                            '{:.1f}',   rds.snrMin))
+    v.append(('spatial peak width mean (pixels)',   '{:.1f}',   rds.wMean))
+    v.append(('spatial peak width max (pixels)',    '{:.1f}',   rds.wMax))
+    v.append(('n sky lines found',                  '{:d}',     rds.nLinesFound))
+    v.append(('n sky lines used',                   '{:d}',     rds.nLinesUsed))
+    v.append(('RMS fit residual',                   '{:.3f}',   rds.frameCalRmsRes))
+    
+    for val in v:
+        try:
+            logger.info('{:>34}'.format(val[0]) + ' = ' + str(val[1]).format(val[2]))
+        except ValueError as e:
+            logger.info('{:>27}'.format(val[0]) + ' = ')

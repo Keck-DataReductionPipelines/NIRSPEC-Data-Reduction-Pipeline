@@ -84,6 +84,9 @@ class ReducedDataSet:
     def getDate(self):
         return self.header['DATE-OBS']
     
+    def getTime(self):
+        return self.header['UTC']
+    
     def getIntegrationTime(self):
         try:
             return self.header['ELAPTIME']

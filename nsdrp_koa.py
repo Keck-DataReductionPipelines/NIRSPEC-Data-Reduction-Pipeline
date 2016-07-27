@@ -24,12 +24,7 @@ def process_dir(in_dir, base_out_dir):
     # use main logger for outer logging, reduce_frame makes the per frame logger
     logger = logging.getLogger('main')
     
-    # open summary spreadsheet file
-    ssFptr = open(base_out_dir + '/nsdrp_summary.csv', 'w')
-    ssFptr.write(', '.join(['fn', 'date', 'target', 'filter', 'slit', 'disppos', 'echlpos',
-            'itime', 'coadds', 'n orders', 'n reduced', 'snr mean', 'snr min', 'width mean', 
-            'width max', 'n lines found', 'n lines used', 'r rms', 'cal frame']) + '\n')
-    ssFptr.flush()
+    ssFptr = start_summary_ss(in_dir, base_out_dir)
     
     # get list of raw data sets arranged in chronological order
     rawDataSets = create_raw_data_sets.create(in_dir)
@@ -186,10 +181,47 @@ def get_out_dir(fn, base_out_dir):
         
     return(out_dir)
 
+def start_summary_ss(in_dir, out_dir):
+    """
+    """
+    ss_fn = None
+    
+ 
+    if config.params['ut'] is not None:
+        # use UT specified as command line argument
+        ss_fn = '{}/NS.{}_summary.csv'.format(out_dir, config.params['ut'])
+    else:
+        # try to get UT from filenames in input directory
+        fns = os.listdir(in_dir)
+        for fn in fns:
+            if fn.startswith('NS.'):
+                ss_fn = out_dir + '/' + fn[:fn.find('.', fn.find('.') + 1)] + '_summary.csv'
+                break
+        if ss_fn is None:
+            # if all else fails, use canned log file name
+            ss_fn = out_dir + '/nsdrp_summary.csv'
+            
+    if config.params['subdirs'] is False:
+        # if not in "subdirs" mode than put ss file in log subdirectory
+        parts = log_fn.split('/')
+        parts.insert(len(parts)-1, 'log')
+        log_fn = '/'.join(parts)
+        
+    # open summary spreadsheet file
+    ss_fptr = open(ss_fn, 'w')
+    ss_fptr.write(', '.join(['fn', 'date', 'time', 'target', 'filter', 'slit', 'disppos', 'echlpos',
+            'itime', 'coadds', 'n orders', 'n reduced', 'snr mean', 'snr min', 'width mean', 
+            'width max', 'n lines found', 'n lines used', 'r rms', 'cal frame']) + '\n')
+    ss_fptr.flush()
+        
+    return(ss_fptr)
+    
+
 def append_to_summary_ss(reduced, ssFptr):
     v = []
     v.append(('{}', reduced.baseName))
     v.append(('{}', reduced.getDate()))
+    v.append(('{}', reduced.getTime()))
     v.append(('{}', reduced.getTargetName()))
     v.append(('{}', reduced.getFilter()))
     v.append(('{}', reduced.getSlit()))
@@ -221,41 +253,3 @@ def append_to_summary_ss(reduced, ssFptr):
     ssFptr.flush()
     return   
     
-#     v = []
-#     v.append(reduced.baseName)
-#     v.append(reduced.getDate())
-#     v.append(reduced.getTargetName())
-#     v.append(reduced.getFilter())
-#     v.append(reduced.getSlit())
-#     v.append('{:.2f}'.format(reduced.getDispPos()))
-#     v.append('{:.2f}'.format(reduced.getEchPos()))
-#     v.append('{:f}'.format(reduced.getITime()))
-#     v.append('{:d}'.format(reduced.getNCoadds()))
-#     v.append('{:d}'.format(reduced.Flat.nOrdersExpected))
-#     v.append('{:d}'.format(reduced.Flat.nOrdersFound))
-#     if reduced.snrMean is None:
-#         v.append(' ')
-#     else:
-#         v.append('{:.1f}'.format(reduced.snrMean))
-#     if reduced.snrMin is None:
-#         v.append(' ')
-#     else:
-#         v.append('{:.1f}'.format(reduced.snrMin))
-#     if reduced.wMean is None:
-#         v.append(' ')
-#     else:
-#         v.append('{:.1f}'.format(reduced.wMean))
-#     if reduced.wMax is None:
-#         v.append(' ')
-#     else:
-#         v.append('{:.1f}'.format(reduced.wMax))
-#     v.append('{:d}'.format(reduced.nLinesFound))
-#     v.append('{:d}'.format(reduced.nLinesUsed))
-#     if reduced.frameCalRmsRes is None:
-#         v.append(' ')
-#     else:
-#         v.append('{:.3f}'.format(reduced.frameCalRmsRes))
-#     v.append('{}'.format(reduced.calFrame))
-#     ssFptr.write(', '.join(v) + '\n')
-#     ssFptr.flush()
-#     return
