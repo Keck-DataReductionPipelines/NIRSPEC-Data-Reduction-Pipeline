@@ -564,7 +564,10 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave,
     pl.clf()
     pl.title(title + ', ' + base_name + ", order " + str(order_num), fontsize=12)
     pl.xlabel('wavelength ($\AA$) (' + wave_note + ')')
-    pl.ylabel(title + '(' + y_units + ')')
+    if len(y_units) > 0:
+        pl.ylabel(title + '(' + y_units + ')')
+    else:
+        pl.ylabel(title)
     pl.grid(True)
     pl.plot(wave[:1004], cont[:1004], "k-", mfc="none", ms=3.0, linewidth=1)
     

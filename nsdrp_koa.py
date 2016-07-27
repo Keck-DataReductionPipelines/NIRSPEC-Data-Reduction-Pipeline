@@ -203,9 +203,9 @@ def start_summary_ss(in_dir, out_dir):
             
     if config.params['subdirs'] is False:
         # if not in "subdirs" mode than put ss file in log subdirectory
-        parts = log_fn.split('/')
+        parts = ss_fn.split('/')
         parts.insert(len(parts)-1, 'log')
-        log_fn = '/'.join(parts)
+        ss_fn = '/'.join(parts)
         
     # open summary spreadsheet file
     ss_fptr = open(ss_fn, 'w')

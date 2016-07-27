@@ -103,7 +103,7 @@ def write_summary(rds):
     v.append(('spatial peak width max (pixels)',    '{:.1f}',   rds.wMax))
     v.append(('n sky lines found',                  '{:d}',     rds.nLinesFound))
     v.append(('n sky lines used',                   '{:d}',     rds.nLinesUsed))
-    v.append(('RMS fit residual',                   '{:.3f}',   rds.frameCalRmsRes))
+    v.append(('RMS fit residual (Angstroms)',       '{:.3f}',   rds.frameCalRmsRes))
     
     for val in v:
         try:
