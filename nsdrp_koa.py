@@ -34,7 +34,6 @@ def process_dir(in_dir, base_out_dir):
     
     # keep track of how many data sets have been successfully reduced
     n_reduced = len(rawDataSets)
-    logger.info(str(len(rawDataSets)) + " raw data set(s) assembled")
         
     # instantiate a flat cacher so each flat or set of flats is only reduced once 
     flatCacher = FlatCacher.FlatCacher(logger, base_out_dir + '/flats')
@@ -61,8 +60,8 @@ def process_dir(in_dir, base_out_dir):
                     gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr)
     
                     del reducedDataSets[:] 
-                    logger.info('starting new multi-frame set for nirpsec config: {}', 
-                            nirspecConfig.toString())
+                    logger.info('starting new multi-frame set for nirpsec config: {}'.format(
+                            nirspecConfig.toString()))
                     nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
             
         try:
