@@ -76,26 +76,29 @@ def create(in_dir):
                         rawDataSet.darkFileNames.append(filename)
         rawDataSet.flatFileNames.sort()
         rawDataSet.darkFileNames.sort()
-             
+        
+    rawDataSets.sort(key=lambda x: x.baseName)
+                 
+    rawDataSetsWithFlats = []
+    
     # remove data sets for which no flats are available
     for rawDataSet in rawDataSets:
         if len(rawDataSet.flatFileNames) == 0:
-            logger.info('no flats for {}'.format(
-                    rawDataSet.objFileName[rawDataSet.objFileName.rfind('/') + 1 :]))
-            rawDataSets.remove(rawDataSet)
+            logger.debug('no flats for {}'.format(rawDataSet.baseName))
+        else:
+            logger.debug('{} has {} flats'.format(rawDataSet.baseName, len(rawDataSet.flatFileNames)))
+            rawDataSetsWithFlats.append(rawDataSet)
             
     if len(rawDataSets) < 1:
         logger.warning('no raw data sets could be assembled')
         return None
             
     # sort raw data set list by ascending UTC
-    rawDataSets.sort(key=lambda x:x.objHeader['UTC'])
-    logger.info('raw data sets to be reduced:')
-    for rawDataSet in rawDataSets:
-        logger.info('{}'.format(rawDataSet.toString()))
+    rawDataSetsWithFlats.sort(key=lambda x:x.objHeader['UTC'])
+    
+    logger.info('n raw data sets with flats = {}'.format(len(rawDataSetsWithFlats)))
  
-          
-    return(rawDataSets)
+    return(rawDataSetsWithFlats)
 
 
 def get_headers(in_dir):
