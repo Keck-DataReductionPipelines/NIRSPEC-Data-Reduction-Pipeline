@@ -56,8 +56,7 @@ def line_id(order, oh_wavelengths, oh_intensities):
     intensities, match observed sky lines with accepted OH lines.
     
     First find_wavelength_shift() is called to determine the offset between the estimated 
-    wavelength scale and the actual wavelength scale by maximizing the overlap integral of 
-    the real sky spectrum with the synthesized sky spectrum.
+    wavelength scale and the actual wavelength scale using the method of cross correlation.
     
     identify() is called to make the actual associate between observed and accepted lines.
     identify() has not yet been recoded, detailed explanation of algorithm forthcoming.  
@@ -66,8 +65,8 @@ def line_id(order, oh_wavelengths, oh_intensities):
     
     """
     # find wavelength shift
-    order.waveShift = find_wavelength_shift(order.skySpec, order.synthesizedSkySpec,
-            order.gratingEqWaveScale)
+    order.waveShift = find_wavelength_shift(order.skySpec['A'], order.synthesizedSkySpec,
+            order.flatOrder.gratingEqWaveScale)
  
     if abs(order.waveShift) > MAX_SHIFT:
         logger.warning('measured wavelength shift of {:.1f} exceeds threshold of {:.0f}'.format(
@@ -75,21 +74,28 @@ def line_id(order, oh_wavelengths, oh_intensities):
         return None
         
     logger.info('wavelength scale shift = ' + str(round(order.waveShift, 3)) + ' pixels')   
-    wavelength_scale_shifted = order.gratingEqWaveScale + order.waveShift   
+    wavelength_scale_shifted = order.flatOrder.gratingEqWaveScale + order.waveShift   
 
     # match sky lines
-    id_tuple = identify(order.skySpec, wavelength_scale_shifted, oh_wavelengths, oh_intensities)
+    id_tuple = identify(
+            order.skySpec['A'], wavelength_scale_shifted, oh_wavelengths, oh_intensities)
+    if id_tuple is not None:
+        matchesdx, matchesohx, matchesidx = id_tuple
+    else:
+        matchesdx, matchesohx, matchesidx = np.array([]), np.array([]), np.array([])
+
     
-    if id_tuple is  None:
+#     if order.isPair:
+#         id_tuple = identify(
+#                 order.skySpec['B'], wavelength_scale_shifted, oh_wavelengths, oh_intensities)
+#         if id_tuple is not None:
+#             matchesdx = np.concatenate((matchesdx, id_tuple[0]))
+#             matchesohx = np.concatenate((matchesohx, id_tuple[1]))
+#             matchesidx = np.concatenate((matchesidx, id_tuple[2]))
+    
+    if len(matchesdx) < 1:
         return None
-     
-    matchesdx, matchesohx, matchesidx = id_tuple
-    
-#     print('matchesdx: ' + str(matchesdx))
-#     print('matchesohx: ' + str(matchesohx))
-#     print('matchesidx: ' + str(matchesidx))
-#     raw_input('waiting')    
-     
+          
     p = np.polyfit(matchesohx, matchesdx, deg=1)
     # polyfit() returns highest power polynomial coefficient first, so p[0] is slope.
     disp = p[0]
@@ -559,7 +565,8 @@ def __residual(params, f, x, y):
     return np.ravel(a0 + a1 * x + a2 * x ** 2 + a3 * y + a4 * x * y + a5 * (x ** 2) * y - f)
 
 LOWER_LEN_POINTS = 10.0
-SIGMA_MAX = 0.3
+#SIGMA_MAX = 0.3
+SIGMA_MAX = 1.0
 MIN_N_LINES = 6
 
 def twodfit(dataX, dataY, dataZ):

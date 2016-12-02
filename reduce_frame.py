@@ -18,77 +18,63 @@ logger = logging.getLogger('obj')
 # main_logger = logging.getLogger('main')
 # main_logger = logging.getLogger('main')
 
-def reduce(raw, out_dir, flatCacher=None):
+def reduce_frame(raw, out_dir, flatCacher=None):
     """
-    raw - RawDataSet object
-    out_dir - data product root directory
+    
+    Arguments:
+        raw: RawDataSet object
+        out_dir: Data product root directory
+        
     """
          
     # initialize per-object logger and check output directory
-    init(raw.objFileName, out_dir)
+    if raw.isPair:
+        init(raw.baseNames['AB'], out_dir)
+    else:
+        init(raw.baseNames['A'], out_dir)
     
     # if no flats in raw data set then fail
-    if (len(raw.flatFileNames) < 1):
-        logger.error("no flats")
+    if (len(raw.flatFns) < 1):
+        logger.error("no flats for {}".format(raw.baseName))
         raise DrpException.DrpException('no flats');
     
     # create reduced data set
-    reduced = ReducedDataSet.ReducedDataSet(raw.getObjFileName(), raw.getObjHeader())
+    reduced = ReducedDataSet.ReducedDataSet(raw)
     
-    # save KOA IDs of first dark (if any) and flat(s), these are added
-    # to FITS headers later.
-    if len(raw.darkFileNames) > 0:
-        reduced.darkKOAId = raw.darkFileNames[0]
-    else:
-        reduced.darkKOAId = 'none'
-        
-    for flat_name in raw.flatFileNames:
-        reduced.flatKOAIds.append(flat_name[flat_name.rfind('/') + 1:flat_name.rfind('.')])
-        
+    # read raw object image data into reduced data set object
+    reduced.objImg['A'] = fits.getdata(raw.objAFn, ignore_missing_end=True)
+    
+    if raw.isPair:
+        reduced.objImg['B'] = fits.getdata(raw.objBFn, ignore_missing_end = True)
     
     # put object summary info into per-object log
     log_start_summary(reduced)
     
-    # read raw object data into reduced data set object
-    reduced.obj = fits.getdata(raw.objFileName, ignore_missing_end=True)
+    # Get fully processed flat in the form of a Flat object
+    reduced.Flat = getFlat(raw, flatCacher)
     
-    # combine flats and darks, if darks exist then subtract from obj and flat,
-    # store results in processed data set
-    #process_darks_and_flats(raw, reduced)
-    
-    # reduce flat
-    if flatCacher is None:
-        # in command line mode with only one flat
-        if config.params['no_cosmic']:
-            logger.info('cosmic ray rejection on flat inhibited by command line flat')
-            flat_data = fits.PrimaryHDU.readfrom(raw.flatFileNames[0], ignore_missing_end=True).data
-        else:
-            logger.info('starting cosmic ray cleaning flat')
-            flat_data = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
-                    raw.flatFileNames[0], ignore_missing_end=True).data)
-            logger.info('cosmic ray cleaning on flat complete')
-        
-        reduced.Flat = Flat.Flat(
-                raw.flatFileNames[0],
-                fits.PrimaryHDU.readfrom(raw.flatFileNames[0], ignore_missing_end=True).header, 
-                flat_data)
-    else:
-        reduced.Flat = flatCacher.getFlat(raw.flatFileNames)
-    
-    # clean cosmic ray hits on object frame
+    # clean cosmic ray hits on object frame(s)
     if config.params['no_cosmic']:
         logger.info("cosmic ray rejection on object frame inhibited by command line flag")
 
     else:
-        logger.info('starting cosmic ray cleaning object frame')
-        reduced.obj = image_lib.cosmic_clean(reduced.obj)
+        logger.info('cosmic ray cleaning object frame A')
+        reduced.objImg['A'] = image_lib.cosmic_clean(reduced.objImg['A'])
+        logger.debug('cosmic ray cleaning object frame A complete')
+        if reduced.isPair:
+            logger.info('cosmic ray cleaning object frame B')
+            reduced.objImg['B'] = image_lib.cosmic_clean(reduced.objImg['B'])
+            logger.debug('cosmic ray cleaning object frame B complete')
         reduced.cosmicCleaned = True 
-        logger.info('cosmic ray cleaning on object frame complete')
-        
+           
     # if darks are available, combine them if there are more than one
-    # and subtract from object and flat
+    # and subtract from object frame(s) and flat
     process_darks(raw, reduced)
     
+    # if AB pair then subtract B from A
+    if reduced.isPair:
+        reduced.objImg['AB'] = np.subtract(reduced.objImg['A'], reduced.objImg['B'])
+
     # reduce orders
     try:
         reduce_orders(reduced)
@@ -96,7 +82,7 @@ def reduce(raw, out_dir, flatCacher=None):
         # might want to do something else here
         raise
     
-    # find wavelength solution
+    # find and apply wavelength solution
     reload(wavelength_utils)
     if find_global_wavelength_soln(reduced) is True:
         apply_wavelength_soln(reduced)
@@ -109,9 +95,50 @@ def reduce(raw, out_dir, flatCacher=None):
     return(reduced)
  
  
-def reduce_orders(reduced):
+def getFlat(raw, flatCacher):
+    """Given a raw data set and a flat cacher, creates and returns a Flat object
+    
+    If there is no flat cacher, this means we are in command line mode where there is a single
+    flat and the flats are not reused.  In this case 1. the flat image data is read from the 
+    flat file specified in the raw data set, 2. unless cosmic ray rejection is inhibited
+    cosmic ray artifacts are removed from the flat, and 3. a Flat object is created from 
+    the flat image data.
+    
+    If there is a flat cacher then a possibly cached Flat object is retrieved from it.
+    
+    Note that in either case, the Flat object represents a fully reduced flat, with orders on
+    the flat identified, traced, cut out and rectified.
+    
+    Args:
+        raw: A RawDataSet object containing, among other things, one or more flat file names
+        flatCacher: A FlatCacher object or None 
+        
+    Returns:
+        A Flat object
+    
     """
-    Successively reduces each order in the frame.  
+    
+    if flatCacher is None:
+        # in command line mode with only one flat
+        if config.params['no_cosmic']:
+            logger.info('cosmic ray rejection on flat inhibited by command line flag')
+            flat_data = fits.PrimaryHDU.readfrom(raw.flatFns[0], ignore_missing_end=True).data
+        else:
+            logger.info('starting cosmic ray cleaning flat')
+            flat_data = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
+                    raw.flatFns[0], ignore_missing_end=True).data)
+            logger.info('cosmic ray cleaning on flat complete')
+        
+        return(Flat.Flat(
+                raw.flatFns[0],
+                fits.PrimaryHDU.readfrom(raw.flatFns[0], ignore_missing_end=True).header, 
+                flat_data))
+    else:
+        return(flatCacher.getFlat(raw.flatFns)) 
+     
+ 
+def reduce_orders(reduced):
+    """Reduces each order in the frame.  
     
     Starting order is determined from a lookup table indexed by filter name.
     
@@ -138,29 +165,20 @@ def reduce_orders(reduced):
         
         logger.info('***** order ' + str(flatOrder.orderNum) + ' *****')
             
-        order = Order.Order(reduced.baseName, flatOrder.orderNum)
-            
-        order.objCutout = np.array(image_lib.cut_out(reduced.obj, 
-                flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))
+        order = Order.Order(reduced.frames, reduced.baseNames, flatOrder)
+        
+        order.isPair = reduced.isPair
+        
+        for frame in order.frames:
+            order.objCutout[frame] = np.array(image_lib.cut_out(reduced.objImg[frame], 
+                    flatOrder.highestPoint, flatOrder.lowestPoint, flatOrder.cutoutPadding))  
         
         order.integrationTime = reduced.getIntegrationTime() # used in noise calc
-        order.gratingEqWaveScale = flatOrder.gratingEqWaveScale
-        #order.wavelengthScaleMeas = flatOrder.waveScaleCalc
-        order.topTrace = flatOrder.topEdgeTrace
-        order.botTrace = flatOrder.botEdgeTrace
-        order.avgTrace = flatOrder.avgEdgeTrace
-        order.smoothedTrace = flatOrder.smoothedSpatialTrace
-        order.traceMask = flatOrder.spatialTraceMask
-        order.flatCutout = flatOrder.cutout
-        order.highestPoint = flatOrder.highestPoint
-        order.lowestPoint = flatOrder.lowestPoint
-        order.padding = flatOrder.cutoutPadding
-        order.botMeas = flatOrder.botMeas
             
         try:
             
             # reduce order, i.e. rectify, extract spectra, identify sky lines
-            reduce_order.reduce_order(order, flatOrder)
+            reduce_order.reduce_order(order)
     
             # add reduced order to list of reduced orders in Reduced object
             reduced.orders.append(order)                      
@@ -184,14 +202,14 @@ def reduce_orders(reduced):
         return
     
     for l in loggers:
-        reduced.snrMean = sum(reduced.orders[i].snr for i in range(len(reduced.orders))) / \
+        reduced.snrMean = sum(reduced.orders[i].snr['A'] for i in range(len(reduced.orders))) / \
                 len(reduced.orders)
         logging.getLogger(l).log(INFO, 'mean signal-to-noise ratio = {:.1f}'.format(
                 reduced.snrMean))
     
     snr = []
     for i in range(len(reduced.orders)):
-        snr.append(reduced.orders[i].snr)
+        snr.append(reduced.orders[i].snr['A'])
     
     for l in loggers:
         reduced.snrMin = np.amin(snr)
@@ -199,7 +217,7 @@ def reduce_orders(reduced):
                 reduced.snrMin))
     
         try:
-            reduced.wMean = sum(abs(reduced.orders[i].gaussianParams[2]) \
+            reduced.wMean = sum(abs(reduced.orders[i].gaussianParams['A'][2]) \
                     for i in range(len(reduced.orders))) /  len(reduced.orders)
             logging.getLogger(l).log(INFO, 'mean spatial peak width = {:.1f} pixels'.format(
                     reduced.wMean))
@@ -208,8 +226,8 @@ def reduce_orders(reduced):
     
         w = []
         for i in range(len(reduced.orders)):
-            if reduced.orders[i].gaussianParams is not None:
-                w.append(reduced.orders[i].gaussianParams[2])
+            if reduced.orders[i].gaussianParams['A'] is not None:
+                w.append(reduced.orders[i].gaussianParams['A'][2])
         try:
             reduced.wMax = np.amax(w)
             logging.getLogger(l).log(INFO, 'maximum spatial peak width = {:.1f} pixels'.format(
@@ -230,7 +248,7 @@ def find_global_wavelength_soln(reduced):
         loggers.append('main')
         
     # create arrays of col, 1/order, accepted wavelength
-    # in future will modify twodfit() to take list of lines rather than these constructed arrays
+    # TODO: modify twodfit() to take list of lines rather than these constructed arrays
     col = []
     centroid = []
     order_inv = []
@@ -240,7 +258,7 @@ def find_global_wavelength_soln(reduced):
         for line in order.lines:
             col.append(line.col)
             centroid.append(line.centroid)
-            order_inv.append(1.0 / order.orderNum)
+            order_inv.append(1.0 / order.flatOrder.orderNum)
             accepted.append(line.waveAccepted)
             
     reduced.nLinesFound = len(col)
@@ -259,7 +277,6 @@ def find_global_wavelength_soln(reduced):
             np.asarray(accepted, dtype='float32'))    
     
     if wave_fit is None:
-#         raise DrpException.DrpException('cannot find wavelength solution')
         reduced.frameCalAvailable = False
         return False
     
@@ -278,9 +295,8 @@ def find_global_wavelength_soln(reduced):
         for order in reduced.orders:
             for line in order.lines:
                 if abs(line.waveAccepted - exp) <= 0.1:
-#                     print(str(line.acceptedWavelength) + " = " + str(exp))
                     line.frameFitOutlier = False
-                    line.frameFitWave = wave_fit[i]
+                    line.frameWaveFit = wave_fit[i]
                     found = True
                     break;
             if found:
@@ -297,13 +313,8 @@ def find_global_wavelength_soln(reduced):
                 line.frameFitSlope = \
                         reduced.frameCalCoeffs[1] + \
                         (2.0 * reduced.frameCalCoeffs[2] * line.col) + \
-                        (reduced.frameCalCoeffs[4] / order.orderNum) + \
-                        (2.0 * reduced.frameCalCoeffs[5] * line.col / order.orderNum)  
-    
-#     print('coeffs: ' + str(reduced.coeffs))
-#     print('wave_fit: ' + str(wave_fit))
-#     print('wave_exp: ' + str(wave_exp))
-#     raw_input('waiting')
+                        (reduced.frameCalCoeffs[4] / order.flatOrder.orderNum) + \
+                        (2.0 * reduced.frameCalCoeffs[5] * line.col / order.flatOrder.orderNum)  
     
     return True
 
@@ -314,7 +325,7 @@ def apply_wavelength_soln(reduced):
     
     for order in reduced.orders:
         x = np.arange(1024)
-        y = 1.0 / order.orderNum
+        y = 1.0 / order.flatOrder.orderNum
         order.frameCalWaveScale = np.ravel(
                 reduced.frameCalCoeffs[0] +
                 reduced.frameCalCoeffs[1] * x +
@@ -329,14 +340,15 @@ def apply_wavelength_soln(reduced):
             order.waveScale = order.frameCalWaveScale
             order.calMethod = 'frame sky line cal'
         else:
-            logger.warning('wavelength scale not monotonic for order {}'.format(order.orderNum))
+            logger.warning('wavelength scale not monotonic for order {}'.format(
+                    order.flatOrder.orderNum))
             logger.warning('using theoretical wavelength scale ')
-            order.waveScale = order.gratingEqWaveScale
+            order.waveScale = order.flatOrder.gratingEqWaveScale
             order.calMethod = 'grating equation'
                    
     return
     
-def init(objFileName, out_dir):
+def init(baseName, out_dir):
     """
     Sets up per-object logger
     
@@ -356,7 +368,8 @@ def init(objFileName, out_dir):
     if config.params['cmnd_line_mode'] is True:
         fn = out_dir + '/nsdrp.log'
     else:
-        fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
+        #fn = out_dir + '/' + objFileName[objFileName.find("NS"):].rstrip('.gz').rstrip('.fits')  + '.log'
+        fn = out_dir + '/' + baseName  + '.log'
 
     if config.params['subdirs'] is False and config.params['cmnd_line_mode'] is False:
         parts = fn.split('/')
@@ -390,6 +403,10 @@ def init(objFileName, out_dir):
         return    
 
 def log_start_summary(reduced):
+    """
+    """
+    #TODO: structure and format this like nsdrp_cmnd.write_summary()
+    
     logger.info('nsdrp version {}'.format(nsdrp.VERSION))
     
     loggers = ['obj']
@@ -397,65 +414,36 @@ def log_start_summary(reduced):
         loggers.append('main')
 
     for l in loggers:
-        logging.getLogger(l).log(INFO, 'starting reduction of ' + reduced.baseName)
-#           #reduced.getFileName()[reduced.getFileName().rfind('/') + 1:].rstrip('.gz').rstrip('.fits'))
-        logging.getLogger(l).log(INFO, '   time of observation = ' + 
+        if reduced.isPair:
+            baseName = reduced.baseNames['AB']
+        else:
+            baseName = reduced.baseNames['A']
+        logging.getLogger(l).log(INFO, 'starting reduction of ' + baseName)
+        logging.getLogger(l).log(INFO, 'time of observation = ' + 
                 str(reduced.getDate()) + ' ' + str(reduced.getTime() + ' UT'))
-        logging.getLogger(l).log(INFO, '           target name = ' + str(reduced.getTargetName()))
-        logging.getLogger(l).log(INFO, '           filter name = ' + str(reduced.getFullFilterName()))
-        logging.getLogger(l).log(INFO, '             slit name = ' + str(reduced.getSlit()))
-        logging.getLogger(l).log(INFO, '      integration time = ' + str(reduced.getITime()) + ' sec')
-        logging.getLogger(l).log(INFO, '              n coadds = ' + str(reduced.getNCoadds()))
-    logger.info('        echelle angle = ' + str(reduced.getEchPos()) + ' deg')
+        logging.getLogger(l).log(INFO, 'target name = ' + str(reduced.getTargetName()))
+        logging.getLogger(l).log(INFO, 'filter name = ' + str(reduced.getFullFilterName()))
+        logging.getLogger(l).log(INFO, 'slit name = ' + str(reduced.getSlit()))
+        logging.getLogger(l).log(INFO, 'integration time = ' + str(reduced.getITime()) + ' sec')
+        logging.getLogger(l).log(INFO, 'n coadds = ' + str(reduced.getNCoadds()))
+    logger.info('echelle angle = ' + str(reduced.getEchPos()) + ' deg')
     logger.info('cross disperser angle = ' + str(reduced.getDispPos()) + ' deg')
     return
 
-def process_darks_and_flats(raw, reduced):
-    
-    # combine flats and darks
-    logger.info(str(len(raw.flatFileNames)) + ' flats: ' + 
-            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
-    reduced.flat = raw.combineFlats()
-    if len(raw.flatFileNames) > 1:
-        logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
-
-    if len(raw.darkFileNames) > 0:
-        reduced.hasDark = True
-        logger.info(str(len(raw.darkFileNames)) + ' darks: ' + 
-            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.darkFileNames])))
-        reduced.dark = raw.combineDarks()
-        if len(raw.darkFileNames) > 1:
-            logger.info(str(len(raw.darkFileNames)) + ' darks have been median combined')
-    else:
-        logger.info('no darks')
-
-    # if dark(s) exist, subtract from obj and flat
-    if reduced.hasDark:
-        reduced.subtractDark()
-        logger.info('dark subtracted from obj and flat')
-        
-    return
-    
-def process_flats(raw, reduced):
-    
-    # combine flats and darks
-    logger.info(str(len(raw.flatFileNames)) + ' flats: ' + 
-            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.flatFileNames])))
-    reduced.flat = raw.combineFlats()
-    if len(raw.flatFileNames) > 1:
-        logger.info(str(len(raw.flatFileNames)) + ' flats have been median combined')
-        
-    return
-
 def process_darks(raw, reduced):
+    """
+    
+    """
+    
+    #TODO if there are < 3 darks should cosmic clean
 
-    if len(raw.darkFileNames) > 0:
+    if len(raw.darkFns) > 0:
         reduced.hasDark = True
-        logger.info(str(len(raw.darkFileNames)) + ' darks: ' + 
-            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.darkFileNames])))
+        logger.info(str(len(raw.darkFns)) + ' darks: ' + 
+            ', '.join(str(x) for x in ([s[s.find("NS"):s.rfind(".")] for s in raw.darkFns])))
         reduced.dark = raw.combineDarks()
-        if len(raw.darkFileNames) > 1:
-            logger.info(str(len(raw.darkFileNames)) + ' darks have been median combined')
+        if len(raw.darkFns) > 1:
+            logger.info(str(len(raw.darkFns)) + ' darks have been median combined')
     else:
         logger.info('no darks')
 

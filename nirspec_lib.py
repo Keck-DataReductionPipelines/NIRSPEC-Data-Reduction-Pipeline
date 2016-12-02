@@ -165,7 +165,7 @@ def find_spectral_trace(data):
     # indices in s or peaks
     maxes = np.array(maxima_c[0][locmaxes[0]])
     
-    logger.info('n sky lines peaks with intensity > {:.0f} = {}'.format(
+    logger.info('n sky line peaks with intensity > {:.0f} = {}'.format(
             SKY_SIGMA * s.mean(), len(maxes)))
 
     deletelist = []

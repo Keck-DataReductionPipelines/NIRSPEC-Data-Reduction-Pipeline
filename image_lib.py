@@ -1,7 +1,8 @@
 import numpy as np
 import scipy.ndimage as ndimage
-from skimage.feature.peak import peak_local_max
+#from skimage.feature.peak import peak_local_max
 import cosmics
+#from __builtin__ import None
 
 
 def rectify_spatial(data, curve):
@@ -126,59 +127,56 @@ def cosmic_clean(data):
     return(c.cleanarray)
 
 
-# EXT_WINDOW = 8
-# SKY_WINDOW = 8
-# SKY_DISTANCE = 2
-
 def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
     """
-
+    This function was modified so it can be used to define object window only or object and sky 
+    windows.  If sky_w and sky_dist are None then only image window pixel list is computed and
+    returned.
+    
+    Truncate windows that extend beyond top or bottom of order.
+    
+    Args:
+        image_width:
+        peak_location:
+        obj_w:
+        sky_w:
+        sky_dist:
+        
+    Returns:
+        three element tuple consisting of:
+            0: Extraction range list.
+            1: Top sky range list or None.
+            2: Bottom sky range list or None.
     """
+    
     if obj_w % 2:
         ext_range = np.array(range(int((1 - obj_w) / 2.0), int((obj_w + 1) / 2.0))) + peak_location
     else:  
         ext_range = np.array(range((-obj_w) / 2, obj_w / 2)) + peak_location
-
-    sky_range_top = np.array(range(ext_range[-1] + sky_dist, 
-                          ext_range[-1] + sky_dist + sky_w))
-    sky_range_bot = np.array(range(ext_range[0] - sky_dist - sky_w + 1,
-                          ext_range[0] - sky_dist + 1))
-        
     ext_range = np.ma.masked_less(ext_range, 0).compressed()
-    sky_range_top = np.ma.masked_less(sky_range_top, 0).compressed()
-    sky_range_bot = np.ma.masked_less(sky_range_bot, 0).compressed()
-    
     ext_range = np.ma.masked_greater_equal(ext_range, image_width).compressed()
-    sky_range_top = np.ma.masked_greater_equal(sky_range_top, image_width).compressed()
-    sky_range_bot = np.ma.masked_greater_equal(sky_range_bot, image_width).compressed()
+    ext_range_list = ext_range.tolist()
 
-#     if ((peak_location + sky_range_bot[-1] + 1) > image_width) or \
-#             ((peak_location + sky_range_bot[0]) < 0):
-# 
-#         sky_distance = min(peak_location - sky_range_bot, image_width - peak_location)
-#         sky_height = 2
-# 
-#         if ext_range[0] - sky_distance + 1 < image_width:
-#             sky_range_bot = range(ext_range[0] - sky_distance - sky_height + 1, 
-#                     ext_range[0] - sky_distance + 1)
-#         else:
-#             sky_range_bot = None
-# 
-#     if (peak_location + sky_range_top[-1] + 1) > image_width:
-#         sky_distance = 1
-#         sky_height = 4
-#         if peak_location + 1 + 4 < image_width:
-#             sky_range_top = range(ext_range[-1] + 1, ext_range[-1] + 1 + 4)
-#         else:
-#             sky_range_top = None
-# 
-#     if image_width - peak_location < 2 or peak_location < 3:
-#         return None, None, None
+
+    if sky_w is not None and sky_dist is not None:
+        sky_range_top = np.array(range(ext_range[-1] + sky_dist, ext_range[-1] + sky_dist + sky_w))
+        sky_range_top = np.ma.masked_less(sky_range_top, 0).compressed()
+        sky_range_top = np.ma.masked_greater_equal(sky_range_top, image_width).compressed()
+        sky_range_top_list = sky_range_top.tolist()
     
-    return ext_range.tolist(), sky_range_top.tolist(), sky_range_bot.tolist()
+        sky_range_bot = np.array(range(ext_range[0] - sky_dist - sky_w + 1,
+                ext_range[0] - sky_dist + 1))
+        sky_range_bot = np.ma.masked_less(sky_range_bot, 0).compressed()
+        sky_range_bot = np.ma.masked_greater_equal(sky_range_bot, image_width).compressed()
+        sky_range_bot_list = sky_range_bot.tolist()
+    else:
+        sky_range_top_list = None
+        sky_range_bot_list = None
+    
+    return ext_range_list, sky_range_top_list, sky_range_bot_list
 
 
-# def extract_spectra(obj, noise, peak, obj_range, sky_range_top, sky_range_bot):
+   
 def extract_spectra(obj, flat, noise, obj_range, sky_range_top, sky_range_bot):
     
     """

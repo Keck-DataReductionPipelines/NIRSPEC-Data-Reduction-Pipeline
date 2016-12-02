@@ -91,7 +91,7 @@ class Flat:
             
             self.logger.info('***** flat order {} *****'.format(orderNum))
 
-            flatOrder = FlatOrder.FlatOrder(orderNum, self.logger)
+            flatOrder = FlatOrder.FlatOrder(self.baseName, orderNum, self.logger)
             
             # get expected location of order on detector
             flatOrder.topCalc, flatOrder.botCalc, flatOrder.gratingEqWaveScale = self.gratingEq.evaluate(

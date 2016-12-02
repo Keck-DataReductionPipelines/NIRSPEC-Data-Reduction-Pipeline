@@ -1,31 +1,80 @@
 import numpy as np
-import image_lib
+# import image_lib
 
-import Flat
+# import Flat
 
 class ReducedDataSet:
+    """This class represents a reduced data set consisting of object, flat and dark file names
+    and image data, a reduced flat, a list of reduced orders, and various other attributes
+    describing the data set and reduction results.
     
-    def __init__(self, fileName, header):
+    In the psuedo object oriented design of the NSDRP classes are used primarily as data 
+    structures and include only trivial methods.  Objects of this class are operated on
+    primarily by functions in the reduce_frame module.
+    
+    Attributes:
+        baseName:
+        header:
+        pair:
+        hasDark:
+        darkKOAId:
+        flatKOAIds:
+        darkSubtracted:
+        cosmicCleaned:
+        objA:
+        objB:
+        objAB:
+        nOrders:
+        nOrdersReduced:
+        snrMean:
+        snrMin:
+        wMean:
+        wMax:
+        orders:
+        nLinesFound:
+        nLinesUsed:
+        frameCalAvailable:
+        frameCalRmsRes:
+        frameCalCoeffs:
+        calFrame:
+        Flat:
+    
+    """
+    
+    def __init__(self, raw):
                 
-        self.fileName = fileName
-        if fileName.find('NS.') == 0:
-            self.baseName = fileName[fileName.find('NS'):].rstrip('.gz').rstrip('.fits')
-        else:
-            if fileName.find('/') >= 0:
-                self.baseName = fileName[fileName.rfind('/')+1:fileName.lower().find('.fits')]
-            else:
-                self.baseName = fileName[:fileName.lower().find('.fits')]
-        self.header = header
-       
-        self.hasDark = False
-        self.darkKOAId = None
-        self.flatKOAIds = []
-        self.darkSubtracted = False
-        self.cosmicCleaned = False;
+        self.baseNames = raw.baseNames
+        self.header = raw.objHeader
+        self.isPair = raw.isPair
         
-        self.obj = np.zeros(self.getShape())
-        self.flat = np.zeros(self.getShape())
-        self.dark = np.zeros(self.getShape())
+        if self.isPair:
+            self.frames = ['A', 'B', 'AB']
+        else:
+            self.frames = ['A']
+            
+            
+        self.objImg = {}
+        for frame in self.frames:
+            self.objImg[frame] = np.zeros(self.getShape())
+            
+        # save KOA IDs of first dark (if any) and flat(s), these are added
+        # to FITS headers later.
+        if len(raw.darkFns) > 0:
+            self.darkKOAId = raw.darkFns[0]
+        else:
+            self.darkKOAId = 'none'
+            
+        self.flatKOAIds = []
+        for flat_name in raw.flatFns:
+            self.flatKOAIds.append(flat_name[flat_name.rfind('/') + 1:flat_name.rfind('.')])
+        
+        self.hasDark = False
+        self.darkSubtracted = False
+        self.cosmicCleaned = False
+        
+
+        self.flatImg = np.zeros(self.getShape())
+        self.darkImg = np.zeros(self.getShape())
         
         self.nOrders = 0
         self.nOrdersReduced = 0
@@ -47,6 +96,11 @@ class ReducedDataSet:
         
         self.Flat = None
         
+    def getBaseName(self):
+        if self.isPair:
+            return(self.baseNames['AB'])
+        else:
+            return(self.baseNames['A'])
         
     def getFileName(self):
         return self.fileName
@@ -99,7 +153,9 @@ class ReducedDataSet:
     
     def subtractDark(self):   
         if self.hasDark:
-            self.obj  = np.subtract(self.obj, self.dark)
+            self.objA  = np.subtract(self.objA, self.dark)
+            if self.isPair:
+                self.objB = np.subtract(self.objB, self.dark)
             self.flat = np.subtract(self.flat, self.dark)
             self.darkSubtracted = True
             

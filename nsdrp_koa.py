@@ -45,8 +45,9 @@ def process_dir(in_dir, base_out_dir):
     for rawDataSet in rawDataSets:
         
         # determine the output directory to use for this frame
-        out_dir = get_out_dir(rawDataSet.objFileName, base_out_dir);
-        
+        #out_dir = get_out_dir(rawDataSet.objAFn, base_out_dir);
+        out_dir = get_out_dir(rawDataSet.baseNames['A'], base_out_dir);
+
         if nirspecConfig is None:
             nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
         else:
@@ -65,7 +66,7 @@ def process_dir(in_dir, base_out_dir):
                     nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
             
         try:
-            reducedDataSets.append(reduce_frame.reduce(rawDataSet, out_dir, flatCacher))  
+            reducedDataSets.append(reduce_frame.reduce_frame(rawDataSet, out_dir, flatCacher))  
         except DrpException as e:
             n_reduced -= 1
             logger.error('failed to reduce {}: {}'.format(
@@ -105,12 +106,12 @@ def gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr):
         logger.info('data product generation inhibited by command line switch')
     else:
         for reducedDataSet in reducedDataSets:
-            products.gen(reducedDataSet, get_out_dir(reducedDataSet.fileName, base_out_dir))
+            products.gen(reducedDataSet, get_out_dir(reducedDataSet.getBaseName(), base_out_dir))
 
     if config.params['dgn'] is True:
         logger.info('diagnostic mode enabled, generating diagnostic data products')
         for reducedDataSet in reducedDataSets:
-            dgn.gen(reducedDataSet, get_out_dir(reducedDataSet.fileName, base_out_dir))    
+            dgn.gen(reducedDataSet, get_out_dir(reducedDataSet.getBaseName(), base_out_dir))    
             
     for reducedDataSet in reducedDataSets:
         append_to_summary_ss(reducedDataSet, ssFptr)    
@@ -130,7 +131,7 @@ def mcal(reducedDataSets):
             break
         
     if allCalibrated is True:
-        logger.info('all frame have been calibrated, no adjacent frame calibration required')
+        logger.info('all frames have been calibrated, no adjacent frame calibration required')
         return
     
     coeffs = None
@@ -159,14 +160,13 @@ def mcal(reducedDataSets):
     return
         
         
-def get_out_dir(fn, base_out_dir):
+def get_out_dir(baseName, base_out_dir):
     
     if config.params['subdirs'] is True:
-        fn = fn.rstrip('.gz').rstrip('.fits')
         if config.params['shortsubdir']:
-            out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
+            out_dir = base_out_dir + '/' + baseName[baseName.find('.') + 1 :]
         else:
-            out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
+            out_dir = base_out_dir + '/' + baseName
     else:
         out_dir = base_out_dir   
              
@@ -179,6 +179,27 @@ def get_out_dir(fn, base_out_dir):
             raise IOError(msg)
         
     return(out_dir)
+
+# def get_out_dir(fn, base_out_dir):
+#     
+#     if config.params['subdirs'] is True:
+#         fn = fn.rstrip('.gz').rstrip('.fits')
+#         if config.params['shortsubdir']:
+#             out_dir = base_out_dir + '/' + fn[fn[:fn.rfind('.')].rfind('.')+1:]
+#         else:
+#             out_dir = base_out_dir + '/' + fn[fn.rfind('/'):]
+#     else:
+#         out_dir = base_out_dir   
+#              
+#     if not os.path.exists(out_dir):
+#         try: 
+#             os.mkdir(out_dir)
+#         except: 
+#             msg = 'output directory {} does not exist and cannot be created'.format(out_dir)
+#             # logger.critical(msg) can't create log if no output directory
+#             raise IOError(msg)
+#         
+#     return(out_dir)
 
 def start_summary_ss(in_dir, out_dir):
     """
@@ -218,7 +239,7 @@ def start_summary_ss(in_dir, out_dir):
 
 def append_to_summary_ss(reduced, ssFptr):
     v = []
-    v.append(('{}', reduced.baseName))
+    v.append(('{}', reduced.getBaseName()))
     v.append(('{}', reduced.getDate()))
     v.append(('{}', reduced.getTime()))
     v.append(('{}', reduced.getTargetName()))

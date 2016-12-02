@@ -1,6 +1,6 @@
 import matplotlib
 
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
     
 import pylab as pl
 import logging
@@ -80,7 +80,7 @@ def gen(reduced, out_dir):
     Given a ReducedDataSet object and a root output directory, generate all
     data products and store results in output directory and subdirectories.
     """
-    obj_logger.info('generating data products for {}...'.format(reduced.baseName))
+    obj_logger.info('generating data products for {}...'.format(reduced.getBaseName()))
     
     file_count[0] = 0
     
@@ -110,9 +110,9 @@ def gen(reduced, out_dir):
     for i in range(len(reduced.flatKOAIds)):
         header['FLAT' + str(i)] = (reduced.flatKOAIds[i], 'KOAID of flat {}'.format(i))
     
-    
-    # per frame data products
-    # -----------------------
+    #
+    # produce per-frame data products
+    # 
     
     # construct arrays for global wavelength cal table
     order_num = []
@@ -127,7 +127,7 @@ def gen(reduced, out_dir):
     for order in reduced.orders:
         for line in order.lines:
             if line.frameFitOutlier == False:
-                order_num.append(order.orderNum)
+                order_num.append(order.flatOrder.orderNum)
                 col.append(line.centroid)
                 source.append('sky')
                 wave_exp.append(line.waveAccepted)
@@ -139,94 +139,168 @@ def gen(reduced, out_dir):
     # global wavelength cal tables
     
     wavelengthCalAsciiTable(
-            out_dir, reduced.baseName, order_num, col, source, wave_exp, wave_fit, res, peak, slope)
+            out_dir, reduced.getBaseName(), order_num, col, source, wave_exp, wave_fit, res, peak, slope)
     
     wavelengthCalFitsTable(
-            out_dir, reduced.baseName, order_num, col, source, 
+            out_dir, reduced.getBaseName(), order_num, col, source, 
             wave_exp, wave_fit, res, peak, slope)
  
-            
-    # per order data products
+    #       
+    # produce per-order data products
+    #
     
     for order in reduced.orders:
             
         # extend header further with per-order data
-        header['FLATSCAL'] = (round(order.flatMean, 5), 'flat field normalization scale factor')
-        header['ECHLORD'] = (order.orderNum, 'Echelle order number')
-        header['OBJEXTRW'] = (len(order.objWindow), 'width of object extraction window in pixels')
-        header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
-                              'width of sky subtraction window in pixels')
-
-        if len(order.topSkyWindow) > 0:
-            header['SKYDIST'] = (order.topSkyWindow[0] - order.objWindow[-1], )
+        header['FLATSCAL'] = (round(order.flatOrder.mean, 5), 
+                'flat field normalization scale factor')
+        header['ECHLORD'] = (order.flatOrder.orderNum, 
+                'Echelle order number')
+        if order.isPair:
+            obj_window_w = len(order.objWindow['AB'])
         else:
-            header['SKYDIST'] = (order.objWindow[0] - order.botSkyWindow[-1], )
+            obj_window_w = len(order.objWindow['A'])
+
+        header['OBJEXTRW'] = (obj_window_w, 'width of object extraction window in pixels')
+         
+        if order.isPair:
+            centroid = order.centroid['AB']
+            header['ORDERSNR'] = (round(order.snr['AB'], 3), 
+                    'signal-to-noise ratio for order')
+        else:
+            centroid = order.centroid['A']
+            header['ORDERSNR'] = (round(order.snr['A'], 3), 
+                    'sign-to-noise ratio for order')
+            header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
+                    'width of sky subtraction window in pixels')
+            if len(order.topSkyWindow) > 0:
+                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], )
+            else:
+                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], )    
+                      
+        header['PROFPEAK'] = (round(centroid, 3), 'fractional row number of profile peak')
             
-        header['PROFPEAK'] = (round(order.centroid, 3), 'fractional row number of profile peak')
-        header['ORDERSNR'] = (round(order.snr, 3), 'sign-to-noise ratio for order')
 
-        fluxAsciiTable(out_dir, reduced.baseName, order.orderNum, order.waveScale, 
-                order.objSpec, order.skySpec, order.synthesizedSkySpec, 
-                np.absolute(order.objSpec/order.noiseSpec),
-                order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
-                order.smoothedTrace, order.smoothedTrace - order.avgTrace)
-             
-        fluxFitsTable(out_dir, reduced.baseName, order.orderNum, order.waveScale, 
-                order.objSpec, order.skySpec, order.synthesizedSkySpec, order.noiseSpec,
-                order.flatSpec, order.topTrace, order.botTrace, order.avgTrace, 
-                order.smoothedTrace, order.smoothedTrace - order.avgTrace)
-                
-        tracePlot(out_dir, reduced.baseName, order.orderNum, order.avgTrace, 
-                order.smoothedTrace, order.traceMask)
+        #
+        # flux ASCII and FITS tables
+        #
+        if order.isPair:
+            obj_spec = order.objSpec['AB']
+            noise_spec = order.noiseSpec['AB']
+            snr_spec = np.absolute(order.objSpec['AB'] / order.noiseSpec['AB'])
+        else:
+            obj_spec = order.objSpec['A']
+            noise_spec = order.noiseSpec['A']
+            snr_spec = np.absolute(order.objSpec['A'] / order.noiseSpec['A'])
+            
+        fluxAsciiTable(out_dir, reduced.getBaseName(), order.flatOrder.orderNum, order.waveScale, 
+                obj_spec, order.skySpec['A'], order.synthesizedSkySpec, snr_spec,
+                order.flatSpec, order.flatOrder.topEdgeTrace, order.flatOrder.botEdgeTrace, 
+                order.flatOrder.avgEdgeTrace, order.flatOrder.smoothedSpatialTrace, 
+                order.flatOrder.smoothedSpatialTrace - order.flatOrder.avgEdgeTrace)
+              
+        fluxFitsTable(out_dir, reduced.getBaseName(), order.flatOrder.orderNum, order.waveScale, 
+                obj_spec, order.skySpec['A'], order.synthesizedSkySpec, noise_spec,
+                order.flatSpec, order.flatOrder.topEdgeTrace, order.flatOrder.botEdgeTrace, 
+                order.flatOrder.avgEdgeTrace, order.flatOrder.smoothedSpatialTrace, 
+                order.flatOrder.smoothedSpatialTrace - order.flatOrder.avgEdgeTrace)
+
+        #
+        # spatial trace plots
+        # 
+        tracePlot(out_dir, reduced.getBaseName(), order.flatOrder.orderNum, order.flatOrder.avgEdgeTrace, 
+                order.flatOrder.smoothedSpatialTrace, order.flatOrder.spatialTraceMask)
      
-        traceFits(out_dir, reduced.baseName, order.orderNum, order.avgTrace)
+        traceFits(out_dir, reduced.getBaseName(), order.flatOrder.orderNum, order.flatOrder.avgEdgeTrace)
         
-        profilePlot(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, 
-            order.peakLocation, order.centroid, order.objWindow, order.topSkyWindow, 
-            order.botSkyWindow, order.topBgMean, order.botBgMean, order.gaussianParams, order.snr)
-         
-        profileAsciiTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
-         
-        profileFitsTable(out_dir, reduced.baseName, order.orderNum, order.spatialProfile)
+        #
+        # spatial profile per order plot, tables and 1-d FITS file
+        #
+        for frame in order.frames:
+ 
+            if frame == 'AB':
+                topSkyWindow = None
+                botSkyWindow = None
+                topBgMean = None
+                botBgMean = None
+            else:
+                topSkyWindow = order.topSkyWindow[frame]
+                botSkyWindow = order.botSkyWindow[frame]
+                topBgMean = order.topBgMean[frame]
+                botBgMean = order.botBgMean[frame]
+            
+            profilePlot(out_dir, reduced.baseNames[frame], order.flatOrder.orderNum, 
+                    order.spatialProfile[frame], order.peakLocation[frame], order.centroid[frame], 
+                    order.objWindow[frame], topSkyWindow, botSkyWindow, topBgMean, botBgMean, 
+                    order.gaussianParams[frame], order.snr[frame])
+                
+            profileAsciiTable(out_dir, reduced.baseNames[frame], order.flatOrder.orderNum, 
+                    order.spatialProfile[frame])
+             
+            profileFitsTable(out_dir, reduced.baseNames[frame], order.flatOrder.orderNum, 
+                    order.spatialProfile[frame])
+            
+            profileFits(out_dir, reduced.baseNames[frame], order.flatOrder.orderNum, 
+                    order.spatialProfile[frame], header)
+            
+
+        #
+        # flux spectrum plot and 1-d FITS file
+        #   
+        for frame in reduced.frames:
+            
+            spectrumPlot(out_dir, reduced.baseNames[frame], 'flux', order.flatOrder.orderNum, 
+                'counts', order.objSpec[frame], order.waveScale, order.calMethod)
+             
+            fitsSpectrum(out_dir, reduced.baseNames[frame], 'flux', order.flatOrder.orderNum, 
+                'counts', order.objSpec[frame], order.waveScale, header)
+
+        #
+        # sky spectrum plot and 1-d FITS file
+        #
+        if reduced.isPair:
+            frames = ['A', 'B']
+        else:
+            frames = ['A']
         
-        profileFits(out_dir, reduced.baseName, order.orderNum, order.spatialProfile, header)
-
-        spectrumPlot(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.waveScale, order.calMethod)
-         
-        fitsSpectrum(out_dir, reduced.baseName, 'flux', order.orderNum, 
-            'counts', order.objSpec, order.waveScale, header)
-
-        spectrumPlot(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.waveScale, order.calMethod)
+        for frame in frames:
+            spectrumPlot(out_dir, reduced.baseNames[frame], 'sky', order.flatOrder.orderNum, 
+                'counts', order.skySpec[frame], order.waveScale, order.calMethod)
+    
+            fitsSpectrum(out_dir, reduced.baseNames[frame], 'sky', order.flatOrder.orderNum, 
+                'counts', order.skySpec[frame], order.waveScale, header)
         
-#         skyLinesPlot(out_dir, reduced.baseName, order)
-#         skyLinesAsciiTable(out_dir, reduced.baseName, order)
+        #
+        # noise spectrum
+        #
+        for frame in reduced.frames:
 
-        fitsSpectrum(out_dir, reduced.baseName, 'sky', order.orderNum, 
-            'counts', order.skySpec, order.waveScale, header)
-
-        spectrumPlot(out_dir, reduced.baseName, 'snr', order.orderNum, 
-            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, order.calMethod)
-         
-        fitsSpectrum(out_dir, reduced.baseName, 'snr', order.orderNum, 
-            '', np.absolute(order.objSpec/order.noiseSpec), order.waveScale, header)
-
-#         multiSpectrumPlot(out_dir, reduced.baseName, order.orderNum, 
-#             'counts', order.objSpec, order.skySpec, order.noiseSpec, wavelength_scale)
+            spectrumPlot(out_dir, reduced.baseNames[frame], 'snr', order.flatOrder.orderNum, 
+                '', np.absolute(order.objSpec[frame]/order.noiseSpec[frame]), order.waveScale, 
+                order.calMethod)
+              
+            fitsSpectrum(out_dir, reduced.baseNames[frame], 'snr', order.flatOrder.orderNum, 
+                '', np.absolute(order.objSpec[frame]/order.noiseSpec[frame]), order.waveScale, 
+                header)
 
 
-        twoDimOrderFits(out_dir, reduced.baseName, order.orderNum, order.objImg, header)
+        #
+        # rectified order plot 2-d image plot and FITS file
+        #
+        for frame in order.frames:
+            twoDimOrderPlot(out_dir, order.baseNames[frame], 'rectified order image', 'order.png', 
+                order.flatOrder.orderNum, order.ffObjImg[frame], order.waveScale, order.calMethod)
+            twoDimOrderFits(out_dir, order.baseNames[frame], order.flatOrder.orderNum, 
+                order.ffObjImg[frame], header)
+        
+        # end of for each order
 
-        twoDimOrderPlot(out_dir, reduced.baseName, 'rectified order image', 
-                reduced.getObjectName(), 'order.png', order.orderNum, order.objImg, 
-                order.waveScale)
 
     main_logger.info('n data products generated for {} = {}'.format(
-            reduced.baseName, str(file_count[0])))
+            reduced.getBaseName(), str(file_count[0])))
     
     obj_logger.info('n data products generated for {} = {}'.format(
-            reduced.baseName, str(file_count[0])))
+            reduced.getBaseName(), str(file_count[0])))
     return 
     
     
@@ -388,21 +462,21 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     pl.ylabel('flux (counts)')
 
     # set axes limits
-    #pl.xlim(0, profile.shape[0])
     yrange = profile.max() - profile.min()
     ymin = profile.min() - (0.1 * yrange)
     ymax = profile.max() + (0.1 * yrange)
     pl.ylim(ymin, ymax)
     
+    # set ticks and grid
     pl.minorticks_on()
     pl.grid(False)
     
+    # plot profile
     pl.plot(profile, "ko-", mfc='none', ms=3.0, linewidth=1)
     
-#     pl.plot([centroid, centroid], [ymin, profile[peak]], "g-", linewidth=0.5, label='peak')
+    # plot vertical line to indicate location of centroid
     pl.plot([centroid, centroid], [ymin, profile.max()], "g-", linewidth=0.5, label='peak')
-
-    
+   
     # draw extraction window
     wvlh = 0.01 * yrange;
     ewh = 0.05 * yrange
@@ -416,22 +490,25 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             (profile.max() - wvlh, profile.max() + wvlh), 
             'r', linewidth=1.5)  
     
+    # draw annotation showing centroid, width and SNR
     if gaussian is None:
         width = 'unknown'
     else:
         width = '{:.1f}'.format(abs(gaussian[2]))
+    
+    aStr = 'centroid = {:.1f} pixels'.format(centroid)
+    aStr = aStr + '\nwidth = {} pixels'.format(width)
+    if snr is not None:
+        aStr = aStr + '\nSNR = {:.1f}'.format(snr)
+    
     if peak > (len(profile) / 2):
-        pl.annotate('centroid = {:.1f} pixels\nwidth = {} pixels\nSNR = {:.1f}'.format(
-                centroid, width, snr), 
-                    (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 3 / 5) + ymin))
+        pl.annotate(aStr, (peak - (len(ext_range) / 2) - 20, ((ymax - ymin) * 3 / 5) + ymin))
     else:
-        pl.annotate('centroid = {:.1f} pixels\nwidth = {} pixels\nSNR = {:.1f}'.format(
-                centroid, width, snr), 
-                    (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 3 / 5) + ymin))
+        pl.annotate(aStr, (peak + (len(ext_range) / 2) + 5, ((ymax - ymin) * 3 / 5) + ymin))
         
     # draw sky windows
  
-    if (sky_range_top):
+    if sky_range_top is not None:
 
         pl.plot((sky_range_top[0], sky_range_top[-1]),
                 (top_bg_mean, top_bg_mean), 
@@ -443,7 +520,8 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
                 (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)  
         
-    if (sky_range_bot):
+    if sky_range_bot is not None:
+        
         pl.plot((sky_range_bot[0], sky_range_bot[-1]),
                 (bot_bg_mean, bot_bg_mean), 
                 'b', linewidth=0.5)   
@@ -456,7 +534,12 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
         
     # draw best fit Gaussian
     if gaussian is not None:
-        pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + np.amin(profile), 
+        min = np.amin(profile)
+        if min < 0:
+            offset = 0
+        else:
+            offset = min
+        pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + offset, 
                 'k--', linewidth=0.5, label='Gaussian fit')
         
     pl.legend(loc='best', prop={'size': 8})
@@ -626,7 +709,8 @@ def multiSpectrumPlot(outpath, base_name, order, y_units, cont, sky, noise, wave
 #     logger.info('writing ' + title + ' plot for order ' + str(order) + ' to ' + fits_fn)
 #     hdulist.writeto(fits_fn, clobber=True)
     
-def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, slope):
+def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wave_fit, res, peak, 
+        slope):
     
     names = ['order', 'source', 'col', 'wave_exp', 'wave_fit', 'res', 'peak', 'disp'] 
     units = ['', '', 'pixels', 'Angstroms', 'Angstroms',  'Angstroms', 'counts', 'Angstroms/pixel']
@@ -703,31 +787,39 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
     log_fn(fn)
     return
     
-def twoDimOrderPlot(outpath, base_name, title, obj_name, base_filename, order_num, data, x):
+def twoDimOrderPlot(outpath, base_name, title, base_filename, order_num, data, x_scale,
+            wave_note='unknown'):
+    """
+    Produces a generic 2-d image plot.
+    
+    Arguments:
+        output: Directory path of root products directory.
+        base_name: Base name of object frame.
+        title: Title of plot, e.g. rectified order image.
+        base_filename:
+        order_num:
+        data:
+        x_scale:
+    """
     pl.figure('2d order image', facecolor='white', figsize=(8, 5))
     pl.cla()
     pl.title(title + ', ' + base_name + ", order " + str(order_num), fontsize=14)
-    pl.xlabel('wavelength($\AA$)', fontsize=12)
+    pl.xlabel('wavelength($\AA$) (' + wave_note + ')', fontsize=12)
     pl.ylabel('row (pixel)', fontsize=12)
-    #pl.imshow(img, aspect='auto')
-    #pl.imshow(data, vmin=0, vmax=1024, aspect='auto')
     
     pl.imshow(exposure.equalize_hist(data), origin='lower', 
-                  extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')      
-#     from matplotlib import colors
-#     norm = colors.LogNorm(data.mean() + 0.5 * data.std(), data.max(), clip='True')
-#     pl.imshow(data, norm=norm, origin='lower',
-#                   extent=[x[0], x[-1], 0, data.shape[0]], aspect='auto')               
-    pl.colorbar()
-    pl.set_cmap('jet')
+                  extent=[x_scale[0], x_scale[-1], 0, data.shape[0]], aspect='auto')      
+       
+#    pl.colorbar()
+#    pl.set_cmap('jet')
+    pl.set_cmap('gray')
 #     pl.set_cmap('Blues_r')
+
     fn = constructFileName(outpath, base_name, order_num, base_filename)
     pl.savefig(fn)
     log_fn(fn)
     pl.close()
-    
-#     np.save(fn[:fn.rfind('.')], data)
-    
+        
     return
     
 
