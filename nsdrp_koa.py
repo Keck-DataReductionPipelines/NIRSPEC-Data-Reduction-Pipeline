@@ -122,7 +122,7 @@ def mcal(reducedDataSets):
      
     logger = logging.getLogger('main')
 
-    logger.info('running mcal')
+#     logger.info('running mcal')
     
     allCalibrated = True
     for rds in reducedDataSets:
@@ -145,7 +145,7 @@ def mcal(reducedDataSets):
                 calFrame = rds.baseName
          
     if coeffs is None:
-        logger.info('calibration frame not found to calibrate adjacent frames')
+        logger.info('no calibrated frames available for this configuration')
         return
     
     for rds in reducedDataSets:

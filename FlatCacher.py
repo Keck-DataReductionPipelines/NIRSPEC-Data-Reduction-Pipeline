@@ -49,8 +49,8 @@ class FlatCacher:
             fn = self.constructFlatName(baseFns)
             hdu = self.combineFlats(fns)
             self.logger.debug('creating flat ' + fn + ' which combines ' + 
-                    ', '.join(str(x) for x in ([f[f.find("NS"):f.rfind(".")] for f in fns])))
-            flat = Flat.Flat(fn, hdu.header, hdu.data, self.flatDir)
+                    ', '.join(str(x) for x in baseFns))            
+            flat = Flat.Flat(fn, baseFns, hdu.header, hdu.data, self.flatDir)
             self.fnToFlat[fn] = flat
             self.fnToRawFlatList[fn] = baseFns
             for k in ['GAIN.SPE', 'FREQ.SPE']:
@@ -91,7 +91,7 @@ class FlatCacher:
         """
         """
         for n in range(8):
-            fn = sorted(baseFns)[0] + '_flat_' + str(n) + '.fits'
+            fn = sorted(baseFns)[0][:sorted(baseFns)[0].find('.fits')] + '_flat_' + str(n) + '.fits'
             if fn not in self.fnToRawFlatList:
                 return fn
         raise DrpException('too many similar flats')

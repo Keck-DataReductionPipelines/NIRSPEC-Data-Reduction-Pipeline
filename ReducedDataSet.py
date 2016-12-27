@@ -153,9 +153,11 @@ class ReducedDataSet:
     
     def subtractDark(self):   
         if self.hasDark:
-            self.objA  = np.subtract(self.objA, self.dark)
+            frames = ['A']
             if self.isPair:
-                self.objB = np.subtract(self.objB, self.dark)
-            self.flat = np.subtract(self.flat, self.dark)
+                frames.append('B')
+            for frame in frames:
+                self.objImg[frame]  = np.subtract(self.objImg[frame], self.dark)
+            self.flatImg = np.subtract(self.flatImg, self.dark)
             self.darkSubtracted = True
             

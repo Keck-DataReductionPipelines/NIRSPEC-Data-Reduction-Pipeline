@@ -12,23 +12,12 @@ import FlatOrder
 import nirspec_lib
 import image_lib
 
-#logger = logging.getLogger('obj')
-
 class Flat:
-    
-#     def __init__(self, filename):
-#         
-#         self.filename = filename
-#         
-#         self.baseName = self.getBaseName()
-#         logger.info('constructing Flat object for {}'.format(self.baseName))
-# 
-#         self.header = fits.getheader(filename)
-#         self.flatImg = fits.getdata(filename)
 
-    def __init__(self, fn, header, data, logDir=None):
+    def __init__(self, fn, baseFns, header, data, logDir=None):
         
         self.fn = fn
+        self.baseFns = baseFns
         self.header = header
         self.logDir = logDir
         
@@ -42,11 +31,9 @@ class Flat:
             
         self.gratingEq = GratingEq.GratingEq(self.logger)
             
-        self.logger.info('constructing Flat object for {}'.format(self.fn))
+        names = ', '.join(str(x) for x in self.baseFns)
+        self.logger.info('creating {} from {}'.format(self.fn, names))
 
-        #self.header = fits.PrimaryHDU.readfrom(filename, ignore_missing_end=True).header
-#         self.header = fits.getheader(filename)
-#         self.flatImg = fits.getdata(filename)
         self.flatImg = data
 
         self.filterName = self.header['filname']

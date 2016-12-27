@@ -508,7 +508,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
         
     # draw sky windows
  
-    if sky_range_top is not None:
+    if sky_range_top is not None and len(sky_range_top) > 0:
 
         pl.plot((sky_range_top[0], sky_range_top[-1]),
                 (top_bg_mean, top_bg_mean), 
@@ -520,7 +520,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
                 (top_bg_mean - wvlh, top_bg_mean + wvlh), 
                 'b', linewidth=1.5)  
         
-    if sky_range_bot is not None:
+    if sky_range_bot is not None and len(sky_range_bot) > 0:
         
         pl.plot((sky_range_bot[0], sky_range_bot[-1]),
                 (bot_bg_mean, bot_bg_mean), 

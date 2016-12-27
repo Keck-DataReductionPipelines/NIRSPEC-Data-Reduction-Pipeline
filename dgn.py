@@ -216,7 +216,7 @@ def tops_bots_plot(outpath, base_name, tops, bots):
 def traces_plot(outpath, obj_base_name, flat_base_name, order_num, obj_img, flat_img, top_trace, 
             bot_trace):
     
-    pl.figure('traces', facecolor='white', figsize=(8, 5))
+    pl.figure('traces', facecolor='white', figsize=(9, 5))
     pl.cla()
     pl.suptitle('order edge traces, {}, order {}'.format(obj_base_name, order_num), fontsize=14)
     pl.set_cmap('Blues_r')

@@ -52,6 +52,7 @@ def reduce_frame(raw, out_dir, flatCacher=None):
     
     # Get fully processed flat in the form of a Flat object
     reduced.Flat = getFlat(raw, flatCacher)
+    logger.info('using flat {}'.format(reduced.Flat.getBaseName()))
     
     # clean cosmic ray hits on object frame(s)
     if config.params['no_cosmic']:
@@ -89,8 +90,8 @@ def reduce_frame(raw, out_dir, flatCacher=None):
     else:
         logger.info('not applying wavelength solution')
         for order in reduced.orders:
-            order.waveScale = order.gratingEqWaveScale
-            order.calMethodUsed = 'grating equation'
+            order.waveScale = order.flatOrder.gratingEqWaveScale
+            order.calMethod = 'grating equation'
     
     return(reduced)
  
@@ -98,7 +99,7 @@ def reduce_frame(raw, out_dir, flatCacher=None):
 def getFlat(raw, flatCacher):
     """Given a raw data set and a flat cacher, creates and returns a Flat object
     
-    If there is no flat cacher, this means we are in command line mode where there is a single
+    If there is no flat cacher then we are in command line mode where there is a single
     flat and the flats are not reused.  In this case 1. the flat image data is read from the 
     flat file specified in the raw data set, 2. unless cosmic ray rejection is inhibited
     cosmic ray artifacts are removed from the flat, and 3. a Flat object is created from 
@@ -130,7 +131,7 @@ def getFlat(raw, flatCacher):
             logger.info('cosmic ray cleaning on flat complete')
         
         return(Flat.Flat(
-                raw.flatFns[0],
+                raw.flatFns[0], [raw.flatFns[0]],
                 fits.PrimaryHDU.readfrom(raw.flatFns[0], ignore_missing_end=True).header, 
                 flat_data))
     else:
