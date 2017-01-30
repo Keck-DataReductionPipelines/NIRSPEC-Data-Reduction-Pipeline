@@ -80,9 +80,9 @@ def process_dir(in_dir, base_out_dir):
                 len(reducedDataSets), nirspecConfig.toString()))
         mcal(reducedDataSets)
 
-    gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr)
             
     if len(rawDataSets) > 0:
+        gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr)
         logger.info('n object frames reduced = {}/{}'.format(
                 n_reduced, len(rawDataSets)))   
         

@@ -84,7 +84,7 @@ def create(in_dir):
     # remove data sets for which no flats are available
     for rawDataSet in rawDataSets:
         if len(rawDataSet.flatFns) == 0:
-            logger.debug('no flats for {}'.format(rawDataSet.baseName))
+            logger.debug('no flats for {}'.format(rawDataSet.baseNames['A']))
         else:
             logger.debug('{} has {} flats'.format(rawDataSet.baseNames['A'], len(rawDataSet.flatFns)))
             rawDataSetsWithFlats.append(rawDataSet)
