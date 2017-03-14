@@ -1,11 +1,11 @@
 # nsdrp
 PREREQUISITES:
 
-1)    NSDRP was developed with Anaconda python and that distribution is recommended, but can be run with Ureka or other python installations. It requires the following modules: numpy, os, math, subprocess, fnmatch, logging, pylab, errno, datetime, warnings, astropy, scipy, argparse, and statsmodels. Depending on your python distribution of choice, you may be required to manually download and install one or more of these modules.
+1)    NSDRP was developed with Anaconda python and that distribution is recommended, but can be run with Ureka or other python installations. Anaconda comes installed with the required modules: numpy, os, math, subprocess, fnmatch, logging, pylab, errno, datetime, warnings, astropy, scipy, argparse, and statsmodels. Depending on your python distribution of choice, you may be required to manually download and install one or more of these modules.
 
 2)    Verify correct installation by typing "python" on the command line. The terminal will display the version number and the distribution, i.e. Python2.7.8, Anaconda 2.1.0, etc. To confirm whether the required modules are installed, type "python check_modules.py". The script will print the name of any missing modules. 
 
-3)    The NSDRP software is maintained on GitHub. Download the code from https://github.com/2ichard/nirspec_drp.git 
+3)    The NSDRP software is maintained on GitHub. Download the code from https://github.com/Keck-DataReductionPipelines/NIRSPEC-Data-Reduction-Pipeline.git 
 and install by decompressing the folder in the directory of your choice.
 
 CONSTRAINTS:
