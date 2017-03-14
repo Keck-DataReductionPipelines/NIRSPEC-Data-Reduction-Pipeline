@@ -7,15 +7,15 @@ from astropy.io import fits
 import warnings
 
 import config
-import dgn
+#import dgn
 
 import nsdrp_cmnd
 import nsdrp_koa
 
-from DrpException import DrpException
-import FlatCacher
+#from DrpException import DrpException
+#import FlatCacher
 
-VERSION = '0.9.13'
+VERSION = '0.9.14'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -69,20 +69,20 @@ def main():
         config.params['out_dir'] = args.out_dir
 
     # initialize environment, setup main logger, check directories
-    try:
-        if config.params['cmnd_line_mode'] is True:
-            init(config.params['out_dir'])
-            nsdrp_cmnd.process_frame(args.arg1, args.arg2, config.params['out_dir'])
-        else:
-            init(args.arg2, args.arg1)
-            nsdrp_koa.process_dir(args.arg1, args.arg2)
-    except Exception as e:
-        print('ERROR: ' + e.message)
-        if config.params['debug'] is True:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-        sys.exit(2)    
+    #   try:
+    if config.params['cmnd_line_mode'] is True:
+        init(config.params['out_dir'])
+        nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
+    else:
+        init(args.arg2, args.arg1)
+        nsdrp_koa.process_dir(args.arg1, args.arg2)
+#     except Exception as e:
+#         print('ERROR: ' + e.message)
+#         if config.params['debug'] is True:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+#             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+#         sys.exit(2)    
 
     sys.exit(0)
     
@@ -149,9 +149,9 @@ def setup_main_logger(logger, in_dir, out_dir):
     logger.addHandler(fh)
      
     if config.params['debug']:
-        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s -  %(message)s')
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(filename)s:%(lineno)s - %(message)s')
     else:   
-        sformatter = logging.Formatter('%(asctime)s %(levelname)s -  %(message)s')
+        sformatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
  
     if config.params['verbose'] is True:
         sh = logging.StreamHandler()
@@ -244,19 +244,11 @@ def parse_cmnd_line_args():
             action='store_true')
     parser.add_argument('-out_dir', 
             help='output directory in command line mode [.], ignored in KOA mode')
-#     parser.add_argument('-serialize_rds',
-#             help='serialize (pickle) reduced data set objects', action='store_true')
+    parser.add_argument('-b',
+            help='filename of frame B in AB pair')
 
     return(parser.parse_args())
-
-
-    
- 
-    
-     
-
-    
-    
+          
 if __name__ == "__main__":
     """
     NIRSPEC DRP

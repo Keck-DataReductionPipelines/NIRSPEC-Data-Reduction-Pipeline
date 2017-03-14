@@ -13,8 +13,9 @@ class FlatOrder:
     LHS refers to left hand side of order, low column numbers, shorter wavelengths.
     """
     
-    def __init__(self, orderNum, logger):
+    def __init__(self, baseName, orderNum, logger):
         
+        self.flatBaseName = baseName
         self.orderNum = orderNum
         self.logger = logger
         

@@ -8,8 +8,9 @@ import reduce_frame
 import config
 import products
 import dgn
+import DrpException
 
-def process_frame(fn1, fn2, out_dir):
+def process_frame(fn1, fn2, obj_B_fn, out_dir):
     
     flat_fn = None
     obj_fn = None
@@ -25,31 +26,44 @@ def process_frame(fn1, fn2, out_dir):
         flat_header = fn1_header
     if fn2_header['flat'] == 1 and fn2_header['calmpos'] == 1:
         if flat_fn is not None:
-            raise DrpException('two flats, no object frame')
+            raise DrpException.DrpException('two flats, no object frame')
         else:
             flat_fn = fn2
             obj_fn = fn1
             obj_header = fn1_header
             flat_header = fn2_header
     if flat_fn is None:
-        raise DrpException('no flat')
+        raise DrpException.DrpException('no flat')
 
     if obj_header['ECHLPOS'] > 100:
         print('ERROR: cannot reduce low-resolution image (ECHLPOS > 100')
         exit(1)
         
     if obj_header['NAXIS1'] != constants.N_COLS:
-        raise DrpException('NAXIS1 != {}'.format(constants.N_COLS))
+        raise DrpException.DrpException('NAXIS1 != {}'.format(constants.N_COLS))
     if obj_header['NAXIS2'] != constants.N_ROWS:
-        raise DrpException('NAXIS2 != {}'.format(constants.N_COLS))
+        raise DrpException.DrpException('NAXIS2 != {}'.format(constants.N_COLS))
     if obj_header['FILNAME'].lower().find('nirspec') < 0:
-        raise DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
+        raise DrpException.DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
     
     if create_raw_data_sets.flat_criteria_met(obj_header, flat_header, ignore_dispers=True) is False:
-        raise DrpException('flat is not compatible with object frame')
+        raise DrpException.DrpException('flat is not compatible with object frame')
     
-    rawDataSet = RawDataSet.RawDataSet(obj_fn, obj_header)
-    rawDataSet.flatFileNames.append(flat_fn)
+    if obj_B_fn is not None:
+        # confirm that A and B are not the same files
+        if obj_fn == obj_B_fn:
+            raise DrpException.DrpException('frames A and B are the same')
+        
+        obj_B_header = fits.PrimaryHDU.readfrom(obj_B_fn, ignore_missing_end=True).header
+        if create_raw_data_sets.is_valid_pair(obj_header, obj_B_header):
+            #print('Reducing AB pair, A=' + obj_fn + ', B=' + obj_B_fn)
+            rawDataSet = RawDataSet.RawDataSet(obj_fn, obj_B_fn, obj_header)
+        else:
+            raise DrpException.DrpException('frames A and B are not a valid pair')
+    else:
+        rawDataSet = RawDataSet.RawDataSet(obj_fn, None, obj_header)
+
+    rawDataSet.flatFns.append(flat_fn)
      
     if not os.path.exists(out_dir):
         try: 
@@ -61,7 +75,7 @@ def process_frame(fn1, fn2, out_dir):
     logger = logging.getLogger('main')
 
     # generate reduced data set by reducing raw data set
-    reducedDataSet = reduce_frame.reduce(rawDataSet, out_dir)
+    reducedDataSet = reduce_frame.reduce_frame(rawDataSet, out_dir)
     
     # write reduction summary to log file
     write_summary(reducedDataSet)
@@ -85,7 +99,7 @@ def write_summary(rds):
     logger = logging.getLogger('obj')
     logger.info("summary:")
     v = []
-    v.append(('base name' , '{}', rds.baseName))
+    v.append(('base name' , '{}', rds.getBaseName()))
     v.append(('observation time (UT)',              '{}',       
               rds.getDate() + ' ' + rds.getTime()))
     v.append(('target name',                        '{}',       rds.getTargetName()))

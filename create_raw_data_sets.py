@@ -44,7 +44,7 @@ def create(in_dir):
 
     for filename, header in headers.items():
             if obj_criteria_met(header, failed2reduce):
-                rawDataSets.append(RawDataSet.RawDataSet(filename, header))
+                rawDataSets.append(RawDataSet.RawDataSet(filename, None, header))
 
                 
     if obj_criteria_met(header, failed2reduce) is False:
@@ -67,26 +67,26 @@ def create(in_dir):
     for rawDataSet in rawDataSets:
         for filename, header in headers.items():
             if (header['IMAGETYP'] == 'flatlamp'):
-                if len(rawDataSet.flatFileNames) < config.params['max_n_flats']:
+                if len(rawDataSet.flatFns) < config.params['max_n_flats']:
                     if flat_criteria_met(rawDataSet.objHeader, header):
-                        rawDataSet.flatFileNames.append(filename)
+                        rawDataSet.flatFns.append(filename)
             elif (header['IMAGETYP'] == 'dark'):
-                if len(rawDataSet.darkFileNames) < config.params['max_n_darks']:
+                if len(rawDataSet.darkFns) < config.params['max_n_darks']:
                     if dark_criteria_met(rawDataSet.objHeader, header):
-                        rawDataSet.darkFileNames.append(filename)
-        rawDataSet.flatFileNames.sort()
-        rawDataSet.darkFileNames.sort()
+                        rawDataSet.darkFns.append(filename)
+        rawDataSet.flatFns.sort()
+        rawDataSet.darkFns.sort()
         
-    rawDataSets.sort(key=lambda x: x.baseName)
+    rawDataSets.sort(key=lambda x: x.baseNames['A'])
                  
     rawDataSetsWithFlats = []
     
     # remove data sets for which no flats are available
     for rawDataSet in rawDataSets:
-        if len(rawDataSet.flatFileNames) == 0:
-            logger.debug('no flats for {}'.format(rawDataSet.baseName))
+        if len(rawDataSet.flatFns) == 0:
+            logger.debug('no flats for {}'.format(rawDataSet.baseNames['A']))
         else:
-            logger.debug('{} has {} flats'.format(rawDataSet.baseName, len(rawDataSet.flatFileNames)))
+            logger.debug('{} has {} flats'.format(rawDataSet.baseNames['A'], len(rawDataSet.flatFns)))
             rawDataSetsWithFlats.append(rawDataSet)
             
     if len(rawDataSets) < 1:
@@ -160,8 +160,7 @@ def obj_criteria_met(header, failed2reduce):
     return True
     
 def flat_criteria_met(obj_header, flat_header, ignore_dispers=False):
-    """
-    Takes an object frame header and a flat frame header and determines if 
+    """Takes an object frame header and a flat frame header and determines if 
     the flat satisfies the criteria for association with the object frame
     
     params
@@ -180,6 +179,23 @@ def flat_criteria_met(obj_header, flat_header, ignore_dispers=False):
             return False
     return True
 
+def is_valid_pair(obj_A_header, obj_B_header):
+    """Determines if the frames associated with the two headers passed as arguments
+    comprise a valid AB pair.
+    
+    args:
+        obj_A_header: FITS header of A
+        obj_B_header: FITS header of B
+        
+    Returns:
+        True if valid pair.
+        False if not valid pair.
+    """
+    kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers', 'itime']
+    for kwd in kwds:
+        if obj_A_header[kwd] != obj_B_header[kwd]:
+            return False
+    return True
 
 def dark_criteria_met(obj_header, dark_header):
     """

@@ -1,5 +1,7 @@
 
 class Line:
+    """
+    """
     
     def __init__(self, frame, order, wAccepted, col, centroid, peak):
         
@@ -25,7 +27,7 @@ class Line:
         self.frameFitRes = 0.0          # fit residual (Angstroms)
         self.frameFitSlope = 0.0        # slope of per-frame WL equation at this WL
                                         # (Angstroms/pixel)
-        self.frameFitOutlier = False    # true if line discarded from per-frame fit as outlier
+        self.frameFitOutlier = True     # true if line discarded from per-frame fit as outlier
         
 
         # multi-frame fit results
