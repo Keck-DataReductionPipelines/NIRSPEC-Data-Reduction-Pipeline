@@ -28,6 +28,7 @@ params['ut']                    = None
 params['gunzip']                = False
 params['out_dir']               = './nsdrp_out'       # used only in command line mode
 #params['serialize_rds']         = False
+params['jpg']                   = False     # if True then write preview plots in JPG not PNG
 
 # configuration and tuning parameters
 params['max_n_flats']           = 8
