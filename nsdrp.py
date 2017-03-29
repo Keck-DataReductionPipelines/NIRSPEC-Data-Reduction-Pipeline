@@ -15,7 +15,7 @@ import nsdrp_koa
 #from DrpException import DrpException
 #import FlatCacher
 
-VERSION = '0.9.14'
+VERSION = '0.9.15'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -67,22 +67,23 @@ def main():
     config.params['spatial_jump_override'] = args.spatial_jump_override
     if args.out_dir is not None:
         config.params['out_dir'] = args.out_dir
+    config.params['jpg'] = args.jpg
 
     # initialize environment, setup main logger, check directories
-    #   try:
-    if config.params['cmnd_line_mode'] is True:
-        init(config.params['out_dir'])
-        nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
-    else:
-        init(args.arg2, args.arg1)
-        nsdrp_koa.process_dir(args.arg1, args.arg2)
-#     except Exception as e:
-#         print('ERROR: ' + e.message)
-#         if config.params['debug'] is True:
-#             exc_type, exc_value, exc_traceback = sys.exc_info()
-#             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-#             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-#         sys.exit(2)    
+    try:
+        if config.params['cmnd_line_mode'] is True:
+            init(config.params['out_dir'])
+            nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
+        else:
+            init(args.arg2, args.arg1)
+            nsdrp_koa.process_dir(args.arg1, args.arg2)
+    except Exception as e:
+        print('ERROR: ' + e.message)
+        if config.params['debug'] is True:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+        sys.exit(2)    
 
     sys.exit(0)
     
@@ -246,6 +247,8 @@ def parse_cmnd_line_args():
             help='output directory in command line mode [.], ignored in KOA mode')
     parser.add_argument('-b',
             help='filename of frame B in AB pair')
+    parser.add_argument('-jpg', help='store preview plots in JPG format instead of PNG',
+            action='store_true')
 
     return(parser.parse_args())
           

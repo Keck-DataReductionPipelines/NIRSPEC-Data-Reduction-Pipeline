@@ -7,6 +7,7 @@ import logging
 import os
 import errno
 import warnings
+import Image
 import numpy as np
 from astropy.io import fits
 from skimage import exposure
@@ -31,28 +32,28 @@ savePlots = True
 showPlots = False
 saveJpgs = False
 
-# This dictionary maps data product filename suffix (e.g. flux.tbl)
+# This dictionary maps data product filename suffix (e.g. flux_tbl.fits)
 # to output subdirectory (e.g. fitstbl/flux).
 subdirs = dict([
-                ('flux.tbl',        'fitstbl/flux'      ),
-                ('flux.txt',        'ascii/flux'        ),
-                ('flux.fits',       'fits/flux'         ),
-                ('flux.png',        'previews/flux'     ),
-                ('profile.tbl',     'fitstbl/profile'   ),
-                ('profile.txt',     'ascii/profile'     ),
-                ('profile.fits',    'fits/profile'      ),
-                ('profile.png',     'previews/profile'  ),
-                ('calids.tbl',      'fitstbl/cal'       ),
-                ('calids.txt',      'ascii/cal'         ),
-                ('order.fits',      'fits/order'        ),
-                ('order.png',       'previews/order'    ),
-                ('sky.fits',        'fits/sky'          ),
-                ('sky.png',         'previews/sky'      ),
-                ('snr.fits',        'fits/snr'          ),
-                ('snr.png',         'previews/snr'      ),
-                ('trace.fits',      'fits/trace'        ),
-                ('trace.png',       'previews/trace'    ),
-#                 ('spectra.png',     'previews/spectra'  ),
+                ('flux_tbl.fits',       'fitstbl/flux'      ),
+                ('flux.txt',            'ascii/flux'        ),
+                ('flux.fits',           'fits/flux'         ),
+                ('flux.png',            'previews/flux'     ),
+                ('profile_tbl.fits',    'fitstbl/profile'   ),
+                ('profile.txt',         'ascii/profile'     ),
+                ('profile.fits',        'fits/profile'      ),
+                ('profile.png',         'previews/profile'  ),
+                ('calids_tbl.fits',     'fitstbl/cal'       ),
+                ('calids.txt',          'ascii/cal'         ),
+                ('order.fits',          'fits/order'        ),
+                ('order.png',           'previews/order'    ),
+                ('sky.fits',            'fits/sky'          ),
+                ('sky.png',             'previews/sky'      ),
+                ('snr.fits',            'fits/snr'          ),
+                ('snr.png',             'previews/snr'      ),
+                ('trace.fits',          'fits/trace'        ),
+                ('trace.png',           'previews/trace'    ),
+#               ('spectra.png',     'previews/spectra'  ),
                ])
 
 
@@ -62,7 +63,7 @@ def constructFileName(outpath, base_name, order, fn_suffix):
     outpath - data product root directory path
     base_name - base object file name, e.g. NS.20000325.49894
     order - order number, or None if this is not a per-order file
-    fn_suffix - filename suffix, e.g. flux.tbl
+    fn_suffix - filename suffix, e.g. flux_tbl.fits
     """
     fn = outpath + '/' + subdirs[fn_suffix] + '/' + base_name + '_' + fn_suffix
     if order is None:
@@ -330,7 +331,7 @@ def tracePlot(outpath, base_name, order_num, raw, fit, mask):
     pl.legend(loc='best', prop={'size': 8})
 
     fn = constructFileName(outpath, base_name, order_num, 'trace.png')
-    pl.savefig(fn)
+    savePreviewPlot(fn)
     pl.close()
     log_fn(fn)
     
@@ -435,7 +436,7 @@ def profileFitsTable(outpath, base_name, order_num, profile):
             fits.Column(name='row (pix)', format='1I', array=np.arange(profile.shape[0], dtype=int)),
             fits.Column(name='mean_flux (cnts)', format='1D', array=profile)]))
     thdulist = fits.HDUList([prihdu, tbhdu]) 
-    fn = constructFileName(outpath, base_name, order_num, 'profile.tbl')
+    fn = constructFileName(outpath, base_name, order_num, 'profile_tbl.fits')
     thdulist.writeto(fn, clobber=True)  
     log_fn(fn)
     return  
@@ -545,7 +546,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
     pl.legend(loc='best', prop={'size': 8})
     
     fn = constructFileName(outpath, base_name, order_num, 'profile.png')
-    pl.savefig(fn)
+    savePreviewPlot(fn)
     pl.close()
     log_fn(fn)
     return
@@ -635,7 +636,7 @@ def fluxFitsTable(outpath, base_name, order_num, wave, flux, sky, synth_sky, err
                 fits.Column(name='trace_mean (pix)', format='1D', array=trace_mean),
                 fits.Column(name='trace_fit (pix)', format='1D', array=trace_fit),
                 fits.Column(name='fit_res (pix)', format='1D', array=trace_mean - trace_fit)])
-    fn = constructFileName(outpath, base_name, order_num, 'flux.tbl')   
+    fn = constructFileName(outpath, base_name, order_num, 'flux_tbl.fits')   
     tbhdu.writeto(fn, clobber=True)
     log_fn(fn)
     return
@@ -662,7 +663,7 @@ def spectrumPlot(outpath, base_name, title, order_num, y_units, cont, wave,
     #axes.set_ylim(0, 300)
     
     fn = constructFileName(outpath, base_name, order_num, title + '.png')
-    pl.savefig(fn)
+    savePreviewPlot(fn)
     log_fn(fn)
     return
     
@@ -697,7 +698,7 @@ def multiSpectrumPlot(outpath, base_name, order, y_units, cont, sky, noise, wave
 
     fn = constructFileName(outpath, base_name, order, 'spectra.png')
         
-    pl.savefig(fn)
+    savePreviewPlot(fn)
     log_fn(fn)
     pl.close()
     return
@@ -782,7 +783,7 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
                 fits.Column(name='peak (counts)', format='1D', array=peak),
                 fits.Column(name='disp (Angstroms/pixel)', format='1D', array=slope)]))
     thdulist = fits.HDUList([prihdu, tbhdu]) 
-    fn = constructFileName(outpath, base_name, None, 'calids.tbl')   
+    fn = constructFileName(outpath, base_name, None, 'calids_tbl.fits')   
     thdulist.writeto(fn, clobber=True)         
     log_fn(fn)
     return
@@ -816,7 +817,7 @@ def twoDimOrderPlot(outpath, base_name, title, base_filename, order_num, data, x
 #     pl.set_cmap('Blues_r')
 
     fn = constructFileName(outpath, base_name, order_num, base_filename)
-    pl.savefig(fn)
+    savePreviewPlot(fn)
     log_fn(fn)
     pl.close()
         
@@ -833,5 +834,24 @@ def twoDimOrderFits(outpath, base_name, order_num, data, header):
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
     return
+
+
+def savePreviewPlot(fn):
+    """
+    Saves a preview plot in either PNG or JPG format, depending on configuration parameter.
+    
+    If config.params['jpg'] is false then the plot is saved in PNG format which is the default.
+    If config.params['jpg'] is true then the PNG file is converted to JPG format and the PNG file
+    is deleted.
+    
+    Args:
+        fn: filename for PNG format, e.g. out/previews/flux/KOAID.png
+        
+    """
+    pl.savefig(fn)
+    if (config.params['jpg']):
+        outfn = fn[:fn.find('.png')] + '.jpg'
+        Image.open(fn).save(outfn, 'JPEG')
+        os.remove(fn)
     
         
