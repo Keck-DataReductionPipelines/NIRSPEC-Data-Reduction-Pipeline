@@ -446,7 +446,13 @@ def profileFits(outpath, base_name, order_num, profile, header):
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+
+            
     fn = constructFileName(outpath, base_name, order_num, 'profile.fits')     
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
@@ -673,7 +679,12 @@ def fitsSpectrum(outpath, base_name, title, order_num, y_units, cont, wave, head
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+            
     fn = constructFileName(outpath, base_name, order_num, title + '.fits')     
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
@@ -829,7 +840,12 @@ def twoDimOrderFits(outpath, base_name, order_num, data, header):
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+            
     fn = constructFileName(outpath, base_name, order_num, 'order.fits')
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)

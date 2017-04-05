@@ -15,7 +15,7 @@ import nsdrp_koa
 #from DrpException import DrpException
 #import FlatCacher
 
-VERSION = '0.9.15'
+VERSION = '0.9.16'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -70,20 +70,20 @@ def main():
     config.params['jpg'] = args.jpg
 
     # initialize environment, setup main logger, check directories
-    try:
-        if config.params['cmnd_line_mode'] is True:
-            init(config.params['out_dir'])
-            nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
-        else:
-            init(args.arg2, args.arg1)
-            nsdrp_koa.process_dir(args.arg1, args.arg2)
-    except Exception as e:
-        print('ERROR: ' + e.message)
-        if config.params['debug'] is True:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-        sys.exit(2)    
+#     try:
+    if config.params['cmnd_line_mode'] is True:
+        init(config.params['out_dir'])
+        nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
+    else:
+        init(args.arg2, args.arg1)
+        nsdrp_koa.process_dir(args.arg1, args.arg2)
+#     except Exception as e:
+#         print('ERROR: ' + e.message)
+#         if config.params['debug'] is True:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+#             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+#         sys.exit(2)    
 
     sys.exit(0)
     
