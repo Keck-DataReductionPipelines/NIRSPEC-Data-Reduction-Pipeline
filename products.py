@@ -13,6 +13,7 @@ from astropy.io import fits
 from skimage import exposure
 import image_lib
 import config
+import nsdrp
 
 warnings.filterwarnings('ignore')
 
@@ -99,6 +100,7 @@ def gen(reduced, out_dir):
             
     # prepare extended fits header
     header = reduced.header
+    header['NSDRPVER'] = (nsdrp.VERSION, 'NSDRP Version')
     header['COMMENT'] = ('NSDRP', 'NSDRP')
     if reduced.frameCalRmsRes is not None: 
         header['WFITRMS'] = (round(reduced.frameCalRmsRes, 4), 
@@ -150,6 +152,8 @@ def gen(reduced, out_dir):
     # produce per-order data products
     #
     
+    SKYDIST_INFO = 'Distance between sky and object extraction windows'
+    
     for order in reduced.orders:
             
         # extend header further with per-order data
@@ -175,9 +179,9 @@ def gen(reduced, out_dir):
             header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
                     'width of sky subtraction window in pixels')
             if len(order.topSkyWindow) > 0:
-                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], )
+                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], SKYDIST_INFO)
             else:
-                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], )    
+                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], SKYDIST_INFO)    
                       
         header['PROFPEAK'] = (round(centroid, 3), 'fractional row number of profile peak')
             
