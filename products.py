@@ -69,7 +69,7 @@ def constructFileName(outpath, base_name, order, fn_suffix):
     if order is None:
         return fn
     else:
-        return fn[:fn.rfind('_') + 1] + str(order) + fn[fn.rfind('_'):]
+        return fn[:fn.rfind(base_name) + len(base_name) + 1] + str(order) + fn[fn.rfind(fn_suffix)-1:]
    
 def log_fn(fn):  
         #obj_logger.info('saving {}'.format(fn))
