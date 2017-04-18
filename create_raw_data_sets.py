@@ -199,7 +199,7 @@ def is_valid_pair(obj_A_header, obj_B_header):
         True if valid pair.
         False if not valid pair.
     """
-    kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers', 'itime']
+    kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'itime']
     for kwd in kwds:
         if obj_A_header[kwd] != obj_B_header[kwd]:
             return False
