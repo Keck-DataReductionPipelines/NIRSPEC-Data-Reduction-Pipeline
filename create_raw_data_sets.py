@@ -1,11 +1,10 @@
 import os
-#import subprocess
 import fnmatch
 import logging
 from astropy.io import fits
 
 import RawDataSet
-import nirspec_constants as constants
+import nirspec_constants
 import config
 
 from __builtin__ import False
@@ -156,13 +155,13 @@ def obj_criteria_met(header, failed2reduce):
         if header['DISPERS'].lower() != 'high':
             failed2reduce['dispmode'] += 1
             return False
-    if header['NAXIS1'] != constants.N_COLS:
+    if header['NAXIS1'] != nirspec_constants.N_COLS:
         failed2reduce['n1'] += 1
         return False
-    if header['NAXIS2'] != constants.N_ROWS:
+    if header['NAXIS2'] != nirspec_constants.N_ROWS:
         failed2reduce['n2'] += 1
         return False
-    if header['FILNAME'].upper() not in constants.filter_names:
+    if header['FILNAME'].upper() not in nirspec_constants.filter_names:
         failed2reduce['fil'] += 1
         return False
     return True

@@ -1,7 +1,7 @@
 import os
 import logging
 from astropy.io import fits
-import nirspec_constants as constants
+import nirspec_constants
 import RawDataSet
 import create_raw_data_sets
 import reduce_frame
@@ -39,10 +39,10 @@ def process_frame(fn1, fn2, obj_B_fn, out_dir):
         print('ERROR: cannot reduce low-resolution image (ECHLPOS > 100')
         exit(1)
         
-    if obj_header['NAXIS1'] != constants.N_COLS:
-        raise DrpException.DrpException('NAXIS1 != {}'.format(constants.N_COLS))
-    if obj_header['NAXIS2'] != constants.N_ROWS:
-        raise DrpException.DrpException('NAXIS2 != {}'.format(constants.N_COLS))
+    if obj_header['NAXIS1'] != nirspec_constants.N_COLS:
+        raise DrpException.DrpException('NAXIS1 != {}'.format(nirspec_constants.N_COLS))
+    if obj_header['NAXIS2'] != nirspec_constants.N_ROWS:
+        raise DrpException.DrpException('NAXIS2 != {}'.format(nirspec_constants.N_COLS))
     if obj_header['FILNAME'].lower().find('nirspec') < 0:
         raise DrpException.DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
     
