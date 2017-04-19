@@ -142,7 +142,7 @@ def mcal(reducedDataSets):
             if rds.frameCalRmsRes < minRes:
                 minRes = rds.frameCalRmsRes
                 coeffs = rds.frameCalCoeffs
-                calFrame = rds.baseName
+                calFrame = rds.baseNames['A']
          
     if coeffs is None:
         logger.info('no calibrated frames available for this configuration')
@@ -155,7 +155,7 @@ def mcal(reducedDataSets):
             rds.calFrame = calFrame
             reduce_frame.apply_wavelength_soln(rds)
             logger.info('{} wavelength calibration applied to {}'.format(
-                    calFrame, rds.baseName))
+                    calFrame, rds.baseNames['A']))
     
     return
         
