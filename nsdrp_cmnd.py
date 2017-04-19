@@ -43,7 +43,7 @@ def process_frame(fn1, fn2, obj_B_fn, out_dir):
         raise DrpException.DrpException('NAXIS1 != {}'.format(nirspec_constants.N_COLS))
     if obj_header['NAXIS2'] != nirspec_constants.N_ROWS:
         raise DrpException.DrpException('NAXIS2 != {}'.format(nirspec_constants.N_COLS))
-    if obj_header['FILNAME'].lower().find('nirspec') < 0:
+    if obj_header['FILNAME'].upper() not in nirspec_constants.filter_names:
         raise DrpException.DrpException('unsupported filter: {}'.format(obj_header['FILNAME']))
     
     if create_raw_data_sets.flat_criteria_met(obj_header, flat_header, ignore_dispers=True) is False:
