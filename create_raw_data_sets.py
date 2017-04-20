@@ -1,11 +1,10 @@
 import os
-#import subprocess
 import fnmatch
 import logging
 from astropy.io import fits
 
 import RawDataSet
-import nirspec_constants as constants
+import nirspec_constants
 import config
 
 from __builtin__ import False
@@ -49,17 +48,23 @@ def create(in_dir):
                 
     if obj_criteria_met(header, failed2reduce) is False:
 #        if failed2reduce.get('itype') > 0:
-#            logger.info('Ignored {} files because they are not object frames'.format(failed2reduce.get('itype')))
+#            logger.info('Ignored {} files because they are not object frames'.format(
+#                    failed2reduce.get('itype')))
         if failed2reduce.get('dismode') > 0:
-            logger.info('Failed to reduced {} files because of low dispersion mode'.format(failed2reduce.get('dispmode')))
+            logger.info('Failed to reduced {} files because of low dispersion mode'.format(
+                    failed2reduce.get('dispmode')))
         if failed2reduce.get('n1') > 0:
-            logger.info('Failed to reduced {} files because NAXIS1 != 1024'.format(failed2reduce.get('n1')))
+            logger.info('Failed to reduced {} files because NAXIS1 != 1024'.format(
+                    failed2reduce.get('n1')))
         if failed2reduce.get('n2') > 0:
-            logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(failed2reduce.get('n2')))
+            logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(
+                    failed2reduce.get('n2')))
         if failed2reduce.get('fil') > 0:
-            logger.info('Failed to reduce {} files because of invalid filter'.format(failed2reduce.get('fil')))
+            logger.info('Failed to reduce {} files because of unsupported filter'.format(
+                    failed2reduce.get('fil')))
 #        if failed2reduce.get('dmode') > 0:
-#            logger.info('Failed to reduce {} files because SCAM mode'.format(failed2reduce.get('dmode')))
+#            logger.info('Failed to reduce {} files because SCAM mode'.format(
+#                    failed2reduce.get('dmode')))
     
     logger.info('n object frames found = {}'.format(str(len(rawDataSets))))
     
@@ -142,19 +147,21 @@ def obj_criteria_met(header, failed2reduce):
 #    if header['DETMODE'].lower != 'spec':
 #        failed2reduce['dmode'] += 1
 #        return False
-    if header['IMAGETYP'].lower() != 'object':
-#        failed2reduce['itype'] += 1
-        return False
-    if header['DISPERS'].lower() != 'high':
-        failed2reduce['dispmode'] += 1
-        return False
-    if header['NAXIS1'] != constants.N_COLS:
+    if config.params['cmnd_line_mode'] == False:
+        if header['IMAGETYP'].lower() != 'object':
+#           failed2reduce['itype'] += 1
+            return False
+    if config.params['cmnd_line_mode'] == False:
+        if header['DISPERS'].lower() != 'high':
+            failed2reduce['dispmode'] += 1
+            return False
+    if header['NAXIS1'] != nirspec_constants.N_COLS:
         failed2reduce['n1'] += 1
         return False
-    if header['NAXIS2'] != constants.N_ROWS:
+    if header['NAXIS2'] != nirspec_constants.N_ROWS:
         failed2reduce['n2'] += 1
         return False
-    if header['FILNAME'].lower().find('nirspec') < 0:
+    if header['FILNAME'].upper() not in nirspec_constants.filter_names:
         failed2reduce['fil'] += 1
         return False
     return True
@@ -191,7 +198,7 @@ def is_valid_pair(obj_A_header, obj_B_header):
         True if valid pair.
         False if not valid pair.
     """
-    kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'dispers', 'itime']
+    kwds = ['disppos', 'echlpos', 'filname', 'slitname', 'itime']
     for kwd in kwds:
         if obj_A_header[kwd] != obj_B_header[kwd]:
             return False

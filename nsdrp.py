@@ -15,7 +15,7 @@ import nsdrp_koa
 #from DrpException import DrpException
 #import FlatCacher
 
-VERSION = '0.9.15'
+VERSION = '0.9.16'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -70,20 +70,20 @@ def main():
     config.params['jpg'] = args.jpg
 
     # initialize environment, setup main logger, check directories
-    try:
-        if config.params['cmnd_line_mode'] is True:
-            init(config.params['out_dir'])
-            nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
-        else:
-            init(args.arg2, args.arg1)
-            nsdrp_koa.process_dir(args.arg1, args.arg2)
-    except Exception as e:
-        print('ERROR: ' + e.message)
-        if config.params['debug'] is True:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
-        sys.exit(2)    
+#     try:
+    if config.params['cmnd_line_mode'] is True:
+        init(config.params['out_dir'])
+        nsdrp_cmnd.process_frame(args.arg1, args.arg2, args.b, config.params['out_dir'])
+    else:
+        init(args.arg2, args.arg1)
+        nsdrp_koa.process_dir(args.arg1, args.arg2)
+#     except Exception as e:
+#         print('ERROR: ' + e.message)
+#         if config.params['debug'] is True:
+#             exc_type, exc_value, exc_traceback = sys.exc_info()
+#             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+#             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=2, file=sys.stdout)
+#         sys.exit(2)    
 
     sys.exit(0)
     
@@ -203,11 +203,11 @@ def parse_cmnd_line_args():
             help='enables output of all log messages to stdout, always true in command line mode',
             action='store_true')
     parser.add_argument('-subdirs',
-            help='enables creation of per object frame subdirectories for data products,' +
+            help='enables creation of per-object-frame subdirectories for data products,' +
             'ignored in command line mode',
             action='store_true')
     parser.add_argument('-dgn', 
-            help='enables storage of diagnostic data products',
+            help='enables saving diagnostic data products in ...out/diagnostics',
             action='store_true')
     parser.add_argument('-npy', 
             help='enables generation of numpy text files for certain diagnostic data products',
@@ -224,7 +224,8 @@ def parse_cmnd_line_args():
     parser.add_argument('-sky_separation', help='separation between object and sky windows in pixels')
     #default=config.DEFAULT_SKY_DIST)
     parser.add_argument('-oh_filename', help='path and filename of OH emission line catalog file')
-    parser.add_argument('-int_c', help='revert to using integer column values in wavelength fit',
+    parser.add_argument('-int_c', help='user integer column values rather than fractional values \
+            determined by centroiding in wavelength fit',
             action='store_true')
     parser.add_argument('-lla', type=int, default=2, 
             help='calibration line location algorithm, 1 or [2]')
@@ -236,15 +237,18 @@ def parse_cmnd_line_args():
             'ignored in command line mode',
             action='store_true')
     parser.add_argument('-ut',
-            help='specify UT to be used for summary log file, overrides auto based on UT in first frame')
+            help='specify UT to be used for summary log file, overrides automatic UT \
+            determination based on UT of first frame')
     parser.add_argument('-gunzip',
-            help='gunzip .gz files (not necessary for processing)', 
-            action='store_true')
+            help='forces decompression of compressed FITS files, leaves both the .gz and .fits \
+                files in the source directory.  Note that the compressed files can be read \
+                directly so it is not necessary to decompress them.',  action='store_true')
     parser.add_argument('-spatial_jump_override',
             help='inhibit rejection of order edge traces based on \'jump\' limit)', 
             action='store_true')
     parser.add_argument('-out_dir', 
-            help='output directory in command line mode [.], ignored in KOA mode')
+            help='output directory path used in command line mode, default is current working \
+            directory, ignored in KOA mode')
     parser.add_argument('-b',
             help='filename of frame B in AB pair')
     parser.add_argument('-jpg', help='store preview plots in JPG format instead of PNG',

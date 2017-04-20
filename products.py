@@ -13,6 +13,7 @@ from astropy.io import fits
 from skimage import exposure
 import image_lib
 import config
+import nsdrp
 
 warnings.filterwarnings('ignore')
 
@@ -43,8 +44,8 @@ subdirs = dict([
                 ('profile.txt',         'ascii/profile'     ),
                 ('profile.fits',        'fits/profile'      ),
                 ('profile.png',         'previews/profile'  ),
-                ('calids_tbl.fits',     'fitstbl/cal'       ),
-                ('calids.txt',          'ascii/cal'         ),
+                ('calids_tbl.fits',     'fitstbl/wave'      ),
+                ('calids.txt',          'ascii/wave'        ),
                 ('order.fits',          'fits/order'        ),
                 ('order.png',           'previews/order'    ),
                 ('sky.fits',            'fits/sky'          ),
@@ -69,7 +70,7 @@ def constructFileName(outpath, base_name, order, fn_suffix):
     if order is None:
         return fn
     else:
-        return fn[:fn.rfind('_') + 1] + str(order) + fn[fn.rfind('_'):]
+        return fn[:fn.rfind(base_name) + len(base_name) + 1] + str(order) + fn[fn.rfind(fn_suffix)-1:]
    
 def log_fn(fn):  
         #obj_logger.info('saving {}'.format(fn))
@@ -99,6 +100,7 @@ def gen(reduced, out_dir):
             
     # prepare extended fits header
     header = reduced.header
+    header['NSDRPVER'] = (nsdrp.VERSION, 'NSDRP Version')
     header['COMMENT'] = ('NSDRP', 'NSDRP')
     if reduced.frameCalRmsRes is not None: 
         header['WFITRMS'] = (round(reduced.frameCalRmsRes, 4), 
@@ -150,6 +152,8 @@ def gen(reduced, out_dir):
     # produce per-order data products
     #
     
+    SKYDIST_INFO = 'Distance between sky and object extraction windows'
+    
     for order in reduced.orders:
             
         # extend header further with per-order data
@@ -175,9 +179,9 @@ def gen(reduced, out_dir):
             header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
                     'width of sky subtraction window in pixels')
             if len(order.topSkyWindow) > 0:
-                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], )
+                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], SKYDIST_INFO)
             else:
-                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], )    
+                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], SKYDIST_INFO)    
                       
         header['PROFPEAK'] = (round(centroid, 3), 'fractional row number of profile peak')
             
@@ -446,7 +450,13 @@ def profileFits(outpath, base_name, order_num, profile, header):
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+
+            
     fn = constructFileName(outpath, base_name, order_num, 'profile.fits')     
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
@@ -673,7 +683,12 @@ def fitsSpectrum(outpath, base_name, title, order_num, y_units, cont, wave, head
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+            
     fn = constructFileName(outpath, base_name, order_num, title + '.fits')     
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
@@ -829,7 +844,12 @@ def twoDimOrderFits(outpath, base_name, order_num, data, header):
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
     for k, v in header.iteritems():
-        hdr[k] = v
+        try:
+            hdr[k] = v
+        except Exception as e:
+            #obj_logger.warning(e.message)
+            pass
+            
     fn = constructFileName(outpath, base_name, order_num, 'order.fits')
     hdulist.writeto(fn, clobber=True)
     log_fn(fn)
