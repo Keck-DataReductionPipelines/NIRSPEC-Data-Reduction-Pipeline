@@ -774,7 +774,7 @@ def wavelengthCalAsciiTable(outpath, base_name, order, col, source, wave_exp, wa
         
     #print('\n'.join(buff))
         
-    fn = constructFileName(outpath, base_name, None, 'calids.txt')
+    fn = constructFileName(outpath, base_name, None, 'wavecal.txt')
     fptr = open(fn, 'w')
     fptr.write('\n'.join(buff))
     fptr.close()
@@ -798,7 +798,7 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
                 fits.Column(name='peak (counts)', format='1D', array=peak),
                 fits.Column(name='disp (Angstroms/pixel)', format='1D', array=slope)]))
     thdulist = fits.HDUList([prihdu, tbhdu]) 
-    fn = constructFileName(outpath, base_name, None, 'calids_tbl.fits')   
+    fn = constructFileName(outpath, base_name, None, 'wavecal_tbl.fits')   
     thdulist.writeto(fn, clobber=True)         
     log_fn(fn)
     return
