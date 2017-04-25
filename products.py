@@ -178,11 +178,14 @@ def gen(reduced, out_dir):
                     'sign-to-noise ratio for order')
             header['SKYEXTRW'] = (max(len(order.topSkyWindow), len(order.botSkyWindow)), 
                     'width of sky subtraction window in pixels')
-            if len(order.topSkyWindow) > 0:
-                header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], SKYDIST_INFO)
-            else:
-                header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], SKYDIST_INFO)    
-                      
+            try:
+                if len(order.topSkyWindow) > 0:
+                    header['SKYDIST'] = (order.topSkyWindow['A'][0] - order.objWindow['A'][-1], SKYDIST_INFO)
+                else:
+                    header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], SKYDIST_INFO)
+            except IndexError as e:
+                header['SKYDIST'] = 'Undefined'
+                 
         header['PROFPEAK'] = (round(centroid, 3), 'fractional row number of profile peak')
             
 
