@@ -438,7 +438,7 @@ def profileFitsTable(outpath, base_name, order_num, profile):
     prihdr = fits.Header()
     prihdr['COMMENT'] = "profile table"
     prihdu = fits.PrimaryHDU(header=prihdr)
-    tbhdu = fits.new_table(
+    tbhdu = fits.BinTableHDU.from_columns(
         fits.ColDefs([
             fits.Column(name='row (pix)', format='1I', array=np.arange(profile.shape[0], dtype=int)),
             fits.Column(name='mean_flux (cnts)', format='1D', array=profile)]))
@@ -790,7 +790,7 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
     prihdr = fits.Header()
     prihdr['COMMENT'] = "wavelength calibration table"
     prihdu = fits.PrimaryHDU(header=prihdr)
-    tbhdu = fits.new_table(
+    tbhdu = fits.BinTableHDU.from_columns(
             fits.ColDefs([
                 fits.Column(name='order', format='1I', array=order),
                 fits.Column(name='source', format='1A', array=source),
