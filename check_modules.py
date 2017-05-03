@@ -1,6 +1,6 @@
 import imp
 
-modules = ['os', 'numpy', 'math', 'subprocess', 'fnmatch', 'logging', 'pylab', 'errno', 'datetime', 'warnings', 'astropy', 'scipy', 'argparse', 'statsmodels']
+modules = ['os', 'numpy', 'math', 'subprocess', 'fnmatch', 'logging', 'pylab', 'errno', 'datetime', 'warnings', 'astropy', 'scipy', 'argparse', 'statsmodels', 'PIL']
 
 for m in modules:
     try:
