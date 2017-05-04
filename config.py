@@ -41,6 +41,8 @@ params['large_tilt_threshold']  = 20
 params['large_tilt_extra_padding'] = 10
 params['overscan_width']        = 10
 
+params['sowc'] = False  # simple order width calculation
+
 
 # expected order number at bottom of detector
 starting_order = {
@@ -71,6 +73,7 @@ def get_max_edge_location_error(filtername, slit):
     if '24' in slit:
         if 'NIRSPEC-7' in filtername.upper():
             return 35
+            #return 50
         else:
             return 30
     else:

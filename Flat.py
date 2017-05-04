@@ -11,6 +11,7 @@ from DrpException import DrpException
 import FlatOrder
 import nirspec_lib
 import image_lib
+from numpy.testing.utils import measure
 
 class Flat:
 
@@ -84,8 +85,8 @@ class Flat:
             flatOrder.topCalc, flatOrder.botCalc, flatOrder.gratingEqWaveScale = self.gratingEq.evaluate(
                     orderNum, self.filterName, self.slit, self.echelleAngle, self.disperserAngle)
             
-            self.logger.info('predicted y location: top = ' + '{:.0f}'.format(flatOrder.topCalc) + 
-                    ', bottom = ' + '{:.0f}'.format(flatOrder.botCalc))
+            self.logger.info('predicted top edge location = {:.0f} pixels'.format(flatOrder.topCalc))
+            self.logger.info('predicted bot edge location = {:.0f} pixels'.format(flatOrder.botCalc))
             
             # determine if order is expected to be on the detector
             # if this order is off but previous order(s) was/were on then no more orders
@@ -100,7 +101,10 @@ class Flat:
                 self.nOrdersExpected += 1
                 
                 # determine top and bottom LHS of order by edge detection
-                self.findOrder(flatOrder)
+                if config.params['sowc'] is True:
+                    self.findOrderSowc(flatOrder)
+                else:
+                    self.findOrder(flatOrder)
                 
                 if flatOrder.topMeas is None and flatOrder.botMeas is None:
                     continue
@@ -171,14 +175,60 @@ class Flat:
         
         return(peak_rows[tall_peaks_i[0]])
         
+    def findOrderSowc(self, flatOrder):
+        
+        flatOrder.topMeas = None
+        flatOrder.botMeas = None
+        w = flatOrder.topCalc - flatOrder.botCalc
+        
+        maxDelta = config.get_max_edge_location_error(self.filterName, self.slit)
+        
+        flatOrder.topMeas = self.findEdge(flatOrder.topCalc, maxDelta, 'top')
+        
+        if flatOrder.topMeas is not None:
+            flatOrder.botMeas = self.findEdge(flatOrder.topMeas - w, maxDelta, 'bot')
+        else:
+            flatOrder.botMeas = self.findEdge(flatOrder.botCalc, maxDelta, 'bot')
+
+        if flatOrder.topMeas is not None and flatOrder.botMeas is None:
+            flatOrder.botMeas = self.findEdge(flatOrder.topMeas - w, maxDelta, 'bot')
+        elif flatOrder.topMeas is None and flatOrder.botMeas is not None:
+            flatOrder.topMeas = self.findEdge(flatOrder.botMeas + w, maxDelta, 'top')
+
+        if flatOrder.topMeas is None:
+            self.logger.info('top edge not found')
+        else:
+            self.logger.info('measured top edge location = {:.0f} pixels'.format(flatOrder.topMeas))
+            self.logger.info('   top edge location delta = {:.0f} pixels'.format(
+                flatOrder.topCalc - flatOrder.topMeas))    
+        if flatOrder.botMeas is None:
+            self.logger.info('bottom edge not found')
+        else:
+            self.logger.info('measured bot edge location = {:.0f} pixels'.format(flatOrder.botMeas))
+            self.logger.info('   bot edge location delta = {:.0f} pixels'.format(
+                flatOrder.botCalc - flatOrder.botMeas))     
+        return
+              
+    def findEdge(self, calc, maxDelta, topOrBot): 
+        if topOrBot == 'bot': 
+            meas = min((abs(calc - i), i) for i in self.botEdgePeaks)[1] 
+        else:
+            meas = min((abs(calc - i), i) for i in self.topEdgePeaks)[1] 
+
+        if meas is None or abs(meas - calc) > maxDelta:
+            self.logger.debug('{} edge not found at {:.0f} +/- {:.0f}'.format(
+                topOrBot, calc, maxDelta)) 
+            return None
+        else:
+            return meas
         
     def findOrder(self, flatOrder):
-        
+         
         flatOrder.topMeas = min((abs(flatOrder.topCalc - i), i) for i in self.topEdgePeaks)[1]
         flatOrder.botMeas = min((abs(flatOrder.botCalc - i), i) for i in self.botEdgePeaks)[1]
-        
+         
         max_delta = config.get_max_edge_location_error(self.filterName, self.slit)
-
+ 
         if flatOrder.topMeas is None or abs(flatOrder.topMeas - flatOrder.topCalc) > max_delta:
             self.logger.info('measured top edge location too far from expected location')
             self.logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
@@ -188,7 +238,7 @@ class Flat:
             topStr = 'not found'
         else:
             topStr = str(flatOrder.topMeas)
-            
+             
         if flatOrder.botMeas is None or abs(flatOrder.botMeas - flatOrder.botCalc) > max_delta:
             self.logger.info('measured bottom edge location too far from expected location')
             self.logger.info('\tcalc={:.0f}, meas={:.0f}, delta={:.0f}, max delta={:.0f}'.format(
@@ -198,9 +248,9 @@ class Flat:
             botStr = 'not found'
         else:
             botStr = str(flatOrder.botMeas)
-
+ 
         self.logger.info('measured y location:  top = ' + topStr + ', bottom = ' + botStr)
-        
+         
         return
         
         
