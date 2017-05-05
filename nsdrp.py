@@ -1,5 +1,11 @@
-import argparse
 import os
+
+import check_modules
+requiredModules = check_modules.is_missing()
+if requiredModules:
+    os.sys.exit()
+    
+import argparse
 import sys
 import traceback
 import logging
