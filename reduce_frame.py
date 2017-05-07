@@ -421,7 +421,7 @@ def log_start_summary(reduced):
             baseName = reduced.baseNames['A']
         logging.getLogger(l).log(INFO, 'starting reduction of ' + baseName)
         logging.getLogger(l).log(INFO, 'time of observation = ' + 
-                str(reduced.getDate()) + ' ' + str(reduced.getTime() + ' UT'))
+                str(reduced.getDate()) + ' ' + str(reduced.getTime()) + ' UT')
         logging.getLogger(l).log(INFO, 'target name = ' + str(reduced.getTargetName()))
         logging.getLogger(l).log(INFO, 'filter name = ' + str(reduced.getFullFilterName()))
         logging.getLogger(l).log(INFO, 'slit name = ' + str(reduced.getSlit()))
