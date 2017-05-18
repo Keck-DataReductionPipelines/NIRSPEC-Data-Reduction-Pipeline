@@ -7,7 +7,12 @@ import logging
 import os
 import errno
 import warnings
-import Image
+
+try:
+    import Image
+except ImportError:
+    from PIL import Image
+    
 import numpy as np
 from astropy.io import fits
 from skimage import exposure
