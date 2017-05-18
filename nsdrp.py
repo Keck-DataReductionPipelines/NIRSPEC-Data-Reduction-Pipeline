@@ -1,10 +1,10 @@
 import os
 
 import check_modules
-    requiredModules = check_modules.is_missing()
-    if requiredModules:
-        os.sys.exit()
-
+requiredModules = check_modules.is_missing()
+if requiredModules:
+    os.sys.exit()
+    
 import argparse
 import sys
 import traceback
@@ -21,7 +21,7 @@ import nsdrp_koa
 #from DrpException import DrpException
 #import FlatCacher
 
-VERSION = '0.9.16'
+VERSION = '0.9.17'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -74,6 +74,7 @@ def main():
     if args.out_dir is not None:
         config.params['out_dir'] = args.out_dir
     config.params['jpg'] = args.jpg
+    config.params['sowc'] = args.sowc;
 
     # initialize environment, setup main logger, check directories
 #     try:
@@ -259,6 +260,7 @@ def parse_cmnd_line_args():
             help='filename of frame B in AB pair')
     parser.add_argument('-jpg', help='store preview plots in JPG format instead of PNG',
             action='store_true')
+    parser.add_argument('-sowc', help='enable simple order width calculation', action='store_true')
 
     return(parser.parse_args())
           

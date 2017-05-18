@@ -1,5 +1,6 @@
 import numpy as np
 import datetime
+import config
 
 import nirspec_constants as const
 
@@ -60,92 +61,107 @@ class GratingEq:
         # solve for location of the beginning of the middle of the order in spatial axis
         left_mid_row = c1 * wavelength_left + c2 * np.sin(np.radians(disppos)) + y0
     
-    
-        # width of order depends on disperser angle
-        k3 = 9.9488e1
-        k4 = 1.0517e0
-        left_top_row = left_mid_row + ((k3 - (k4 * disppos)) / 2.0)
-        left_bot_row = left_mid_row - ((k3 - (k4 * disppos)) / 2.0)
+        if config.params['sowc'] is True:
+            self.logger.info('using simple order width calculation')
+            if '24' in slit:
+                orderWidth = 24.0 / 0.193
+                self.logger.info('long slit order width = {:.0f} pixels'.format(orderWidth))
+            else:
+                orderWidth = 12.0 / 0.193
+                self.logger.info('short slit order width = {:.0f} pixels'.format(orderWidth))
+
+            left_top_row = left_mid_row + (orderWidth / 2.0)
+            left_bot_row = left_mid_row - (orderWidth / 2.0)
+        else:
             
-        # apply empirical corrections
+            self.logger.info('using complicated order width calculation')
+            # width of order depends on disperser angle
+            k3 = 9.9488e1
+            k4 = 1.0517e0
+            left_top_row = left_mid_row + ((k3 - (k4 * disppos)) / 2.0)
+            left_bot_row = left_mid_row - ((k3 - (k4 * disppos)) / 2.0)
+                
+            # apply empirical corrections
+            
+            long_slit_y_corr = 20
+            low_res_slit_y_corr = 30
+        #     date_y_corr = 50
+            date_y_corr = 0
+            filter_7_y_corr = 45
+            filter_4_5_6_y_corr = 30
+            filter_3_y_corr = 50
+            filter_1_y_corr = 50
         
-        long_slit_y_corr = 20
-        low_res_slit_y_corr = 30
-    #     date_y_corr = 50
-        date_y_corr = 0
-        filter_7_y_corr = 45
-        filter_4_5_6_y_corr = 30
-        filter_3_y_corr = 50
-        filter_1_y_corr = 50
-    
-        if '24' in slit:
-            
-            if '1' not in filtername:
-                self.logger.debug('applying +/-' + str(long_slit_y_corr) + 
-                            ' pixel long slit y correction for slit ' + slit)
-                left_top_row += long_slit_y_corr
-                left_bot_row -= long_slit_y_corr
-            
-            if '3' in filtername:
-                self.logger.info('applying N-3 long slit correction')
-                left_top_row -= 25
-                left_bot_row -= 25 
+            if '24' in slit:
                 
-            if '5' in filtername:
-                self.logger.info('applying N-5 long slit correction')
-                left_top_row += 10
-                left_bot_row += 10
+                if '1' not in filtername:
+                    self.logger.debug('applying +/-' + str(long_slit_y_corr) + 
+                                ' pixel long slit y correction for slit ' + slit)
+                    left_top_row += long_slit_y_corr
+                    left_bot_row -= long_slit_y_corr
                 
-            if '6' in filtername:
-                self.logger.info('applying N-6 long slit correction')
-                left_top_row -= 25
-                left_bot_row -= 25 
-            
-        elif '42x' in slit:
-            self.logger.debug('applying +/-' + str(low_res_slit_y_corr) + 
-                        ' pixel low res slit y correction for slit ' + slit)
-            left_top_row += low_res_slit_y_corr
-            left_bot_row -= low_res_slit_y_corr
-            
-        elif '2.26' in slit:
-            self.logger.debug ('applying x2.26 AO slit correction')
-            left_bot_row = left_top_row - ((left_top_row - left_bot_row) * 2)
-            
-        elif '1.13' in slit:
-            self.logger.debug ('applying no correction for x1.13 AO slit correction')
-            
-        if dateobs is not None:
-            obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')
-            shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
-            
-            if obs_date < shift_date:
-                self.logger.debug('applying +' + str(date_y_corr) + 
-                            ' pixel pre-' + shift_date.strftime('%x') + ' y correction')
-                left_top_row += date_y_corr
-                left_bot_row += date_y_corr
-            
-        if 'NIRSPEC-7' in filtername:
-            self.logger.debug('applying + ' + str(filter_7_y_corr) + ' pixel y corr for filter ' + filtername)
-            left_top_row += filter_7_y_corr
-            left_bot_row += filter_7_y_corr
-            
-        elif 'NIRSPEC-6' in filtername or 'NIRSPEC-5' in filtername or 'NIRSPEC-4' in filtername:
-            self.logger.debug('applying +' + str(filter_4_5_6_y_corr) + 
-                        ' pixel N-4,5,6 filter y corr for filter ' + filtername)
-            left_top_row += filter_4_5_6_y_corr
-            left_bot_row += filter_4_5_6_y_corr
-            
-        elif 'NIRSPEC-3' in filtername:
-            self.logger.debug('applying +' + str(filter_3_y_corr) + 
-                        ' pixel N-3 filter y corr for filter ' + filtername )
-            left_top_row += filter_3_y_corr
-            left_bot_row += filter_3_y_corr
-            
-        elif 'NIRSPEC-1' in filtername:
-            self.logger.debug('applying +' + str(filter_1_y_corr) + 
-                        ' pixel N-1 filter y corr for filter ' + filtername )
-            left_top_row += filter_1_y_corr
-            left_bot_row += filter_1_y_corr
+                if '3' in filtername:
+                    self.logger.info('applying N-3 long slit correction')
+                    left_top_row -= 25
+                    left_bot_row -= 25 
+                    
+                if '5' in filtername:
+                    self.logger.info('applying N-5 long slit correction')
+                    left_top_row += 10
+                    left_bot_row += 10
+                    
+                if '6' in filtername:
+                    self.logger.info('applying N-6 long slit correction')
+                    left_top_row -= 25
+                    left_bot_row -= 25 
+                
+            elif '42x' in slit:
+                self.logger.debug('applying +/-' + str(low_res_slit_y_corr) + 
+                            ' pixel low res slit y correction for slit ' + slit)
+                left_top_row += low_res_slit_y_corr
+                left_bot_row -= low_res_slit_y_corr
+                
+            elif '2.26' in slit:
+                self.logger.debug ('applying x2.26 AO slit correction')
+                left_bot_row = left_top_row - ((left_top_row - left_bot_row) * 2)
+                
+            elif '1.13' in slit:
+                self.logger.debug ('applying no correction for x1.13 AO slit correction')
+                
+            if dateobs is not None:
+                obs_date = datetime.datetime.strptime(dateobs, '%Y-%m-%d')
+                shift_date = datetime.datetime.strptime('2004-05-24', '%Y-%m-%d')
+                
+                if obs_date < shift_date:
+                    self.logger.debug('applying +' + str(date_y_corr) + 
+                                ' pixel pre-' + shift_date.strftime('%x') + ' y correction')
+                    left_top_row += date_y_corr
+                    left_bot_row += date_y_corr
+                
+            if 'NIRSPEC-7' in filtername:
+                self.logger.debug('applying + ' + str(filter_7_y_corr) + ' pixel y corr for filter ' + filtername)
+                left_top_row += filter_7_y_corr
+                left_bot_row += filter_7_y_corr
+                
+            elif 'NIRSPEC-6' in filtername or 'NIRSPEC-5' in filtername or 'NIRSPEC-4' in filtername:
+                self.logger.debug('applying +' + str(filter_4_5_6_y_corr) + 
+                            ' pixel N-4,5,6 filter y corr for filter ' + filtername)
+                left_top_row += filter_4_5_6_y_corr
+                left_bot_row += filter_4_5_6_y_corr
+                
+            elif 'NIRSPEC-3' in filtername:
+                self.logger.debug('applying +' + str(filter_3_y_corr) + 
+                            ' pixel N-3 filter y corr for filter ' + filtername )
+                left_top_row += filter_3_y_corr
+                left_bot_row += filter_3_y_corr
+                
+            elif 'NIRSPEC-1' in filtername:
+                self.logger.debug('applying +' + str(filter_1_y_corr) + 
+                            ' pixel N-1 filter y corr for filter ' + filtername )
+                left_top_row += filter_1_y_corr
+                left_bot_row += filter_1_y_corr
+                
+                self.logger.info('order width = {:.0f} pixels'.format(left_top_row - left_bot_row))
             
         wavelength_shift = 0
         
