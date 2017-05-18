@@ -12,7 +12,7 @@ try:
     import Image
 except ImportError:
     from PIL import Image
-    
+
 import numpy as np
 from astropy.io import fits
 from skimage import exposure
@@ -190,8 +190,7 @@ def gen(reduced, out_dir):
                     header['SKYDIST'] = (order.objWindow['A'][0] - order.botSkyWindow['A'][-1], SKYDIST_INFO)
             except IndexError as e:
                 header['SKYDIST'] = 'Undefined'
-                      
-                      
+                 
         header['PROFPEAK'] = (round(centroid, 3), 'fractional row number of profile peak')
             
 
@@ -444,7 +443,7 @@ def profileFitsTable(outpath, base_name, order_num, profile):
     prihdr = fits.Header()
     prihdr['COMMENT'] = "profile table"
     prihdu = fits.PrimaryHDU(header=prihdr)
-    tbhdu = fits.new_table(
+    tbhdu = fits.BinTableHDU.from_columns(
         fits.ColDefs([
             fits.Column(name='row (pix)', format='1I', array=np.arange(profile.shape[0], dtype=int)),
             fits.Column(name='mean_flux (cnts)', format='1D', array=profile)]))
@@ -796,7 +795,7 @@ def wavelengthCalFitsTable(outpath, base_name, order, col, source, wave_exp, wav
     prihdr = fits.Header()
     prihdr['COMMENT'] = "wavelength calibration table"
     prihdu = fits.PrimaryHDU(header=prihdr)
-    tbhdu = fits.new_table(
+    tbhdu = fits.BinTableHDU.from_columns(
             fits.ColDefs([
                 fits.Column(name='order', format='1I', array=order),
                 fits.Column(name='source', format='1A', array=source),
