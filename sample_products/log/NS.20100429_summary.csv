@@ -1,0 +1,2 @@
+fn, date, time, target, filter, slit, disppos, echlpos, itime, coadds, n orders, n reduced, snr mean, snr min, width mean, width max, n lines found, n lines used, r rms, cal frame
+NS.20100429.40280, 2010-04-29, 11:11:20.45, 511_Davida 11UT, NIRSPEC-5, 0.432x12, 36.93, 63.31, 90.000000, 1, 8, 8, 2.9, 1.2, 2.9, 3.1, 58, 55, 0.411, self

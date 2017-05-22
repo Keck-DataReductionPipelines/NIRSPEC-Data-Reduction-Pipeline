@@ -1,4 +1,4 @@
-from __builtin__ import False
+#from __builtin__ import False
 
 class NirspecConfig:
     

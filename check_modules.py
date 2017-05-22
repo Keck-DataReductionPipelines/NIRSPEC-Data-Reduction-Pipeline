@@ -8,7 +8,7 @@ def is_missing():
         try:
             imp.find_module(m)
         except ImportError:
-            print 'Module %s not installed' % m
+            print('Module %s not installed' % m)
             missingModules.append(m)
     
     return missingModules

@@ -61,7 +61,7 @@ class FlatCacher:
         else:
             self.logger.debug('reusing flat ' + fn)
             return(self.fnToFlat[fn])
-        
+            
     def getCachedFlat(self, baseFns):
         
         for k, v in self.fnToRawFlatList.items():

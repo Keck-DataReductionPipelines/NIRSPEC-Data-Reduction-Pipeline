@@ -13,6 +13,7 @@ import Flat
 from logging import INFO
 import Order
 import image_lib
+import imp
 
 logger = logging.getLogger('obj')
 # main_logger = logging.getLogger('main')
@@ -53,7 +54,7 @@ def reduce_frame(raw, out_dir, flatCacher=None):
     # Get fully processed flat in the form of a Flat object
     reduced.Flat = getFlat(raw, flatCacher)
     logger.info('using flat {}'.format(reduced.Flat.getBaseName()))
-    
+        
     # clean cosmic ray hits on object frame(s)
     if config.params['no_cosmic']:
         logger.info("cosmic ray rejection on object frame inhibited by command line flag")
@@ -84,7 +85,7 @@ def reduce_frame(raw, out_dir, flatCacher=None):
         raise
     
     # find and apply wavelength solution
-    reload(wavelength_utils)
+    imp.reload(wavelength_utils)
     if find_global_wavelength_soln(reduced) is True:
         apply_wavelength_soln(reduced)
     else:
@@ -135,7 +136,7 @@ def getFlat(raw, flatCacher):
                 fits.PrimaryHDU.readfrom(raw.flatFns[0], ignore_missing_end=True).header, 
                 flat_data))
     else:
-        return(flatCacher.getFlat(raw.flatFns)) 
+        return(flatCacher.getFlat(raw.flatFns))
      
  
 def reduce_orders(reduced):

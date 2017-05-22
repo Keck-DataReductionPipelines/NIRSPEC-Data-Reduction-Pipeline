@@ -7,7 +7,7 @@ import RawDataSet
 import nirspec_constants
 import config
 
-from __builtin__ import False
+#from __builtin__ import False
 
 failed2reduce = {'itype':0, 'dispmode':0, 'n1':0, 'n2':0, 'fil':0} #, 'dmode':0}
 
@@ -33,7 +33,7 @@ def create(in_dir):
             
     if (len(headers) == 0):
         logger.critical('no fits files found')
-        print "CRITICAL - no fits files found in: " + in_dir
+        print("CRITICAL - no fits files found in: " + in_dir)
         os.sys.exit(2)
         return
     
@@ -44,24 +44,25 @@ def create(in_dir):
     for filename, header in headers.items():
             if obj_criteria_met(header, failed2reduce):
                 rawDataSets.append(RawDataSet.RawDataSet(filename, None, header))
-
-                
+    
     if obj_criteria_met(header, failed2reduce) is False:
 #        if failed2reduce.get('itype') > 0:
 #            logger.info('Ignored {} files because they are not object frames'.format(
 #                    failed2reduce.get('itype')))
-        if failed2reduce.get('dismode') > 0:
+        if failed2reduce.get('dismode') is not None:
             logger.info('Failed to reduced {} files because of low dispersion mode'.format(
                     failed2reduce.get('dispmode')))
-        if failed2reduce.get('n1') > 0:
+        elif failed2reduce.get('n1') is not None:
             logger.info('Failed to reduced {} files because NAXIS1 != 1024'.format(
                     failed2reduce.get('n1')))
-        if failed2reduce.get('n2') > 0:
+        elif failed2reduce.get('n2') is not None:
             logger.info('Failed to reduced {} files because NAXIS2 != 1024'.format(
                     failed2reduce.get('n2')))
-        if failed2reduce.get('fil') > 0:
+        elif failed2reduce.get('fil') is not None:
             logger.info('Failed to reduce {} files because of unsupported filter'.format(
                     failed2reduce.get('fil')))
+        else:
+            pass
 #        if failed2reduce.get('dmode') > 0:
 #            logger.info('Failed to reduce {} files because SCAM mode'.format(
 #                    failed2reduce.get('dmode')))
