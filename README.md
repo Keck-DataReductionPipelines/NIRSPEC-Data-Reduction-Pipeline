@@ -3,7 +3,7 @@ PREREQUISITES:
 
 1)    NSDRP was developed with Anaconda python and that distribution is recommended, but can be run with Ureka or other python installations. Anaconda comes installed with the required modules: numpy, os, math, subprocess, fnmatch, logging, pylab, errno, datetime, warnings, astropy, scipy, argparse, and statsmodels. Depending on your python distribution of choice, you may be required to manually download and install one or more of these modules.
 
-2)    Verify correct installation by typing "python" on the command line. The terminal will display the version number and the distribution, i.e. Python2.7.8, Anaconda 2.1.0, etc. To confirm whether the required modules are installed, type "python check_modules.py". The script will print the name of any missing modules. 
+2)    Verify correct installation by typing "python" on the command line. The terminal will display the version number and the distribution, i.e. Python2.7.8, Anaconda 2.1.0, etc. To verify installation of the required python modules, please refer to step one in the EXECUTING NSDRP section below.
 
 3)    The NSDRP software is maintained on GitHub. Download the code from https://github.com/Keck-DataReductionPipelines/NIRSPEC-Data-Reduction-Pipeline.git 
 and install by decompressing the folder in the directory of your choice.
@@ -32,7 +32,9 @@ EXECUTING NSDRP:
 1)    Simple command line usage: python nsdrp.py in_dir out_dir
 
       Note that you must provide the full directory path of the python file (nsdrp.py) if your current working 
-      directory is not the source code.  
+      directory is not the source code. 
+      
+      Any required python packages that are not installed will be printed on the terminal console and NSDRP will halt             execution.
       
       OH sky lines are used to refine the theoretical wavelength scale. These lines are listed in the 
       ir_ohlines.dat file which is included in the download. In case you would like to use a different file, 
