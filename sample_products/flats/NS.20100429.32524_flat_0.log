@@ -1,0 +1,107 @@
+2017-05-22 13:06:20,231 INFO - creating NS.20100429.32524_flat_0.fits from NS.20100429.32524.fits
+2017-05-22 13:06:20,232 INFO - reducing flat NS.20100429.32524_flat_0
+2017-05-22 13:06:20,245 INFO - ***** flat order 53 *****
+2017-05-22 13:06:20,245 INFO - using complicated order width calculation
+2017-05-22 13:06:20,245 INFO - predicted top edge location = -249 pixels
+2017-05-22 13:06:20,245 INFO - predicted bot edge location = -310 pixels
+2017-05-22 13:06:20,245 INFO - order 53 is not on the detector
+2017-05-22 13:06:20,245 INFO - ***** flat order 52 *****
+2017-05-22 13:06:20,246 INFO - using complicated order width calculation
+2017-05-22 13:06:20,246 INFO - predicted top edge location = -147 pixels
+2017-05-22 13:06:20,246 INFO - predicted bot edge location = -208 pixels
+2017-05-22 13:06:20,246 INFO - order 52 is not on the detector
+2017-05-22 13:06:20,246 INFO - ***** flat order 51 *****
+2017-05-22 13:06:20,246 INFO - using complicated order width calculation
+2017-05-22 13:06:20,246 INFO - predicted top edge location = -42 pixels
+2017-05-22 13:06:20,246 INFO - predicted bot edge location = -102 pixels
+2017-05-22 13:06:20,246 INFO - order 51 is not on the detector
+2017-05-22 13:06:20,246 INFO - ***** flat order 50 *****
+2017-05-22 13:06:20,246 INFO - using complicated order width calculation
+2017-05-22 13:06:20,246 INFO - predicted top edge location = 68 pixels
+2017-05-22 13:06:20,246 INFO - predicted bot edge location = 8 pixels
+2017-05-22 13:06:20,246 INFO - measured y location:  top = 77, bottom = 16
+2017-05-22 13:06:20,338 INFO - using top and bottom trace
+2017-05-22 13:06:20,340 INFO - spatial trace smoothed, 27 points ignored
+2017-05-22 13:06:20,340 INFO - spatial trace smoothing rms fit residual = 0.24
+2017-05-22 13:06:20,340 INFO - large order tilt detected, tilt = 25.7 threshold = 20 extra padding = 10
+2017-05-22 13:06:20,343 INFO - reducing flat order 50
+2017-05-22 13:06:20,351 INFO - flat normalized, flat mean = 4054.9
+2017-05-22 13:06:20,442 INFO - ***** flat order 49 *****
+2017-05-22 13:06:20,442 INFO - using complicated order width calculation
+2017-05-22 13:06:20,442 INFO - predicted top edge location = 183 pixels
+2017-05-22 13:06:20,442 INFO - predicted bot edge location = 122 pixels
+2017-05-22 13:06:20,442 INFO - measured y location:  top = 194, bottom = 130
+2017-05-22 13:06:20,527 INFO - using top and bottom trace
+2017-05-22 13:06:20,528 INFO - spatial trace smoothed, 26 points ignored
+2017-05-22 13:06:20,528 INFO - spatial trace smoothing rms fit residual = 0.25
+2017-05-22 13:06:20,530 INFO - reducing flat order 49
+2017-05-22 13:06:20,536 INFO - flat normalized, flat mean = 4519.4
+2017-05-22 13:06:20,623 INFO - ***** flat order 48 *****
+2017-05-22 13:06:20,623 INFO - using complicated order width calculation
+2017-05-22 13:06:20,623 INFO - predicted top edge location = 302 pixels
+2017-05-22 13:06:20,623 INFO - predicted bot edge location = 241 pixels
+2017-05-22 13:06:20,623 INFO - measured y location:  top = 312, bottom = 251
+2017-05-22 13:06:20,709 INFO - using top and bottom trace
+2017-05-22 13:06:20,710 INFO - spatial trace smoothed, 28 points ignored
+2017-05-22 13:06:20,710 INFO - spatial trace smoothing rms fit residual = 0.17
+2017-05-22 13:06:20,712 INFO - reducing flat order 48
+2017-05-22 13:06:20,719 INFO - flat normalized, flat mean = 4734.3
+2017-05-22 13:06:20,838 INFO - ***** flat order 47 *****
+2017-05-22 13:06:20,838 INFO - using complicated order width calculation
+2017-05-22 13:06:20,838 INFO - predicted top edge location = 426 pixels
+2017-05-22 13:06:20,838 INFO - predicted bot edge location = 365 pixels
+2017-05-22 13:06:20,838 INFO - measured y location:  top = 436, bottom = 375
+2017-05-22 13:06:20,932 INFO - using top and bottom trace
+2017-05-22 13:06:20,933 INFO - spatial trace smoothed, 22 points ignored
+2017-05-22 13:06:20,933 INFO - spatial trace smoothing rms fit residual = 0.19
+2017-05-22 13:06:20,934 INFO - reducing flat order 47
+2017-05-22 13:06:20,941 INFO - flat normalized, flat mean = 4736.9
+2017-05-22 13:06:21,023 INFO - ***** flat order 46 *****
+2017-05-22 13:06:21,023 INFO - using complicated order width calculation
+2017-05-22 13:06:21,023 INFO - predicted top edge location = 556 pixels
+2017-05-22 13:06:21,023 INFO - predicted bot edge location = 495 pixels
+2017-05-22 13:06:21,023 INFO - measured y location:  top = 565, bottom = 505
+2017-05-22 13:06:21,108 INFO - using top and bottom trace
+2017-05-22 13:06:21,109 INFO - spatial trace smoothed, 29 points ignored
+2017-05-22 13:06:21,109 INFO - spatial trace smoothing rms fit residual = 0.18
+2017-05-22 13:06:21,111 INFO - reducing flat order 46
+2017-05-22 13:06:21,117 INFO - flat normalized, flat mean = 4623.2
+2017-05-22 13:06:21,198 INFO - ***** flat order 45 *****
+2017-05-22 13:06:21,198 INFO - using complicated order width calculation
+2017-05-22 13:06:21,198 INFO - predicted top edge location = 691 pixels
+2017-05-22 13:06:21,198 INFO - predicted bot edge location = 631 pixels
+2017-05-22 13:06:21,198 INFO - measured y location:  top = 701, bottom = 640
+2017-05-22 13:06:21,284 INFO - using top and bottom trace
+2017-05-22 13:06:21,285 INFO - spatial trace smoothed, 22 points ignored
+2017-05-22 13:06:21,285 INFO - spatial trace smoothing rms fit residual = 0.16
+2017-05-22 13:06:21,287 INFO - reducing flat order 45
+2017-05-22 13:06:21,294 INFO - flat normalized, flat mean = 4404.6
+2017-05-22 13:06:21,377 INFO - ***** flat order 44 *****
+2017-05-22 13:06:21,377 INFO - using complicated order width calculation
+2017-05-22 13:06:21,377 INFO - predicted top edge location = 833 pixels
+2017-05-22 13:06:21,377 INFO - predicted bot edge location = 772 pixels
+2017-05-22 13:06:21,378 INFO - measured y location:  top = 842, bottom = 781
+2017-05-22 13:06:21,466 INFO - using top and bottom trace
+2017-05-22 13:06:21,467 INFO - spatial trace smoothed, 24 points ignored
+2017-05-22 13:06:21,467 INFO - spatial trace smoothing rms fit residual = 0.22
+2017-05-22 13:06:21,469 INFO - reducing flat order 44
+2017-05-22 13:06:21,476 INFO - flat normalized, flat mean = 3999.9
+2017-05-22 13:06:21,561 INFO - ***** flat order 43 *****
+2017-05-22 13:06:21,561 INFO - using complicated order width calculation
+2017-05-22 13:06:21,562 INFO - predicted top edge location = 981 pixels
+2017-05-22 13:06:21,562 INFO - predicted bot edge location = 920 pixels
+2017-05-22 13:06:21,562 INFO - measured y location:  top = 991, bottom = 930
+2017-05-22 13:06:21,648 INFO - using top and bottom trace
+2017-05-22 13:06:21,649 INFO - spatial trace smoothed, 22 points ignored
+2017-05-22 13:06:21,649 INFO - spatial trace smoothing rms fit residual = 0.28
+2017-05-22 13:06:21,649 INFO - large order tilt detected, tilt = 26.3 threshold = 20 extra padding = 10
+2017-05-22 13:06:21,651 INFO - reducing flat order 43
+2017-05-22 13:06:21,660 INFO - flat normalized, flat mean = 3276.6
+2017-05-22 13:06:21,754 INFO - ***** flat order 42 *****
+2017-05-22 13:06:21,755 INFO - using complicated order width calculation
+2017-05-22 13:06:21,755 INFO - predicted top edge location = 1136 pixels
+2017-05-22 13:06:21,755 INFO - predicted bot edge location = 1075 pixels
+2017-05-22 13:06:21,755 INFO - order 42 is not on the detector
+2017-05-22 13:06:21,755 INFO - flat reduction compete
+2017-05-22 13:06:21,755 INFO - n orders expected = 8
+2017-05-22 13:06:21,755 INFO - n orders found = 8

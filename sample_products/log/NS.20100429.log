@@ -1,0 +1,28 @@
+2017-05-22 13:05:59,202 INFO - start nsdrp version 0.9.17
+2017-05-22 13:05:59,202 INFO - cwd: /Users/Andrew/Desktop/wmkeck/koa/nirspec/NIRSPEC-Data-Reduction-Pipeline
+2017-05-22 13:05:59,202 INFO - input dir: rawfits
+2017-05-22 13:05:59,202 INFO - output dir: sample_products
+2017-05-22 13:05:59,347 INFO - n fits files found = 2
+2017-05-22 13:05:59,347 INFO - n object frames found = 1
+2017-05-22 13:05:59,348 INFO - n raw data sets with flats = 1
+2017-05-22 13:05:59,348 INFO - instantiating flat cacher
+2017-05-22 13:05:59,465 INFO - starting reduction of NS.20100429.40280
+2017-05-22 13:05:59,465 INFO - time of observation = 2010-04-29 11:11:20.45 UT
+2017-05-22 13:05:59,465 INFO - target name = 511_Davida 11UT
+2017-05-22 13:05:59,465 INFO - filter name = NIRSPEC-5
+2017-05-22 13:05:59,465 INFO - slit name = 0.432x12
+2017-05-22 13:05:59,465 INFO - integration time = 90.0 sec
+2017-05-22 13:05:59,465 INFO - n coadds = 1
+2017-05-22 13:05:59,692 INFO - cosmic cleaning flat because < 3 flats were median combined
+2017-05-22 13:06:20,224 INFO - cosmic ray cleaning complete
+2017-05-22 13:06:31,472 INFO - mean signal-to-noise ratio = 2.9
+2017-05-22 13:06:31,472 INFO - minimum signal-to-noise ratio = 1.2
+2017-05-22 13:06:31,472 INFO - mean spatial peak width = 2.9 pixels
+2017-05-22 13:06:31,472 INFO - maximum spatial peak width = 3.1 pixels
+2017-05-22 13:06:31,473 INFO - n sky lines identified = 58
+2017-05-22 13:06:31,528 INFO - n lines used in wavelength fit = 55
+2017-05-22 13:06:31,528 INFO - rms wavelength fit residual = 0.411
+2017-05-22 13:06:31,530 INFO - generating data products for single-frame set, nirspec config: disppos=36.93, echlpos=63.31, filname=NIRSPEC-5, slitname=0.432x12
+2017-05-22 13:06:44,142 INFO - n data products generated for NS.20100429.40280 = 130
+2017-05-22 13:06:44,142 INFO - n object frames reduced = 1/1
+2017-05-22 13:06:44,143 INFO - end nsdrp

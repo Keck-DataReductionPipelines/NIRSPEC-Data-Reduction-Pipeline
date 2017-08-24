@@ -3,7 +3,7 @@ import scipy.ndimage as ndimage
 #from skimage.feature.peak import peak_local_max
 import cosmics
 #from __builtin__ import None
-
+import os
 
 def rectify_spatial(data, curve):
     """
@@ -123,6 +123,7 @@ def cosmic_clean(data):
     
     c = cosmics.cosmicsImage(data, sigclip=sig_clip, sigfrac=sig_frac, objlim=obj_lim, 
             verbose=False)
+    
     c.run(max_iter)
     return(c.cleanarray)
 

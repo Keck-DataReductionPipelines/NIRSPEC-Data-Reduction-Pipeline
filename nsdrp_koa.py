@@ -51,7 +51,7 @@ def process_dir(in_dir, base_out_dir):
         if nirspecConfig is None:
             nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
         else:
-            if nirspecConfig.isTheSame(rawDataSet.objHeader) == False:
+            if nirspecConfig.isTheSame(rawDataSet.objHeader) is not None:
     
                 if len(reducedDataSets) > 0:
     
@@ -65,22 +65,22 @@ def process_dir(in_dir, base_out_dir):
                             nirspecConfig.toString()))
                     nirspecConfig = NirspecConfig.NirspecConfig(rawDataSet.objHeader)
             
-        try:
-            reducedDataSets.append(reduce_frame.reduce_frame(rawDataSet, out_dir, flatCacher))  
-        except DrpException as e:
-            n_reduced -= 1
-            logger.error('failed to reduce {}: {}'.format(
-                    rawDataSet.objFileName, e.message))
-        except IOError as e:
-            logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
-            sys.exit(1)
-            
+        
+        reducedDataSets.append(reduce_frame.reduce_frame(rawDataSet, out_dir, flatCacher))
+
+#        except DrpException as e:
+#            n_reduced -= 1
+#            logger.error('failed to reduce {}: {}'.format(
+#                    rawDataSet.objFileName, e.message))e
+#        except IOError as e:
+#            logger.critical('DRP failed due to I/O error: {}'.format(str(e)))
+#            sys.exit(1)
+        
     if len(reducedDataSets) > 1:
         logger.info('doing multi-frame calibration on {} frames, nirspec config: {}'.format(
                 len(reducedDataSets), nirspecConfig.toString()))
         mcal(reducedDataSets)
 
-            
     if len(rawDataSets) > 0:
         gen_data_products(reducedDataSets, nirspecConfig, base_out_dir, ssFptr)
         logger.info('n object frames reduced = {}/{}'.format(

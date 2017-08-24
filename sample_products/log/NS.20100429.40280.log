@@ -1,0 +1,185 @@
+2017-05-22 13:05:59,464 INFO - nsdrp version 0.9.17
+2017-05-22 13:05:59,464 INFO - starting reduction of NS.20100429.40280
+2017-05-22 13:05:59,464 INFO - time of observation = 2010-04-29 11:11:20.45 UT
+2017-05-22 13:05:59,464 INFO - target name = 511_Davida 11UT
+2017-05-22 13:05:59,464 INFO - filter name = NIRSPEC-5
+2017-05-22 13:05:59,464 INFO - slit name = 0.432x12
+2017-05-22 13:05:59,465 INFO - integration time = 90.0 sec
+2017-05-22 13:05:59,465 INFO - n coadds = 1
+2017-05-22 13:05:59,465 INFO - echelle angle = 63.31 deg
+2017-05-22 13:05:59,465 INFO - cross disperser angle = 36.93 deg
+2017-05-22 13:06:21,792 INFO - using flat NS.20100429.32524_flat_0
+2017-05-22 13:06:21,792 INFO - cosmic ray cleaning object frame A
+2017-05-22 13:06:29,829 INFO - no darks
+2017-05-22 13:06:29,829 INFO - ***** order 50 *****
+2017-05-22 13:06:29,833 INFO - order has been flat fielded
+2017-05-22 13:06:29,950 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:29,951 INFO - frame A spatial profile peak intensity row 13
+2017-05-22 13:06:29,951 INFO - frame A spatial profile peak centroid row 12.6
+2017-05-22 13:06:29,954 INFO - frame A spatial peak width = 3.1 pixels
+2017-05-22 13:06:29,954 INFO - n sky line peaks with intensity > 1142 = 4
+2017-05-22 13:06:29,960 INFO - 3 sky lines used for spectral rectification
+2017-05-22 13:06:29,960 INFO - spectral tilt is 0.089 pixels/pixel
+2017-05-22 13:06:30,004 INFO - frame A extraction window width = 9
+2017-05-22 13:06:30,004 INFO - frame A top background window width = 8
+2017-05-22 13:06:30,004 INFO - frame A top background window separation = 2
+2017-05-22 13:06:30,004 INFO - frame A bottom background window width = 8
+2017-05-22 13:06:30,004 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:30,004 INFO - frame A signal-to-noise ratio = 4.1
+2017-05-22 13:06:30,004 INFO - reading OH line data from ./ir_ohlines.dat
+2017-05-22 13:06:30,057 INFO - wavelength scale shift = 7.013 pixels
+2017-05-22 13:06:30,058 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:30,060 INFO - slope of accepted vs measured wavelengths = 1.001
+2017-05-22 13:06:30,060 INFO - 4 matched sky lines found in order
+2017-05-22 13:06:30,061 INFO - per order wavelength fit: n = 4, a = 27.014770, b = 0.998662, r = 0.999988
+2017-05-22 13:06:30,061 INFO - ***** order 49 *****
+2017-05-22 13:06:30,063 INFO - order has been flat fielded
+2017-05-22 13:06:30,169 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:30,169 INFO - frame A spatial profile peak intensity row 8
+2017-05-22 13:06:30,169 INFO - frame A spatial profile peak centroid row 8.0
+2017-05-22 13:06:30,171 INFO - frame A spatial peak width = 2.9 pixels
+2017-05-22 13:06:30,171 INFO - n sky line peaks with intensity > 2869 = 2
+2017-05-22 13:06:30,175 INFO - 2 sky lines used for spectral rectification
+2017-05-22 13:06:30,175 INFO - spectral tilt is 0.075 pixels/pixel
+2017-05-22 13:06:30,218 INFO - frame A extraction window width = 9
+2017-05-22 13:06:30,218 INFO - frame A top background window width = 8
+2017-05-22 13:06:30,218 INFO - frame A top background window separation = 2
+2017-05-22 13:06:30,218 INFO - frame A bottom background window width = 3
+2017-05-22 13:06:30,218 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:30,219 INFO - frame A signal-to-noise ratio = 3.6
+2017-05-22 13:06:30,266 INFO - wavelength scale shift = 4.384 pixels
+2017-05-22 13:06:30,267 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:30,269 INFO - slope of accepted vs measured wavelengths = 1.011
+2017-05-22 13:06:30,269 INFO - 13 matched sky lines found in order
+2017-05-22 13:06:30,271 INFO - per order wavelength fit: n = 13, a = 170.627469, b = 0.989378, r = 0.999951
+2017-05-22 13:06:30,271 INFO - ***** order 48 *****
+2017-05-22 13:06:30,273 INFO - order has been flat fielded
+2017-05-22 13:06:30,376 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:30,376 INFO - frame A spatial profile peak intensity row 13
+2017-05-22 13:06:30,376 INFO - frame A spatial profile peak centroid row 12.7
+2017-05-22 13:06:30,379 INFO - frame A spatial peak width = 2.8 pixels
+2017-05-22 13:06:30,379 INFO - n sky line peaks with intensity > 1837 = 5
+2017-05-22 13:06:30,383 INFO - 3 sky lines used for spectral rectification
+2017-05-22 13:06:30,384 INFO - spectral tilt is 0.051 pixels/pixel
+2017-05-22 13:06:30,428 INFO - frame A extraction window width = 9
+2017-05-22 13:06:30,428 INFO - frame A top background window width = 8
+2017-05-22 13:06:30,428 INFO - frame A top background window separation = 2
+2017-05-22 13:06:30,429 INFO - frame A bottom background window width = 8
+2017-05-22 13:06:30,429 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:30,429 INFO - frame A signal-to-noise ratio = 2.3
+2017-05-22 13:06:30,472 INFO - wavelength scale shift = 4.657 pixels
+2017-05-22 13:06:30,473 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:30,474 INFO - slope of accepted vs measured wavelengths = 1.007
+2017-05-22 13:06:30,474 INFO - 5 matched sky lines found in order
+2017-05-22 13:06:30,476 INFO - per order wavelength fit: n = 5, a = 122.954994, b = 0.992516, r = 0.999979
+2017-05-22 13:06:30,476 INFO - ***** order 47 *****
+2017-05-22 13:06:30,479 INFO - order has been flat fielded
+2017-05-22 13:06:30,577 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:30,577 INFO - frame A spatial profile peak intensity row 11
+2017-05-22 13:06:30,577 INFO - frame A spatial profile peak centroid row 10.9
+2017-05-22 13:06:30,579 INFO - frame A spatial peak width = 2.8 pixels
+2017-05-22 13:06:30,579 INFO - n sky line peaks with intensity > 1362 = 5
+2017-05-22 13:06:30,584 INFO - 3 sky lines used for spectral rectification
+2017-05-22 13:06:30,584 INFO - spectral tilt is 0.044 pixels/pixel
+2017-05-22 13:06:30,625 INFO - frame A extraction window width = 9
+2017-05-22 13:06:30,625 INFO - frame A top background window width = 8
+2017-05-22 13:06:30,625 INFO - frame A top background window separation = 2
+2017-05-22 13:06:30,625 INFO - frame A bottom background window width = 6
+2017-05-22 13:06:30,625 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:30,625 INFO - frame A signal-to-noise ratio = 3.4
+2017-05-22 13:06:30,669 INFO - wavelength scale shift = 1.047 pixels
+2017-05-22 13:06:30,669 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:30,671 INFO - slope of accepted vs measured wavelengths = 0.999
+2017-05-22 13:06:30,671 INFO - 9 matched sky lines found in order
+2017-05-22 13:06:30,673 INFO - per order wavelength fit: n = 9, a = -13.696558, b = 1.000922, r = 0.999979
+2017-05-22 13:06:30,673 INFO - ***** order 46 *****
+2017-05-22 13:06:30,676 INFO - order has been flat fielded
+2017-05-22 13:06:30,787 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:30,787 INFO - frame A spatial profile peak intensity row 9
+2017-05-22 13:06:30,787 INFO - frame A spatial profile peak centroid row 8.9
+2017-05-22 13:06:30,789 INFO - frame A spatial peak width = 2.7 pixels
+2017-05-22 13:06:30,789 INFO - n sky line peaks with intensity > 1689 = 2
+2017-05-22 13:06:30,792 INFO - 2 sky lines used for spectral rectification
+2017-05-22 13:06:30,792 INFO - spectral tilt is 0.053 pixels/pixel
+2017-05-22 13:06:30,833 INFO - frame A extraction window width = 9
+2017-05-22 13:06:30,833 INFO - frame A top background window width = 8
+2017-05-22 13:06:30,833 INFO - frame A top background window separation = 2
+2017-05-22 13:06:30,833 INFO - frame A bottom background window width = 4
+2017-05-22 13:06:30,833 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:30,833 INFO - frame A signal-to-noise ratio = 3.7
+2017-05-22 13:06:30,879 INFO - wavelength scale shift = 0.047 pixels
+2017-05-22 13:06:30,880 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:30,881 INFO - slope of accepted vs measured wavelengths = 1.005
+2017-05-22 13:06:30,881 INFO - 6 matched sky lines found in order
+2017-05-22 13:06:30,883 INFO - per order wavelength fit: n = 6, a = 91.935340, b = 0.994504, r = 0.999970
+2017-05-22 13:06:30,883 INFO - ***** order 45 *****
+2017-05-22 13:06:30,887 INFO - order has been flat fielded
+2017-05-22 13:06:30,985 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:30,985 INFO - frame A spatial profile peak intensity row 9
+2017-05-22 13:06:30,985 INFO - frame A spatial profile peak centroid row 9.1
+2017-05-22 13:06:30,987 INFO - frame A spatial peak width = 2.8 pixels
+2017-05-22 13:06:30,987 INFO - n sky line peaks with intensity > 1330 = 4
+2017-05-22 13:06:30,992 INFO - 3 sky lines used for spectral rectification
+2017-05-22 13:06:30,993 INFO - spectral tilt is 0.036 pixels/pixel
+2017-05-22 13:06:31,033 INFO - frame A extraction window width = 9
+2017-05-22 13:06:31,033 INFO - frame A top background window width = 8
+2017-05-22 13:06:31,033 INFO - frame A top background window separation = 2
+2017-05-22 13:06:31,033 INFO - frame A bottom background window width = 4
+2017-05-22 13:06:31,033 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:31,034 INFO - frame A signal-to-noise ratio = 3.2
+2017-05-22 13:06:31,077 INFO - wavelength scale shift = -1.17 pixels
+2017-05-22 13:06:31,077 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:31,078 INFO - slope of accepted vs measured wavelengths = 0.998
+2017-05-22 13:06:31,079 INFO - 4 matched sky lines found in order
+2017-05-22 13:06:31,080 INFO - per order wavelength fit: n = 4, a = -28.246426, b = 1.001569, r = 0.999982
+2017-05-22 13:06:31,080 INFO - ***** order 44 *****
+2017-05-22 13:06:31,084 INFO - order has been flat fielded
+2017-05-22 13:06:31,185 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:31,185 INFO - frame A spatial profile peak intensity row 10
+2017-05-22 13:06:31,185 INFO - frame A spatial profile peak centroid row 9.8
+2017-05-22 13:06:31,187 INFO - frame A spatial peak width = 2.9 pixels
+2017-05-22 13:06:31,188 INFO - n sky line peaks with intensity > 1282 = 2
+2017-05-22 13:06:31,191 INFO - 2 sky lines used for spectral rectification
+2017-05-22 13:06:31,191 INFO - spectral tilt is 0.015 pixels/pixel
+2017-05-22 13:06:31,236 INFO - frame A extraction window width = 9
+2017-05-22 13:06:31,236 INFO - frame A top background window width = 8
+2017-05-22 13:06:31,236 INFO - frame A top background window separation = 2
+2017-05-22 13:06:31,236 INFO - frame A bottom background window width = 5
+2017-05-22 13:06:31,236 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:31,236 INFO - frame A signal-to-noise ratio = 2.1
+2017-05-22 13:06:31,283 INFO - wavelength scale shift = -12.766 pixels
+2017-05-22 13:06:31,284 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:31,285 INFO - slope of accepted vs measured wavelengths = 1.01
+2017-05-22 13:06:31,285 INFO - 12 matched sky lines found in order
+2017-05-22 13:06:31,287 INFO - per order wavelength fit: n = 12, a = 159.379268, b = 0.990084, r = 0.999936
+2017-05-22 13:06:31,287 INFO - ***** order 43 *****
+2017-05-22 13:06:31,291 INFO - order has been flat fielded
+2017-05-22 13:06:31,419 INFO - order has been rectified in the spatial dimension
+2017-05-22 13:06:31,419 INFO - frame A spatial profile peak intensity row 9
+2017-05-22 13:06:31,420 INFO - frame A spatial profile peak centroid row 8.6
+2017-05-22 13:06:31,422 INFO - frame A spatial peak width = 3.0 pixels
+2017-05-22 13:06:31,422 INFO - n sky line peaks with intensity > 3787 = 0
+2017-05-22 13:06:31,422 WARNING - failed to find sky line trace
+2017-05-22 13:06:31,422 WARNING - not rectifying order 43 in spectral dimension
+2017-05-22 13:06:31,424 INFO - frame A extraction window width = 9
+2017-05-22 13:06:31,424 INFO - frame A top background window width = 8
+2017-05-22 13:06:31,424 INFO - frame A top background window separation = 2
+2017-05-22 13:06:31,424 INFO - frame A bottom background window width = 4
+2017-05-22 13:06:31,424 INFO - frame A bottom background window separation = 2
+2017-05-22 13:06:31,424 INFO - frame A signal-to-noise ratio = 1.2
+2017-05-22 13:06:31,469 INFO - wavelength scale shift = -11.86 pixels
+2017-05-22 13:06:31,469 INFO - using calibration line location algorithm 2
+2017-05-22 13:06:31,470 INFO - slope of accepted vs measured wavelengths = 1.008
+2017-05-22 13:06:31,470 INFO - 5 matched sky lines found in order
+2017-05-22 13:06:31,472 INFO - per order wavelength fit: n = 5, a = 124.270265, b = 0.992275, r = 0.999976
+2017-05-22 13:06:31,472 INFO - mean signal-to-noise ratio = 2.9
+2017-05-22 13:06:31,472 INFO - minimum signal-to-noise ratio = 1.2
+2017-05-22 13:06:31,472 INFO - mean spatial peak width = 2.9 pixels
+2017-05-22 13:06:31,472 INFO - maximum spatial peak width = 3.1 pixels
+2017-05-22 13:06:31,473 INFO - n sky lines identified = 58
+2017-05-22 13:06:31,528 INFO - wavelength calibration rms fit residual = 0.411
+2017-05-22 13:06:31,528 INFO - wavelength eq coefficients: 1.21E+02, 2.45E-02, -3.52E-05, 7.53E+05, 9.19E+00, 2.06E-03
+2017-05-22 13:06:31,528 INFO - n lines used in wavelength fit = 55
+2017-05-22 13:06:31,528 INFO - rms wavelength fit residual = 0.411
+2017-05-22 13:06:31,530 INFO - generating data products for NS.20100429.40280...
+2017-05-22 13:06:44,142 INFO - n data products generated for NS.20100429.40280 = 130

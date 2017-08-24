@@ -94,7 +94,7 @@ def gen(reduced, out_dir):
     warnings.filterwarnings('ignore', category=UserWarning, append=True)
     
     # make sub directories
-    for k, v in subdirs.iteritems():
+    for k, v in subdirs.items():
         try:
             os.makedirs(out_dir + '/' + v)
         except OSError as exception:
@@ -457,7 +457,7 @@ def profileFits(outpath, base_name, order_num, profile, header):
     hdu = fits.PrimaryHDU(profile)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.iteritems():
+    for k, v in header.items():
         try:
             hdr[k] = v
         except Exception as e:
@@ -690,7 +690,7 @@ def fitsSpectrum(outpath, base_name, title, order_num, y_units, cont, wave, head
     hdu = fits.PrimaryHDU(cont)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.iteritems():
+    for k, v in header.items():
         try:
             hdr[k] = v
         except Exception as e:
@@ -851,7 +851,7 @@ def twoDimOrderFits(outpath, base_name, order_num, data, header):
     hdu = fits.PrimaryHDU(data)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.iteritems():
+    for k, v in header.items():
         try:
             hdr[k] = v
         except Exception as e:
