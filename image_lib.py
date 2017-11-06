@@ -221,11 +221,16 @@ def gaussian(x, a, b, c):
     return(a * np.exp(-(x - b)**2 / c**2))
 
 def cut_out(data, top, bot, padding):
-        
-    if bot > padding:
-        return data[bot - padding:top + padding, :]
-    else:
-        return data[0:top + padding, :]
+    try:    
+        if bot > padding:
+            return data[bot - padding:top + padding, :]
+        else:
+            return data[0:top + padding, :]
+    except TypeError:
+        if bot > padding:
+            return data[int(bot) - int(padding):int(top) + int(padding), :]
+        else:
+            return data[0:int(top) + int(padding), :]
 
 def centroid(spec, width, window, approx):
     p0 = max(0, approx - (window / 2))
