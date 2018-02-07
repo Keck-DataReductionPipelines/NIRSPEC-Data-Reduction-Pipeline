@@ -42,7 +42,7 @@ def gen(reduced, out_dir):
     logger.info('generating diagnostic data products for {}...'.format(reduced.getBaseName()))
     
     # make sub directories
-    for k, v in subdirs.iteritems():
+    for k, v in subdirs.items():
         try:
             os.makedirs(out_dir + '/diagnostics/' + v)
         except OSError as exception:
