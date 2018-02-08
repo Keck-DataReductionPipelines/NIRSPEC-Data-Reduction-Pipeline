@@ -1,4 +1,3 @@
-import astroscrappy
 import numpy as np
 import scipy.ndimage as ndimage
 #from skimage.feature.peak import peak_local_max
