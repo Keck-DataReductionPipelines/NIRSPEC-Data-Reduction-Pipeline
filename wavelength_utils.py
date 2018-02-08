@@ -643,7 +643,7 @@ def twodfit(dataX, dataY, dataZ):
     x_res = np.arange(len(residual))
     regression = ols("data ~ x_res", data=dict(data=residual, x=x_res)).fit()
     test = regression.outlier_test()
-    outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.icol(2)) if t < 0.9)
+    outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.iloc[:,2]) if t < 0.9)
     #print('outliers=',list(outliers))
     x=list(outliers)
     #logger.info('residual outliers='+str(x))
@@ -673,7 +673,7 @@ def twodfit(dataX, dataY, dataZ):
         
         regression = ols("data ~ x_res", data=dict(data=residual, x=x_res)).fit()
         test = regression.outlier_test()
-        outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.icol(2)) if t < 0.9)
+        outliers = ((x_res[i], residual[i]) for i,t in enumerate(test.iloc[:,2]) if t < 0.9)
         #print('outliers=',list(outliers))
         x=list(outliers)
         xhap=0
