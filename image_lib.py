@@ -1,3 +1,4 @@
+import astroscrappy
 import numpy as np
 import scipy.ndimage as ndimage
 #from skimage.feature.peak import peak_local_max
@@ -121,12 +122,8 @@ def cosmic_clean(data):
     sig_frac = 0.3
     obj_lim = 5.0
     
-    c = cosmics.cosmicsImage(data, sigclip=sig_clip, sigfrac=sig_frac, objlim=obj_lim, 
-            verbose=False)
-    
-    c.run(max_iter)
-    return(c.cleanarray)
-
+    cosmicRayMask, cleanedArray = astroscrappy.detect_cosmics(data, pssl=0.0, gain=2.2, sigclip=sig_clip, sigfrac=sig_frac, objlim=obj_lim, readnoise=10.0, satlevel=np.inf, inmask=None, sepmed=False, cleantype='medmask', fsmode='median')
+    return(cleanedArray)
 
 def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
     """
