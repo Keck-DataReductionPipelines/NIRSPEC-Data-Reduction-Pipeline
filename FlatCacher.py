@@ -125,8 +125,9 @@ class FlatCacher:
                 self.logger.info('flat cosmic ray cleaning inhibited by command line flag')
             else:
                 self.logger.info('cosmic cleaning flat because < 3 flats were median combined')
-                data = image_lib.cosmic_clean(data)
+                data, cosmicMethod = image_lib.cosmic_clean(data)
                 hdr['CLEANED'] = 'yes'
+                self.logger.info(cosmicMethod)
                 self.logger.info('cosmic ray cleaning complete')
          
         return(fits.PrimaryHDU(data, hdr))
