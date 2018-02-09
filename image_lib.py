@@ -4,10 +4,7 @@ import scipy.ndimage as ndimage
 import cosmics
 #from __builtin__ import None
 import os
-import logging
 
-
-logger = logging.getLogger('main')
 
 def rectify_spatial(data, curve):
     """
