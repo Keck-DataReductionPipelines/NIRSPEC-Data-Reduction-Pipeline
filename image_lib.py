@@ -127,17 +127,15 @@ def cosmic_clean(data):
     
     try:
         import astroscrappy
-        msg = 'using Cython implementation of LACOSMIC'
+        msg = 'used Cython implementation of LACOSMIC'
         cosmicRayMask, cleanedArray = astroscrappy.detect_cosmics(data, pssl=0.0, gain=2.2, sigclip=sig_clip, sigfrac=sig_frac, objlim=obj_lim, readnoise=10.0, satlevel=np.inf, inmask=None, sepmed=False, cleantype='medmask', fsmode='median')
     except ImportError:
-        msg = 'using original LACOSMIC'
+        msg = 'used original LACOSMIC'
         c = cosmics.cosmicsImage(data, sigclip=sig_clip, sigfrac=sig_frac, objlim=obj_lim, verbose=False)
         c.run(max_iter)
         cleanedArray = c.cleanarray
 
-    logger.info(msg)
-
-    return(cleanedArray)
+    return(cleanedArray, msg)
 
 def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
     """
