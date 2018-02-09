@@ -61,13 +61,14 @@ def reduce_frame(raw, out_dir, flatCacher=None):
 
     else:
         logger.info('cosmic ray cleaning object frame A')
-        reduced.objImg['A'] = image_lib.cosmic_clean(reduced.objImg['A'])
+        reduced.objImg['A'], cosmicMethod = image_lib.cosmic_clean(reduced.objImg['A'])
         logger.debug('cosmic ray cleaning object frame A complete')
         if reduced.isPair:
             logger.info('cosmic ray cleaning object frame B')
             reduced.objImg['B'] = image_lib.cosmic_clean(reduced.objImg['B'])
             logger.debug('cosmic ray cleaning object frame B complete')
         reduced.cosmicCleaned = True 
+        logger.info(cosmicMethod)
            
     # if darks are available, combine them if there are more than one
     # and subtract from object frame(s) and flat
@@ -127,8 +128,9 @@ def getFlat(raw, flatCacher):
             flat_data = fits.PrimaryHDU.readfrom(raw.flatFns[0], ignore_missing_end=True).data
         else:
             logger.info('starting cosmic ray cleaning flat')
-            flat_data = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
+            flat_data, cosmicMethod = image_lib.cosmic_clean(fits.PrimaryHDU.readfrom(
                     raw.flatFns[0], ignore_missing_end=True).data)
+            logger.info(cosmicMethod)
             logger.info('cosmic ray cleaning on flat complete')
         
         return(Flat.Flat(
