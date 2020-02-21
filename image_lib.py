@@ -228,8 +228,8 @@ def extract_spectra(obj, flat, noise, obj_range, sky_range_top, sky_range_bot):
     sky_noise_top_sum = np.sum(noise[i, :] for i in sky_range_top)
     sky_noise_bot_sum = np.sum(noise[i, :] for i in sky_range_bot)
 
-    k = np.square(len(obj_range)) / \
-        np.square((len(sky_range_top) + len(sky_range_bot)))
+    k = float(np.square(len(obj_range)) / \
+        np.square((len(sky_range_top) + len(sky_range_bot))))
     noise_sp = np.sqrt(
         obj_noise_sum + (k * (sky_noise_top_sum + sky_noise_bot_sum)))
 
