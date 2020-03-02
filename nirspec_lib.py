@@ -22,10 +22,10 @@ def calc_noise_img(obj, flat, integration_time):
     noise = obj / G
 
     # add read noise
-    noise += np.square(RN / G)
+    noise += np.square(RN)
 
     # add dark current noise
-    noise += (DC / G) * integration_time
+    noise += DC * integration_time
 
     # divide by normalized flat squared
     noise /= np.square(flat)
