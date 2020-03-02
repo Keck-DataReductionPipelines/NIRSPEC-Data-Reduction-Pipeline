@@ -325,8 +325,8 @@ def __find_spatial_profile_and_peak(order):
 
         # fit peak to Gaussian, save Gaussian parameters and real centroid
         # location
-        p0 = order.peakLocation[frame] - (config.params['obj_window'] / 2)
-        p1 = order.peakLocation[frame] + (config.params['obj_window'] / 2)
+        p0 = order.peakLocation[frame] - (config.params['obj_window'] // 2)
+        p1 = order.peakLocation[frame] + (config.params['obj_window'] // 2)
         order.centroid[frame] = (scipy.ndimage.measurements.center_of_mass(
             order.spatialProfile[frame][p0:p1]))[0] + p0
         logger.info('frame {} spatial profile peak centroid row {:.1f}'.format(

@@ -564,15 +564,15 @@ def max_corr(a, b):
     coarse_max = np.argmax(np.correlate(a, b, mode='full')) - length + 1
 
     omega = np.zeros(length)
-    omega[0:length / 2] = (2 * np.pi * np.arange(length / 2)) / length
-    omega[length / 2 + 1:] = (2 * np.pi *
+    omega[0:length // 2] = (2 * np.pi * np.arange(length / 2)) / length
+    omega[length // 2 + 1:] = (2 * np.pi *
                               (np.arange(length / 2 + 1, length) - length)) / length
 
     fft_a = fft.fft(a)
 
     def correlate_point(tau):
         rotate_vec = np.exp(1j * tau * omega)
-        rotate_vec[length / 2] = np.cos(np.pi * tau)
+        rotate_vec[length // 2] = np.cos(np.pi * tau)
 
         return np.sum((fft.ifft(fft_a * rotate_vec)).real * b)
 
