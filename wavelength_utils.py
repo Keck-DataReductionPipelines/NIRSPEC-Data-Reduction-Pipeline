@@ -344,14 +344,14 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
         for i in range(0, len(bigdx) - 1):
             if bigdx[i + 1] - bigdx[i] < 2:
                 if debug:
-                    print(bigdx[i], ' and ', bigdx[i + 1], 'possible doublet')
+                    print((bigdx[i], ' and ', bigdx[i + 1], 'possible doublet'))
 
                 # locx is the section of bigohx  within +/- 4 angstrom of the
                 # bigdx possible doublet
                 locx = np.intersect1d(np.where(bigohx2 > (bigdx[i] - 4))[0],
                                       np.where(bigohx2 < (bigdx[i + 1] + 4))[0])
                 if debug:
-                    print('locx=', locx)
+                    print(('locx=', locx))
 
                 if len(
                         locx) > 1:  # there has to be more than two lines within the range for matched doublet
@@ -384,25 +384,25 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
 
                         locx = sorted(locx[locxfix])
                         if debug:
-                            print('locx=', locx)
+                            print(('locx=', locx))
 
                     ohslice = np.array(
                         bigohx2[locx[0] - 2 * happened:locx[1] - 2 * happened + 1])
                     if debug:
-                        print('ohslice=',
+                        print(('ohslice=',
                               ohslice,
                               ' are in the same location as',
                               bigdx[i],
-                              bigdx[i + 1])
+                              bigdx[i + 1]))
                     if len(ohslice) > 1:
                         for j in range(0, 1):
                             if debug:
-                                print('j=', j)
+                                print(('j=', j))
                             if ((ohslice[j + 1] - ohslice[j]) < 2 and abs(ohslice[j] - bigdx2[i - 2 * happened]) < 6
                                     and abs(ohslice[j + 1] - bigdx2[i + 1 - 2 * happened]) < 6):
                                 if debug:
-                                    print(ohslice[j], ohslice[j + 1], 'is same doublet as ',
-                                          bigdx2[i - 2 * happened], bigdx2[i + 1 - 2 * happened])
+                                    print((ohslice[j], ohslice[j + 1], 'is same doublet as ',
+                                          bigdx2[i - 2 * happened], bigdx2[i + 1 - 2 * happened]))
 
                                 matchesohx.append(ohslice[j])
                                 matchesohx.append(ohslice[j + 1])
@@ -416,13 +416,13 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
                                 matchesidx.append(bigidx[i - 2 * happened + 1])
 
                                 if debug:
-                                    print('removing bigdxs',
+                                    print(('removing bigdxs',
                                           bigdx2[i - 2 * happened],
-                                          bigdx2[i - 2 * happened + 1])
-                                    print('removing bigoxs', bigohx2[locx[0] - 2 * happened + j],
-                                          bigohx2[locx[0] - 2 * happened + j + 1])
-                                    print('before dx2=', bigdx2)
-                                    print('before oh2=', bigohx2)
+                                          bigdx2[i - 2 * happened + 1]))
+                                    print(('removing bigoxs', bigohx2[locx[0] - 2 * happened + j],
+                                          bigohx2[locx[0] - 2 * happened + j + 1]))
+                                    print(('before dx2=', bigdx2))
+                                    print(('before oh2=', bigohx2))
 
                                 bigdx2 = np.delete(bigdx2, i - 2 * happened)
                                 bigdx2 = np.delete(
@@ -446,10 +446,10 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
         bigohy = bigohy2
 
         if debug:
-            print('bigohx=', bigohx)
-            print('bigohy=', bigohy)
-            print('bigdx=', bigdx)
-            print('bigidx=', bigidx)
+            print(('bigohx=', bigohx))
+            print(('bigohy=', bigohy))
+            print(('bigdx=', bigdx))
+            print(('bigidx=', bigidx))
 
         for j in range(0, len(bigohx)):
             minimum = min((abs(bigohx[j] - i), i) for i in bigdx)
@@ -465,10 +465,10 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
 
     if len(matchesdx) > 2:
         if debug:
-            print('matchesdx:', matchesdx)
-            print('matchesohx:', matchesohx)
-            print('matchesohy:', matchesohy)
-            print('matchesidx:', matchesidx)
+            print(('matchesdx:', matchesdx))
+            print(('matchesohx:', matchesohx))
+            print(('matchesohy:', matchesohy))
+            print(('matchesidx:', matchesidx))
         # check for duplicates
         matchesdx2 = matchesdx[:]
         matchesohx2 = matchesohx[:]
@@ -479,7 +479,7 @@ def identify(sky, wavelength_scale_shifted, oh_wavelengths, oh_intensities):
 
             if abs(matchesdx[j + 1] - matchesdx[j]) < 0.01:
                 if debug:
-                    print('duplicate=', matchesdx[j + 1], matchesdx[j])
+                    print(('duplicate=', matchesdx[j + 1], matchesdx[j]))
                 # find which oh does it actually belongs to
 
                 if min(matchesdx[j + 1] - matchesohx[j + 1],

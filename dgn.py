@@ -44,7 +44,7 @@ def gen(reduced, out_dir):
             reduced.getBaseName()))
 
     # make sub directories
-    for k, v in subdirs.items():
+    for k, v in list(subdirs.items()):
         try:
             os.makedirs(out_dir + '/diagnostics/' + v)
         except OSError as exception:

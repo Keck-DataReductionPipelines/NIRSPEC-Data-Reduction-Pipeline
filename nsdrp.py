@@ -6,7 +6,7 @@ import nsdrp_koa
 import check_modules
 requiredModules = check_modules.is_missing()
 if requiredModules:
-    print('Missing modules: ' + ', '.join(requiredModules))
+    print(('Missing modules: ' + ', '.join(requiredModules)))
     os.sys.exit()
 
 import argparse

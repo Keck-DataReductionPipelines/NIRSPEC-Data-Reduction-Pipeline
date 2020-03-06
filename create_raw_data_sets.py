@@ -39,7 +39,7 @@ def create(in_dir):
 
     if (len(headers) == 0):
         logger.critical('no fits files found')
-        print("CRITICAL - no fits files found in: " + in_dir)
+        print(("CRITICAL - no fits files found in: " + in_dir))
         os.sys.exit(2)
         return
 
@@ -47,7 +47,7 @@ def create(in_dir):
 
     rawDataSets = []
 
-    for filename, header in headers.items():
+    for filename, header in list(headers.items()):
         if obj_criteria_met(header, failed2reduce):
             rawDataSets.append(RawDataSet.RawDataSet(filename, None, header))
 
@@ -77,7 +77,7 @@ def create(in_dir):
 
     # associate darks and flats with each object frame
     for rawDataSet in rawDataSets:
-        for filename, header in headers.items():
+        for filename, header in list(headers.items()):
             if (header['IMAGETYP'] == 'flatlamp'):
                 if len(rawDataSet.flatFns) < config.params['max_n_flats']:
                     if flat_criteria_met(rawDataSet.objHeader, header):

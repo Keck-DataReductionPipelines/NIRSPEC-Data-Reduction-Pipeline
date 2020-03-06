@@ -10,9 +10,9 @@ from PIL import ImageTk
 
 
 try:
-    from Tkinter import *
-    from tkFileDialog import askopenfilename
-    from tkFileDialog import askdirectory
+    from tkinter import *
+    from tkinter.filedialog import askopenfilename
+    from tkinter.filedialog import askdirectory
 except ImportError:
     from tkinter import *
     from tkinter.filedialog import askopenfilename

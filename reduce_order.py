@@ -284,7 +284,7 @@ def __characterize_spatial_profile(order):
                 x0 = max(0, order.peakLocation[frame] - w)
                 x1 = min(
                     len(order.spatialProfile[frame]) - 1, order.peakLocation[frame] + w)
-                x = range(x1 - x0)
+                x = list(range(x1 - x0))
                 order.gaussianParams[frame], pcov = scipy.optimize.curve_fit(
                     image_lib.gaussian, x, order.spatialProfile[frame][x0:x1] -
                     np.amin(order.spatialProfile[frame][x0:x1]))

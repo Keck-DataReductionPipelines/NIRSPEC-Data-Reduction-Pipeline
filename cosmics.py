@@ -188,7 +188,7 @@ class cosmicsImage:
         # each object.
         if len(slicecouplelist) != n:
             # This never happened, but you never know ...
-            raise(RuntimeError, "Mega error in labelmask !")
+            raise RuntimeError
         centers = [[(tup[0].start + tup[0].stop) / 2.0,
                     (tup[1].start + tup[1].stop) / 2.0] for tup in slicecouplelist]
         # We also want to know how many pixels where affected by each cosmic ray.
@@ -381,7 +381,7 @@ class cosmicsImage:
         # tofits(dilsatlabels, "test.fits")
 
         if verbose:
-            print("We have %i saturated stars." % nsat)
+            print(("We have %i saturated stars." % nsat))
 
         # The ouput, False for now :
         outmask = np.zeros(self.rawarray.shape)
@@ -501,7 +501,7 @@ class cosmicsImage:
         nbcandidates = np.sum(candidates)
 
         if verbose:
-            print("  %5i candidate pixels" % nbcandidates)
+            print(("  %5i candidate pixels" % nbcandidates))
 
         # At this stage we use the saturated stars to mask the candidates, if
         # available :
@@ -513,9 +513,9 @@ class cosmicsImage:
             nbcandidates = np.sum(candidates)
 
             if verbose:
-                print(
+                print((
                     "  %5i candidate pixels not part of saturated stars" %
-                    nbcandidates)
+                    nbcandidates))
 
         if verbose:
             print("Building fine structure image ...")
@@ -543,7 +543,7 @@ class cosmicsImage:
         nbcosmics = np.sum(cosmics)
 
         if verbose:
-            print("  %5i remaining candidate pixels" % nbcosmics)
+            print(("  %5i remaining candidate pixels" % nbcosmics))
 
         # What follows is a special treatment for neighbors, with more relaxed
         # constains.
@@ -585,7 +585,7 @@ class cosmicsImage:
         nbfinal = np.sum(finalsel)
 
         if verbose:
-            print("  %5i pixels detected as cosmics" % nbfinal)
+            print(("  %5i pixels detected as cosmics" % nbfinal))
 
         # Now the replacement of the cosmics...
         # we outsource this to the function clean(), as for some purposes the cleaning might not even be needed.
@@ -677,16 +677,16 @@ class cosmicsImage:
             self.findsatstars(verbose=verbose)
 
         if verbose:
-            print("Starting %i L.A.Cosmic iterations ..." % maxiter)
+            print(("Starting %i L.A.Cosmic iterations ..." % maxiter))
         for i in range(1, maxiter + 1):
             if verbose:
-                print("Iteration %i" % i)
+                print(("Iteration %i" % i))
 
             iterres = self.lacosmiciteration(verbose=verbose)
             if verbose:
-                print(
+                print((
                     "%i cosmic pixels (%i new)" %
-                    (iterres["niter"], iterres["nnew"]))
+                    (iterres["niter"], iterres["nnew"])))
 
             # self.clean(mask = iterres["mask"]) # No, we want clean to operate on really clean pixels only !
             # Thus we always apply it on the full mask, as lacosmic does :
@@ -727,10 +727,10 @@ def fromfits(infilename, hdu=0, verbose=True):
 
     pixelarrayshape = pixelarray.shape
     if verbose:
-        print("FITS import shape : (%i, %i)" %
-              (pixelarrayshape[0], pixelarrayshape[1]))
-        print("FITS file BITPIX : %s" % (hdr["BITPIX"]))
-        print("Internal array type :", pixelarray.dtype.name)
+        print(("FITS import shape : (%i, %i)" %
+              (pixelarrayshape[0], pixelarrayshape[1])))
+        print(("FITS file BITPIX : %s" % (hdr["BITPIX"])))
+        print(("Internal array type :", pixelarray.dtype.name))
 
     return pixelarray, hdr
 
@@ -743,8 +743,8 @@ def tofits(outfilename, pixelarray, hdr=None, verbose=True):
     """
     pixelarrayshape = pixelarray.shape
     if verbose:
-        print("FITS export shape : (%i, %i)" %
-              (pixelarrayshape[0], pixelarrayshape[1]))
+        print(("FITS export shape : (%i, %i)" %
+              (pixelarrayshape[0], pixelarrayshape[1])))
 
     if pixelarray.dtype.name == "bool":
         pixelarray = np.cast["uint8"](pixelarray)
@@ -760,7 +760,7 @@ def tofits(outfilename, pixelarray, hdr=None, verbose=True):
     hdu.writeto(outfilename)
 
     if verbose:
-        print("Wrote %s" % outfilename)
+        print(("Wrote %s" % outfilename))
 
 
 # Array manipulation

@@ -99,7 +99,7 @@ def gen(reduced, out_dir):
     warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
     # make sub directories
-    for k, v in subdirs.items():
+    for k, v in list(subdirs.items()):
         try:
             os.makedirs(out_dir + '/' + v)
         except OSError as exception:
@@ -490,7 +490,7 @@ def profileFits(outpath, base_name, order_num, profile, header):
     hdu = fits.PrimaryHDU(profile)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.items():
+    for k, v in list(header.items()):
         try:
             hdr[k] = v
         except Exception as e:
@@ -599,7 +599,7 @@ def profilePlot(outpath, base_name, order_num, profile, peak, centroid,
             offset = 0
         else:
             offset = min
-        pl.plot(image_lib.gaussian(range(len(profile)), gaussian[0], gaussian[1], gaussian[2]) + offset,
+        pl.plot(image_lib.gaussian(list(range(len(profile))), gaussian[0], gaussian[1], gaussian[2]) + offset,
                 'k--', linewidth=0.5, label='Gaussian fit')
 
     pl.legend(loc='best', prop={'size': 8})
@@ -745,7 +745,7 @@ def fitsSpectrum(outpath, base_name, title, order_num,
     hdu = fits.PrimaryHDU(cont)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.items():
+    for k, v in list(header.items()):
         try:
             hdr[k] = v
         except Exception as e:
@@ -949,7 +949,7 @@ def twoDimOrderFits(outpath, base_name, order_num, data, header):
     hdu = fits.PrimaryHDU(data)
     hdulist = fits.HDUList(hdu)
     hdr = hdulist[0].header
-    for k, v in header.items():
+    for k, v in list(header.items()):
         try:
             hdr[k] = v
         except Exception as e:

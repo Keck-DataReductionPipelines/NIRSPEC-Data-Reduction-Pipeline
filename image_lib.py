@@ -165,24 +165,24 @@ def get_extraction_ranges(image_width, peak_location, obj_w, sky_w, sky_dist):
     """
 
     if obj_w % 2:
-        ext_range = np.array(range(int((1 - obj_w) / 2.0),
-                                   int((obj_w + 1) / 2.0))) + peak_location
+        ext_range = np.array(list(range(int((1 - obj_w) / 2.0),
+                                   int((obj_w + 1) / 2.0)))) + peak_location
     else:
-        ext_range = np.array(range((-obj_w) / 2, obj_w / 2)) + peak_location
+        ext_range = np.array(list(range((-obj_w) / 2, obj_w / 2))) + peak_location
     ext_range = np.ma.masked_less(ext_range, 0).compressed()
     ext_range = np.ma.masked_greater_equal(ext_range, image_width).compressed()
     ext_range_list = ext_range.tolist()
 
     if sky_w is not None and sky_dist is not None:
         sky_range_top = np.array(
-            range(ext_range[-1] + sky_dist, ext_range[-1] + sky_dist + sky_w))
+            list(range(ext_range[-1] + sky_dist, ext_range[-1] + sky_dist + sky_w)))
         sky_range_top = np.ma.masked_less(sky_range_top, 0).compressed()
         sky_range_top = np.ma.masked_greater_equal(
             sky_range_top, image_width).compressed()
         sky_range_top_list = sky_range_top.tolist()
 
-        sky_range_bot = np.array(range(ext_range[0] - sky_dist - sky_w + 1,
-                                       ext_range[0] - sky_dist + 1))
+        sky_range_bot = np.array(list(range(ext_range[0] - sky_dist - sky_w + 1,
+                                       ext_range[0] - sky_dist + 1)))
         sky_range_bot = np.ma.masked_less(sky_range_bot, 0).compressed()
         sky_range_bot = np.ma.masked_greater_equal(
             sky_range_bot, image_width).compressed()
