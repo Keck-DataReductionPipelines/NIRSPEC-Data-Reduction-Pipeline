@@ -406,12 +406,12 @@ class cosmicsImage:
             print("Convolving image with Laplacian kernel ...")
 
         # We subsample, convolve, clip negative values, and rebin to original size
-        subsam = subsample(self.cleanarray) 
+        subsam = subsample(self.cleanarray)
         conved = signal.convolve2d(subsam, laplkernel, mode="same", boundary="symm")
         cliped = conved.clip(min=0.0)
         #cliped = np.abs(conved) # unfortunately this does not work to find holes as well ...
         lplus = rebin2x2(cliped)
-            
+
         if verbose:
             print("Creating noise model ...")
 
@@ -420,10 +420,10 @@ class cosmicsImage:
         # We keep this m5, as I will use it later for the interpolation.
         m5clipped = m5.clip(min=0.00001) # As we will take the sqrt
         noise = (1.0/self.gain) * np.sqrt(self.gain*m5clipped + self.readnoise*self.readnoise)
- 
+
         if verbose:
             print("Calculating Laplacian signal to noise ratio ...")
- 
+
         # Laplacian signal to noise ratio :
         s = lplus / (2.0 * noise) # the 2.0 is from the 2x2 subsampling
         # This s is called sigmap in the original lacosmic.cl
@@ -558,7 +558,7 @@ class cosmicsImage:
         m5 = ndimage.filters.median_filter(self.cleanarray, size=5, mode='mirror')
         m5clipped = m5.clip(min=0.00001)
         noise = (1.0/self.gain) * np.sqrt(self.gain*m5clipped + self.readnoise*self.readnoise)
- 
+
         s = lplus / (2.0 * noise) # the 2.0 is from the 2x2 subsampling
         # This s is called sigmap in the original lacosmic.cl
 
@@ -618,7 +618,7 @@ class cosmicsImage:
 #     Applies the full artillery using and returning only numpy arrays
 #     """
 #     pass
-# 
+#
 # def fullfits(infile, outcleanfile = None, outmaskfile = None):
 #     """
 #     Applies the full artillery of the function fullarray() directly on FITS files.
@@ -711,10 +711,10 @@ def rebin(a, newshape):
 
             >>> a=rand(6,4); b=rebin(a,(3,2))
         """
-    
+
     shape = a.shape
     lenShape = len(shape)
-    factor = np.asarray(shape)/np.asarray(newshape)
+    factor = np.asarray(shape)//np.asarray(newshape)
     #print(factor)
     evList = ['a.reshape('] + \
              ['newshape[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
@@ -732,6 +732,5 @@ def rebin2x2(a):
     if not (inshape % 2 == np.zeros(2)).all(): # Modulo check to see if size is even
         raise RuntimeError("I want even image shapes !")
 
-    
-    return rebin(a, inshape/2)
 
+    return rebin(a, inshape//2)
