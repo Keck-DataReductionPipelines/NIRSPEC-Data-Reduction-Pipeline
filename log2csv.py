@@ -90,7 +90,7 @@ def get_empty_dict():
     return d
 
 def dict_is_complete(d):
-    for k, v in d.iteritems():
+    for k, v in d.items():
         if v is None:
             if k.lower() == 'n_lines_used':
                 continue
@@ -106,32 +106,32 @@ def print_record(d):
     global i
     if i == 0:
 #        print('index, fn, date, target, filter, slit, itime, coadds, n orders, n reduced, '),
-        print('index, fn, date, target, filter, slit, itime, coadds, '),
-        print('snr mean, snr min, width mean, width max, n lines found, n lines used, '),
+        print(('index, fn, date, target, filter, slit, itime, coadds, '), end=' ')
+        print(('snr mean, snr min, width mean, width max, n lines found, n lines used, '), end=' ')
         print('r rms')
     i += 1
     
-    for k, v in d.iteritems():
+    for k, v in d.items():
         if v is None:
             d[k] = ''
             
-    print('{}, '.format(i)),
-    print('{}, '.format(d['fn'].strip())),
-    print('{}, '.format(d['date'].strip())),
-    print('{}, '.format(d['target'].strip())),
-    print('{}, '.format(d['filter'])),
-    print('{}, '.format(d['slit'])),
-    print('{}, '.format(d['itime'])),
-    print('{}, '.format(d['n_coadds'])),
+    print(('{}, '.format(i)), end=' ')
+    print(('{}, '.format(d['fn'].strip())), end=' ')
+    print(('{}, '.format(d['date'].strip())), end=' ')
+    print(('{}, '.format(d['target'].strip())), end=' ')
+    print(('{}, '.format(d['filter'])), end=' ')
+    print(('{}, '.format(d['slit'])), end=' ')
+    print(('{}, '.format(d['itime'])), end=' ')
+    print(('{}, '.format(d['n_coadds'])), end=' ')
 #     print('{}, '.format(d['n_orders'])),
 #     print('{}, '.format(d['n_reduced'])),
-    print('{:.2f}, '.format(float(d['snr_mean']))),
-    print('{}, '.format(d['snr_min'])),
-    print('{}, '.format(d['w_mean'])),
-    print('{}, '.format(d['w_max'])),
-    print('{}, '.format(d['n_lines_found'])),
-    print('{}, '.format(d['n_lines_used'])),
-    print('{}, '.format(d['r_rms'])),
+    print(('{:.2f}, '.format(float(d['snr_mean']))), end=' ')
+    print(('{}, '.format(d['snr_min'])), end=' ')
+    print(('{}, '.format(d['w_mean'])), end=' ')
+    print(('{}, '.format(d['w_max'])), end=' ')
+    print(('{}, '.format(d['n_lines_found'])), end=' ')
+    print(('{}, '.format(d['n_lines_used'])), end=' ')
+    print(('{}, '.format(d['r_rms'])), end=' ')
     print('')
 
 def main():
@@ -142,7 +142,7 @@ def main():
     try:
         f = open(args.log_fn)
     except IOError as e:
-        print('can\'t open {}: {}'.format(args.log_fn, e))
+        print(('can\'t open {}: {}'.format(args.log_fn, e)))
         exit(1)
     
     log2csv(f.readlines())
