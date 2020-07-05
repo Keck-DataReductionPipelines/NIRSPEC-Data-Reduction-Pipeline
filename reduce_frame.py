@@ -68,7 +68,7 @@ def reduce_frame(raw, out_dir, flatCacher=None):
         logger.debug('cosmic ray cleaning object frame A complete')
         if reduced.isPair:
             logger.info('cosmic ray cleaning object frame B')
-            reduced.objImg['B'] = image_lib.cosmic_clean(reduced.objImg['B'])
+            reduced.objImg['B'], _ = image_lib.cosmic_clean(reduced.objImg['B'])
             logger.debug('cosmic ray cleaning object frame B complete')
         reduced.cosmicCleaned = True
         logger.info(cosmicMethod)
