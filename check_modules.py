@@ -15,7 +15,8 @@ MODULES = [
     'scipy',
     'argparse',
     'statsmodels',
-    'PIL']
+    'PIL',
+    'astroscrappy']
 
 missingModules = []
 

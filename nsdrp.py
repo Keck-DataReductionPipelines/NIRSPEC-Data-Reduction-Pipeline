@@ -1,14 +1,14 @@
 import os
-import config
-import nsdrp_cmnd
-import nsdrp_koa
-
 import check_modules
+
 requiredModules = check_modules.is_missing()
 if requiredModules:
     print(('Missing modules: ' + ', '.join(requiredModules)))
     os.sys.exit()
 
+import config
+import nsdrp_cmnd
+import nsdrp_koa
 import argparse
 import logging
 from astropy.io import fits
