@@ -11,7 +11,6 @@ from skimage import exposure
 import config
 
 import scipy.misc
-from scipy.misc.pilutil import imresize
 
 # import Order
 # import ReducedDataSet

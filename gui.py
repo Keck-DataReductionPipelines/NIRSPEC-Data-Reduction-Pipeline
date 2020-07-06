@@ -1,7 +1,14 @@
+import os
+import check_modules
+
+requiredModules = check_modules.is_missing()
+if requiredModules:
+    print(('Missing modules: ' + ', '.join(requiredModules)))
+    os.sys.exit()
+
 from datetime import datetime
 import threading
 import time
-import os
 import glob
 import fnmatch
 import subprocess as sp
@@ -9,14 +16,15 @@ from PIL import Image as imopen
 from PIL import ImageTk
 
 
+# Import tkinter for python 3 or Tkinter for python 2
 try:
     from tkinter import *
     from tkinter.filedialog import askopenfilename
     from tkinter.filedialog import askdirectory
 except ImportError:
-    from tkinter import *
-    from tkinter.filedialog import askopenfilename
-    from tkinter.filedialog import askdirectory
+    from Tkinter import *
+    from Tkinter.filedialog import askopenfilename
+    from Tkinter.filedialog import askdirectory
 
 
 class nsdrpGui():
