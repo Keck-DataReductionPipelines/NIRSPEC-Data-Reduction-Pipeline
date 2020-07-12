@@ -16,7 +16,6 @@ import warnings
 # from DrpException import DrpException
 # import FlatCacher
 
-VERSION = '0.9.17'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 

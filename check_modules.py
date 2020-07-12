@@ -38,7 +38,6 @@ def is_missing():
 
 def install_packages(packages):
     print(('Missing modules: ' + ', '.join(packages)))
-    print('XXXXXXX' * 9)
 
     if 'PIL' in packages:
         idx = packages.index('PIL')

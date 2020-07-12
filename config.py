@@ -1,3 +1,5 @@
+VERSION = '0.9.17'
+
 params = {}
 
 # command line arguments

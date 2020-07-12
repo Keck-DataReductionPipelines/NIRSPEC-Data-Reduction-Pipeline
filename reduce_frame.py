@@ -8,7 +8,6 @@ import DrpException
 import ReducedDataSet
 import reduce_order
 import wavelength_utils
-import nsdrp
 import Flat
 from logging import INFO
 import Order
@@ -434,7 +433,7 @@ def log_start_summary(reduced):
     """
     # TODO: structure and format this like nsdrp_cmnd.write_summary()
 
-    logger.info('nsdrp version {}'.format(nsdrp.VERSION))
+    logger.info('nsdrp version {}'.format(config.VERSION))
 
     loggers = ['obj']
     if config.params['cmnd_line_mode'] is False:

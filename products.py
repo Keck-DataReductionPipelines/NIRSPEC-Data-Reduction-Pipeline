@@ -18,7 +18,6 @@ from astropy.io import fits
 from skimage import exposure
 import image_lib
 import config
-import nsdrp
 
 warnings.filterwarnings('ignore')
 
@@ -110,7 +109,7 @@ def gen(reduced, out_dir):
 
     # prepare extended fits header
     header = reduced.header
-    header['NSDRPVER'] = (nsdrp.VERSION, 'NSDRP Version')
+    header['NSDRPVER'] = (config.VERSION, 'NSDRP Version')
     header['COMMENT'] = ('NSDRP', 'NSDRP')
     if reduced.frameCalRmsRes is not None:
         header['WFITRMS'] = (round(reduced.frameCalRmsRes, 4),
