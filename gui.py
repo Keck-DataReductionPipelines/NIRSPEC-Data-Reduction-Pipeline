@@ -1,11 +1,10 @@
-import os
 import check_modules
 
 requiredModules = check_modules.is_missing()
 if requiredModules:
-    print(('Missing modules: ' + ', '.join(requiredModules)))
-    os.sys.exit()
+    check_modules.install_packages(requiredModules)
 
+import os
 from datetime import datetime
 import threading
 import time

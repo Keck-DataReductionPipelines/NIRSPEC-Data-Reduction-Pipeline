@@ -1,11 +1,10 @@
-import os
 import check_modules
 
 requiredModules = check_modules.is_missing()
 if requiredModules:
-    print(('Missing modules: ' + ', '.join(requiredModules)))
-    os.sys.exit()
+    check_modules.install_packages(requiredModules)
 
+import os
 import config
 import nsdrp_cmnd
 import nsdrp_koa
@@ -126,7 +125,7 @@ def init(out_dir, in_dir=None):
     if (config.params['cmnd_line_mode'] is False):
         setup_main_logger(logger, in_dir, out_dir)
 
-        logger.info('start nsdrp version {}'.format(VERSION))
+        logger.info('start nsdrp version {}'.format(config.VERSION))
         logger.info('cwd: {}'.format(os.getcwd()))
         logger.info('input dir: {}'.format(in_dir.rstrip('/')))
         logger.info('output dir: {}'.format(out_dir.rstrip('/')))
