@@ -3,8 +3,13 @@ import check_modules
 
 requiredModules = check_modules.is_missing()
 if requiredModules:
-    print(('Missing modules: ' + ', '.join(requiredModules)))
-    os.sys.exit()
+    installedModules, failedModules = check_modules.install_packages(requiredModules)
+    if installedModules:
+        print('Installed: ' + ', '.join(installedModules))
+    if failedModules:
+        print(('Failed to install: ' + ', '.join(failedModules)))
+        print('Aborting NSDRP')
+        os.sys.exit()
 
 import config
 import nsdrp_cmnd
@@ -17,7 +22,6 @@ import warnings
 # from DrpException import DrpException
 # import FlatCacher
 
-VERSION = '0.9.17'
 
 warnings.filterwarnings('ignore', category=UserWarning, append=True)
 
@@ -126,7 +130,7 @@ def init(out_dir, in_dir=None):
     if (config.params['cmnd_line_mode'] is False):
         setup_main_logger(logger, in_dir, out_dir)
 
-        logger.info('start nsdrp version {}'.format(VERSION))
+        logger.info('start nsdrp version {}'.format(config.VERSION))
         logger.info('cwd: {}'.format(os.getcwd()))
         logger.info('input dir: {}'.format(in_dir.rstrip('/')))
         logger.info('output dir: {}'.format(out_dir.rstrip('/')))
