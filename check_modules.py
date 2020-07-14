@@ -1,7 +1,6 @@
-import subprocess
+import subprocess as sp
 import sys
 import importlib
-import pip
 
 
 MODULES = [
@@ -24,6 +23,8 @@ MODULES = [
     'skimage']
 
 missingModules = []
+installedModules = []
+failedToInstall = []
 
 
 def is_missing():
@@ -49,15 +50,15 @@ def install_packages(packages):
 
     for package in packages:
         try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-q', package])
-            print('Installed ' + package)
-        except:
-            if hasattr(pip, 'main'):
-                pip.main(['install', package])
-                print('Installed ' + package)
+            if sys.version_info[0]  == 2:
+                sp.check_call([sys.executable, '-m', 'pip', 'install', '-q', package], stderr=sp.PIPE)
             else:
-                pip._internal.main(['install', package])
-                print('Installed ' + package)
+                sp.check_call([sys.executable, '-m', 'pip', 'install', '-q', package], stderr=sp.DEVNULL)
+
+            installedModules.append(package)
+
+        except sp.CalledProcessError:
+            failedToInstall.append(package)
 
         if package == 'Pillow':
             package = 'PIL'
@@ -65,4 +66,6 @@ def install_packages(packages):
         if package == 'scikit-image':
             package = 'skimage'
 
-        globals()[package] = importlib.import_module(package)
+        #globals()[package] = importlib.import_module(package)
+
+    return installedModules, failedToInstall

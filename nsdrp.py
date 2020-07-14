@@ -1,10 +1,16 @@
+import os
 import check_modules
 
 requiredModules = check_modules.is_missing()
 if requiredModules:
-    check_modules.install_packages(requiredModules)
+    installedModules, failedModules = check_modules.install_packages(requiredModules)
+    if installedModules:
+        print('Installed: ' + ', '.join(installedModules))
+    if failedModules:
+        print(('Failed to install: ' + ', '.join(failedModules)))
+        print('Aborting NSDRP')
+        os.sys.exit()
 
-import os
 import config
 import nsdrp_cmnd
 import nsdrp_koa
